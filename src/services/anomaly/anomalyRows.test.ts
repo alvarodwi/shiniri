@@ -137,6 +137,10 @@ describe('countRowsForDate', () => {
       countRowsForDate(['date', '2026-11-17', '', '2026-11-17', '2026-11-16'], '2026-11-17'),
     ).toBe(2)
   })
+
+  it('matches date serials from unformatted reads', () => {
+    expect(countRowsForDate(['date', '46343', '46342', '2026-11-17'], '2026-11-17')).toBe(2)
+  })
 })
 
 describe('newRun', () => {

@@ -54,5 +54,14 @@ export function applyToRun(
   )
 }
 
+const SHEETS_EPOCH = Date.UTC(1899, 11, 30)
+
+// Column A holds real dates (serial numbers when read unformatted) or ISO text in older rows.
+function cellToIsoDate(value: string): string {
+  const v = value.trim()
+  if (!/^\d+(\.\d+)?$/.test(v)) return v
+  return new Date(SHEETS_EPOCH + Math.floor(Number(v)) * 86_400_000).toISOString().slice(0, 10)
+}
+
 export const countRowsForDate = (colA: string[], date: string): number =>
-  colA.filter((v) => v.trim() === date).length
+  colA.filter((v) => cellToIsoDate(v) === date).length

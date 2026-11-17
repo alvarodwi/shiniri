@@ -135,6 +135,36 @@ describe('anomalyStore', () => {
     expect(store.runCount).toBe(1)
   })
 
+  it('does not carry boss changes into runs already filled in', async () => {
+    const { store } = await loaded()
+    store.setRun(2, { modules: 2 })
+    store.setBossOrStage(0, { boss: 'Harvester' })
+    expect(store.runs.slice(0, 4).map((r) => r.boss)).toEqual([
+      'Harvester',
+      'Harvester',
+      'Ultra',
+      'Harvester',
+    ])
+  })
+
+  it('resets the form after a successful write even if the reload fails', async () => {
+    const { api, store } = await loaded(['date'])
+    store.setBossOrStage(0, { boss: 'Ultra', stage: 7 })
+    fillModules(store)
+    const realGet = api.getValues.getMockImplementation()!
+    api.updateValues.mockImplementationOnce(async (_id, range) => {
+      api.getValues.mockImplementation(async (id, r) => {
+        if (r === COL_A) throw new Error('network down')
+        return realGet(id, r)
+      })
+      return { updatedRange: range }
+    })
+    await store.save(api, () => true)
+    expect(store.lastSaved?.count).toBe(5)
+    expect(store.runs.every((r) => r.modules === null)).toBe(true)
+    expect(store.runs[0]).toMatchObject({ boss: 'Ultra', stage: 7 })
+  })
+
   it('falls back to kraken 9 on an empty sheet', async () => {
     const { store } = await loaded(['date'], [])
     expect(store.runs[0]).toMatchObject({ boss: 'Kraken', stage: 9 })

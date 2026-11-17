@@ -41,8 +41,9 @@ const range = (tab: TabSpec, from: number, to: number) =>
   `${quoted(tab)}!A${from}:${lastCol(tab)}${to}`
 
 export async function readColumnA(api: SheetsApi, tab: TabSpec): Promise<string[]> {
-  const values = await api.getValues(tab.spreadsheetId, `${quoted(tab)}!A:A`)
-  return values.map((r) => r[0] ?? '')
+  // Unformatted: dates come back as serial numbers, independent of the cell's display format.
+  const values = await api.getValues(tab.spreadsheetId, `${quoted(tab)}!A:A`, 'UNFORMATTED_VALUE')
+  return values.map((r) => String(r[0] ?? ''))
 }
 
 export const readRows = (api: SheetsApi, tab: TabSpec, fromRow: number, toRow: number) =>

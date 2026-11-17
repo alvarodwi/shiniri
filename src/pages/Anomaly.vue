@@ -71,7 +71,7 @@ function confirmDuplicate(existing: number, after: number): boolean {
     </template>
 
     <p v-if="store.error" role="alert" class="text-accent-ink py-3">{{ store.error }}</p>
-    <p v-if="store.status === 'saved' && store.lastSaved" role="status" class="py-3">
+    <p v-if="store.lastSaved" role="status" class="py-3">
       Saved {{ store.lastSaved.count }} rows to {{ store.lastSaved.updatedRange }}.
     </p>
 

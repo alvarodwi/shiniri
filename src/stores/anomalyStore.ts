@@ -47,7 +47,7 @@ export const useAnomalyStore = defineStore('anomaly', {
   },
 
   actions: {
-    async load(api: SheetsApi = sheetsApi) {
+    async load(api: SheetsApi = sheetsApi): Promise<boolean> {
       this.status = 'loading'
       this.error = null
       try {
@@ -58,9 +58,11 @@ export const useAnomalyStore = defineStore('anomaly', {
         this.existingForDate = countRowsForDate(colA, this.date)
         this.reset(lastRunDefaults(lastRow))
         this.status = 'idle'
+        return true
       } catch (e) {
         this.status = 'error'
         this.error = (e as Error).message
+        return false
       }
     },
 
@@ -79,8 +81,10 @@ export const useAnomalyStore = defineStore('anomaly', {
       this.touched[index] = true
     },
 
+    // Filling a run in counts as touching it, so later carry-forward leaves it alone.
     setRun(index: number, patch: Partial<AnomalyRun>) {
       this.runs[index] = { ...this.runs[index], ...patch }
+      this.touched[index] = true
     },
 
     setRunCount(n: number) {
@@ -106,10 +110,12 @@ export const useAnomalyStore = defineStore('anomaly', {
         }
         const rows = this.activeRuns.map((run) => toRow(this.date, run))
         const { updatedRange } = await writeRowsAtEnd(api, ANOMALY_TAB, rows)
-        const saved = { updatedRange, count: rows.length }
-        await this.load(api)
-        this.lastSaved = saved
-        this.status = 'saved'
+        // Clear the form before reloading, so a failed reload can't leave saved runs to resave.
+        const last = this.activeRuns[this.activeRuns.length - 1]
+        this.lastSaved = { updatedRange, count: rows.length }
+        this.reset({ boss: last.boss, stage: last.stage })
+        this.existingForDate += rows.length
+        if (await this.load(api)) this.status = 'saved'
       } catch (e) {
         this.status = 'error'
         this.error = (e as Error).message

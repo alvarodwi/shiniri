@@ -2,10 +2,12 @@ import type { Cell } from '@/types/sheet'
 
 const BASE = 'https://sheets.googleapis.com/v4/spreadsheets'
 
+export type ValueRender = 'FORMATTED_VALUE' | 'UNFORMATTED_VALUE'
+
 export type TokenGetter = (opts?: { forceRefresh?: boolean }) => Promise<string>
 
 export interface SheetsApi {
-  getValues(spreadsheetId: string, range: string): Promise<string[][]>
+  getValues(spreadsheetId: string, range: string, render?: ValueRender): Promise<string[][]>
   updateValues(
     spreadsheetId: string,
     range: string,
@@ -48,8 +50,8 @@ export function createSheetsApi(getToken: TokenGetter, fetchFn: typeof fetch = f
     `${BASE}/${encodeURIComponent(id)}/values/${encodeURIComponent(range)}`
 
   return {
-    async getValues(id, range) {
-      const body = await request(`${url(id, range)}?valueRenderOption=FORMATTED_VALUE`)
+    async getValues(id, range, render = 'FORMATTED_VALUE') {
+      const body = await request(`${url(id, range)}?valueRenderOption=${render}`)
       return body.values ?? []
     },
     async updateValues(id, range, rows) {

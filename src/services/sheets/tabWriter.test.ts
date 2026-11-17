@@ -45,9 +45,10 @@ describe('nextEmptyRow', () => {
 })
 
 describe('readColumnA', () => {
-  it('flattens column A, keeping blanks', async () => {
-    const api = fakeApi({ [COL_A]: [['date'], [], ['x']] })
-    expect(await readColumnA(api, tab)).toEqual(['date', '', 'x'])
+  it('flattens unformatted column A to strings, keeping blanks', async () => {
+    const api = fakeApi({ [COL_A]: [['date'], [], [46343 as unknown as string]] })
+    expect(await readColumnA(api, tab)).toEqual(['date', '', '46343'])
+    expect(api.getValues).toHaveBeenCalledWith('sid', COL_A, 'UNFORMATTED_VALUE')
   })
 })
 
