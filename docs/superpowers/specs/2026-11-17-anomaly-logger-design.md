@@ -16,13 +16,13 @@ This is the proof of concept for a larger personal app. Later forms (gacha track
 - 5 attempts per day normally, doubled to 10 on some weekends and anniversaries (it was 3, or 6 when doubled, before an update). Each attempt targets one of 5 bosses, chosen freely, and attempts can be split across bosses.
 - Each boss has a fixed reward type:
 
-  | bossName (as written in sheet) | dropType |
-  |---|---|
-  | Kraken | Modules (custom module shards, fixed 50; amount not logged) |
-  | Ultra | Helmet |
-  | Mirror Container | Gloves |
-  | Indivilia | Torso |
-  | Harvester | Boots |
+  | bossName (as written in sheet) | dropType                                                    |
+  | ------------------------------ | ----------------------------------------------------------- |
+  | Kraken                         | Modules (custom module shards, fixed 50; amount not logged) |
+  | Ultra                          | Helmet                                                      |
+  | Mirror Container               | Gloves                                                      |
+  | Indivilia                      | Torso                                                       |
+  | Harvester                      | Boots                                                       |
 
 - Stage is 1–9. At stage 9 the reward always drops. Below 9 it can fail (`dropped = FALSE`).
 - Every attempt can also give 0–3 bonus modules, independent of whether the reward dropped.
@@ -69,13 +69,13 @@ This is the proof of concept for a larger personal app. Later forms (gacha track
 ## Decided
 
 - **Stack:** Vue 3 + Vite + UnoCSS, TypeScript. Owner's choice.
-- **Auth:** Google Identity Services token client (browser-only), scope `https://www.googleapis.com/auth/spreadsheets`. There's no password page: the OAuth consent screen stays in *Testing* with only the owner as a test user, so nobody else can get a token. No secrets ship in the bundle; the client ID is public by design. Tokens last about 1 hour with no refresh token. Re-request on expiry, silently where possible.
+- **Auth:** Google Identity Services token client (browser-only), scope `https://www.googleapis.com/auth/spreadsheets`. There's no password page: the OAuth consent screen stays in _Testing_ with only the owner as a test user, so nobody else can get a token. No secrets ship in the bundle; the client ID is public by design. Tokens last about 1 hour with no refresh token. Re-request on expiry, silently where possible.
 - **Hosting:** Netlify from a private GitHub repo, deploying from `main` (same as ntrsv). Authorized JS origins: the Netlify domain and `http://localhost:5173`.
 - **Writes (Claude's call, after review):** no `values.append`. Append guesses where the table ends, and `INSERT_ROWS` would push down the I–N notes and break fixed row references. Instead the app computes the target rows itself:
   1. Read `Anomaly!A:A`. The target start row is n = last non-empty row + 1.
   2. Read `Anomaly!A{n}:I{n+k-1}`, where k is the number of runs. Abort if any cell holds anything. The last row changes daily because this is live data, so never hardcode a row number. (Verified 2026-11-17: column D has no checkboxes below the data. Real headers: `date,bossName,stage,dropped,modules,gear class,gear manu,dropType`. Class spelling is `Supporter`. Column I holds occasional per-row notes; the app leaves it alone.)
   3. Write with one `values.update` to exactly that range, `valueInputOption=USER_ENTERED`. One call means the save is all-or-nothing.
-  This never shifts, overwrites or inserts rows. Rows are never inserted, so I–N stay put.
+     This never shifts, overwrites or inserts rows. Rows are never inserted, so I–N stay put.
 - **Date = game day (owner's decision).** The game resets at 03:00 local time (WIB, UTC+7), which is 20:00 UTC. The default date is the UTC date of `now + 4h`, which doesn't depend on the device's timezone. The duplicate-day warning uses that same date. The date stays editable in the header.
 - **Reads:** the header row, `Anomaly!A:A` (about 1k date cells, cheap), and the last few full rows for defaults. The duplicate-day count matches dates across all of column A, so it doesn't rely on rows being in date order.
 
