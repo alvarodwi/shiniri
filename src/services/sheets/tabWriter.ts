@@ -6,20 +6,25 @@ import type { Cell } from '@/types/sheet'
 // it writes once, into rows it has just confirmed are empty, below the last row of data.
 
 export class HeaderMismatchError extends Error {
-  constructor(
-    public expected: readonly string[],
-    public actual: string[],
-  ) {
+  expected: readonly string[]
+  actual: string[]
+
+  constructor(expected: readonly string[], actual: string[]) {
     super(
       `Sheet headers changed. Expected [${expected.join(' | ')}], found [${actual.join(' | ')}].`,
     )
     this.name = 'HeaderMismatchError'
+    this.expected = expected
+    this.actual = actual
   }
 }
 
 export class TargetNotEmptyError extends Error {
-  constructor(public range: string) {
+  range: string
+
+  constructor(range: string) {
     super(`Refusing to write: ${range} is not empty.`)
+    this.range = range
     this.name = 'TargetNotEmptyError'
   }
 }
