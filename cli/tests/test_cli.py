@@ -287,3 +287,25 @@ def test_union_exports_keyed_by_member_not_name(union_store):
     assert "cached" not in text and "はる" in text
     app.execute("union hits s46 me")
     assert "5 hits" in out.export_text()
+
+
+def test_q_leaves_union_mode(union_store):
+    app, _ = make_app(union_store)
+    app.execute("union")
+    assert app.execute("q") is True and app.mode == "main"
+
+
+def test_hits_quoted_and_forced_member_names(union_store):
+    assert parse_command('hits "bravo two" @hard', UNION_COMMANDS).args == ["bravo two", "@hard"]
+    raw = union_store.load_raw("union/1000046")
+    for h in raw["raid"]["participate_data"]:
+        h["nickname"] = {"a": "hard", "b": "BRA VO", "d": "DELTA"}[h["openid"]]
+    union_store.save_raw("union/1000046", raw)
+    app, out = make_app(union_store)
+    app.execute("union hits s46 @hard")
+    assert "5 hits" in out.export_text()
+    app.execute('union hits s46 "bra vo"')
+    assert "3 hits" in out.export_text()
+    app.execute('union hits "unbalanced')
+    assert "unbalanced quote" in out.export_text(clear=False)
+    assert "Traceback" not in out.export_text()

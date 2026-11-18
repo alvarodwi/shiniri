@@ -2,6 +2,7 @@
 
 import asyncio
 import re
+import shlex
 import time
 from dataclasses import dataclass
 from datetime import date
@@ -41,8 +42,9 @@ UNION_COMMANDS: dict[str, tuple[str, str, list[str]]] = {
     "fetch": ("fetch", "download seasons not stored yet (needs cookie)", ["fetch"]),
     "live": ("live", "re-download the running season", ["live"]),
     "season": ("sN | season [sN]", "season recap", ["s45", "season"]),
-    "hits": ("hits [sN] [normal|hard] [lv<n>] [d<n>] [boss] [member]", "every hit, filtered, biggest first",
-             ["hits hard hsta", "hits s45 d2 alpha"]),
+    "hits": ("hits [sN] [normal|hard] [lv<n>] [d<n>] [boss] [member]",
+             "every hit, filtered, biggest first · quote names with spaces, @name for a name like a filter",
+             ["hits hard hsta", "hits s45 d2 alpha", 'hits "two words"', "hits @hard"]),
     "missed": ("missed [sN]", "members under 3 hits on the hard-mode day", ["missed", "mi s44"]),
     "normal": ("normal [sN]", "who hit normal mode", ["normal s45"]),
     "top": ("top [sN|all] [member]", "most-used Nikkes in hits", ["top", "top all", "top s45 alpha"]),
@@ -84,6 +86,11 @@ def parse_command(line: str, commands: dict = COMMANDS) -> Command:
         args = [a.strip() for a in rest.split("+") if a.strip()]
     elif name == "member":
         args = [rest.strip()] if rest.strip() else []
+    elif name == "hits":
+        try:
+            args = shlex.split(rest)  # "two words" for names with spaces
+        except ValueError:
+            raise QueryError("unbalanced quote") from None
     elif name == "cookie":
         args = []  # only via the hidden prompt, so the token never lands in history
     else:
@@ -194,7 +201,8 @@ class App:
             return True
         try:
             if self.mode == "union":
-                if line.strip().lower() == "quit":
+                word = line.strip().lower()
+                if word and "quit".startswith(word):
                     self.mode = "main"
                     return True
                 cmd = parse_command(line, UNION_COMMANDS)
@@ -344,7 +352,8 @@ class App:
         if name in ("season", "missed", "normal") and rest:
             raise QueryError("usage: " + UNION_COMMANDS[name][0])
         if name == "hits":  # members as openids: export names keep only [a-z0-9], so CJK names would collide
-            rest = [f.lower() if uq.is_filter(f) else self._member(f) for f in rest]
+            rest = [self._member(f[1:]) if f.startswith("@") else f.lower() if uq.is_filter(f) else self._member(f)
+                    for f in rest]
         if name in ("season", "missed", "normal", "hits"):
             n = uq.pick_season(u, season_arg)
             key = [f"s{n}", *rest]
@@ -403,7 +412,7 @@ class App:
         except AuthError:
             self.out.print("[red]cookie rejected (game not login) — run cookie[/]")
         except UnionError as e:
-            self.out.print(f"[red]union info refused: {e}[/]")
+            self.out.print(f"[red]{escape(str(e))}[/]")
         except KeyboardInterrupt:
             self.out.print("[yellow]fetch interrupted — seasons so far are saved[/]")
             interrupted = True

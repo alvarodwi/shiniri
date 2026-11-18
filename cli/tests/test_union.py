@@ -179,3 +179,12 @@ def test_partial_results_survive_auth_error(union_store):
         asyncio.run(fetch_union(union_store, httpx.AsyncClient(transport=httpx.MockTransport(handler)), 99999,
                                 delay=(0, 0), results=results))
     assert results[47] == "saved"
+
+
+def test_network_error_is_not_a_refusal(union_store):
+    def handler(req):
+        raise httpx.ConnectTimeout("x")
+    with pytest.raises(UnionError, match="can't reach blablalink"):
+        _run(union_store, httpx.AsyncClient(transport=httpx.MockTransport(handler)), 1000)
+    with pytest.raises(UnionError, match="union info refused: user not in guild"):
+        _run(union_store, _client([], guild={"code": 1303028, "msg": "user not in guild"}), 1000)
