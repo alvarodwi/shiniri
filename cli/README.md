@@ -54,12 +54,42 @@ Every search prints a table and saves a CSV under `data/exports/`. Running the s
 search again reuses that file. Prefix a search with `!` to rebuild it (`!synchro`).
 A `fetch` or `sync` that changes the data clears the affected exports automatically.
 
+## Union raid
+
+`union` switches to a `union>` prompt with its own commands and `help`. `back` returns.
+From the main prompt, `union <cmd>` runs one union command directly (`union s45`,
+`union missed s44`), and `help union` lists them.
+
+```
+union> fetch        download every season not stored yet (run sync first, needs cookie)
+union> s46          season recap
+```
+
+| Command | What it shows |
+|---|---|
+| `fetch` | download seasons not stored yet |
+| `live` | re-download the running season |
+| `sN` / `season [sN]` | recap: normal clear day, hard result, damage, top hitters |
+| `hits [sN] [normal\|hard] [lv<n>] [d<n>] [boss] [member]` | every hit, filtered, biggest first |
+| `missed [sN]` | members under 3 hits on the hard-mode day |
+| `normal [sN]` | who hit normal mode |
+| `top [sN\|all] [member]` | most-used Nikkes in hits |
+| `member [name]` | one member across seasons, with tendencies (no name = you) |
+| `members` | first/last season per member, arrivals and departures |
+| `growth [name [+ name]]` | per-season damage; with names, next to the union median |
+| `boss <code>` | one boss (HSTA PSID ZEUS DMTR ANMI) across seasons |
+
+No season means the running one, else the latest stored. A finished season that
+downloaded cleanly is never downloaded again or overwritten, and a failed download never
+replaces a stored file. The server only answers while you're in the union, so
+`data/raw/json/union/` is the only copy once you leave. Back it up.
+
 ## Where things live
 
 ```
 config/sources.json      CDN paths of the reference files (committed)
 config/cookie.txt        your cookie (git-ignored)
-data/raw/json/           what the server sent: the source of truth
+data/raw/json/           what the server sent: the source of truth (union/ holds one file per raid season)
 data/parsed/csv/         campaign_clears.csv, tower_clears.csv, lineups.csv (rebuilt from raw)
 data/exports/            one CSV per search, grouped into campaign/, tower/ and all/
 src/blablalink/          the code: store, queries, fetch, cli

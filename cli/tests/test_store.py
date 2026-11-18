@@ -89,9 +89,10 @@ def test_export_roundtrip(store):
 
 def test_scopes_to_wipe():
     assert scopes_to_wipe(fetched={"tower"}) == {"tower", "all"}
-    assert scopes_to_wipe(synced={"nikke_list_en"}) == {"campaign", "tower", "all"}
+    assert scopes_to_wipe(synced={"nikke_list_en"}) == {"campaign", "tower", "all", "union"}
     assert scopes_to_wipe(synced={"stage_list"}) == {"campaign", "all"}
     assert scopes_to_wipe() == set()
+    assert scopes_to_wipe(synced={"raid_list"}) == {"union"}
 
 
 def test_wipe_only_scope(store):
