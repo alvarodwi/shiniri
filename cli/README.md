@@ -15,8 +15,10 @@ uv run blablalink       # starts the shell
 uv run pytest           # runs the tests
 ```
 
-Use PowerShell, cmd or Windows Terminal. Git Bash's default terminal (mintty)
-isn't a Windows console, so the prompt won't start there unless you go through `winpty`.
+Works the same on Windows, macOS and Linux, in any normal terminal.
+
+Windows only: Git Bash's default terminal (mintty) isn't a Windows console, so the prompt
+won't start there. Use PowerShell, cmd or Windows Terminal, or run it through `winpty`.
 
 ## First run
 
