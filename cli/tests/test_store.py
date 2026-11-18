@@ -29,3 +29,34 @@ def test_migrate_converts_legacy(tmp_path):
     assert s.load_raw("nikke") == [] and not (tmp_path / "nikke.json").exists()
     assert (tmp_path / "test_tower_clear_history.json").exists()
     assert s.migrate() == []
+
+
+def test_build_tables_joins(store):
+    t = store.build_tables()
+    camp = next(c for c in t.clears if c["source"] == "campaign")
+    assert (camp["stage_id"], camp["mode"], camp["chapter"], camp["stage_name"]) == (6002003, "Normal", 2, "2-3 STAGE")
+    assert camp["team_cp"] == 909195 and camp["synchro_level"] == "740"
+    assert camp["cleared_at"] == datetime.fromtimestamp(1793443017).astimezone()
+    assert [(u["name"], u["dupe"]) for u in camp["team"]] == [("Crown", "MLB"), ("Anis: Star", "C2")]
+    tower = next(c for c in t.clears if c["source"] == "tower")
+    assert (tower["mode"], tower["floor"], tower["stage_name"]) == ("Tribe", 1, "1F")
+    assert [(u["slot"], u["name"], u["dupe"]) for u in tower["team"]] == [(1, "NIKKE_999999", "N/A"), (2, "Anis: Star", "C2")]
+    assert len(t.lineups) == 4 and "Anis" in t.nikke_names
+
+
+def test_cleared_at_zero_is_none(store):
+    store.save_clears("tower", {"50002": {"cleared_at": "0", "list": [{"slot": 1, "tid": 433004, "lv": 5, "combat": 1}]}})
+    assert store.build_tables().clears[-1]["cleared_at"] is None
+
+
+def test_write_parsed(store):
+    store.write_parsed(store.build_tables())
+    with open(store.parsed_dir / "lineups.csv", encoding="utf-8-sig") as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == 4 and {r["name"] for r in rows} >= {"Crown", "NIKKE_999999"}
+    assert (store.parsed_dir / "campaign_clears.csv").exists() and (store.parsed_dir / "tower_clears.csv").exists()
+
+
+def test_empty_store_builds_empty_tables(tmp_path):
+    t = Store(tmp_path).build_tables()
+    assert (t.clears, t.lineups, t.nikke_names) == ([], [], [])
