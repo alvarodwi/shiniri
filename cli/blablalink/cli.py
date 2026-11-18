@@ -2,7 +2,7 @@
 
 import asyncio
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 
 import httpx
@@ -91,6 +91,23 @@ class App:
             store.write_parsed(self.tables)
             store.wipe_exports(set(SCOPES))
             self.out.print("[dim]raw data changed since last run · rebuilt parsed csv · cleared exports[/]")
+        self._completer = self._build_completer()
+
+    def _build_completer(self):
+        from prompt_toolkit.completion import NestedCompleter, WordCompleter
+        towers = {c["mode"].lower() for c in self.tables.clears if c["source"] == "tower"}
+        return NestedCompleter.from_nested_dict({
+            **{name: None for name in COMMANDS},
+            "nikke": WordCompleter(self.tables.nikke_names, ignore_case=True, sentence=True),
+            "floor": towers,
+            "top": towers | {"normal", "hard"},
+            "stage": {"normal", "hard"},
+            "fetch": {"campaign", "tower", "all"},
+            "help": set(COMMANDS),
+        })
+
+    def completer(self):
+        return self._completer
 
     # --- plumbing -------------------------------------------------------
     def refresh(self, fetched: set[str] = frozenset(), synced: set[str] = frozenset()) -> None:
@@ -100,14 +117,14 @@ class App:
         self.tables = self.store.build_tables()
         self.store.write_parsed(self.tables)
         self.store.wipe_exports(scopes)
+        self._completer = self._build_completer()
         self.out.print(f"[dim]rebuilt parsed csv · cleared exports: {', '.join(sorted(scopes))}[/]")
 
     def status(self) -> str:
         counts = {s: sum(1 for c in self.tables.clears if c["source"] == s) for s in SOURCES}
-        files = [self.store.raw_dir / f"{s}_clears.json" for s in SOURCES]
-        times = [f.stat().st_mtime for f in files if f.exists()]
-        when = datetime.fromtimestamp(max(times)).strftime("%Y-%m-%d %H:%M") if times else "never"
-        return f"campaign {counts['campaign']} · tower {counts['tower']} · raw updated {when}"
+        state = self.store.state()
+        fetched, synced = (state.get(k, "never") for k in ("fetch", "sync"))
+        return f"campaign {counts['campaign']} · tower {counts['tower']} · fetched {fetched} · synced {synced}"
 
     def execute(self, line: str) -> bool:
         if not line.strip():
@@ -128,32 +145,36 @@ class App:
         return True
 
     # --- searches -------------------------------------------------------
-    def _search(self, cmd: Command) -> Result:
-        a, t = cmd.args, self.tables
+    def _prepare(self, cmd: Command):
+        """Validate arguments; return a callable that runs the search on the current tables."""
+        a = cmd.args
         match cmd.name:
             case "nikke":
                 if not a:
                     raise QueryError("usage: " + COMMANDS["nikke"][0])
-                return queries.nikke(t, a)
+                return lambda: queries.nikke(self.tables, a)
             case "stage":
                 if len(a) != 2:
                     raise QueryError("usage: " + COMMANDS["stage"][0])
-                return queries.stage(t, a[0], _int(a[1], "chapter"))
+                chapter = _int(a[1], "chapter")
+                return lambda: queries.stage(self.tables, a[0], chapter)
             case "floor":
                 if len(a) != 2:
                     raise QueryError("usage: " + COMMANDS["floor"][0])
-                return queries.floor(t, a[0], _int(a[1], "floor"))
+                n = _int(a[1], "floor")
+                return lambda: queries.floor(self.tables, a[0], n)
             case "date":
                 if len(a) != 1:
                     raise QueryError("usage: " + COMMANDS["date"][0])
                 start, _, end = a[0].partition("..")
-                return queries.date_range(t, _date(start), _date(end or start))
+                lo, hi = sorted((_date(start), _date(end or start)))
+                return lambda: queries.date_range(self.tables, lo, hi)
             case "top":
-                return queries.top(t, a[0] if a else None)
+                return lambda: queries.top(self.tables, a[0] if a else None)
             case "synchro":
-                return queries.synchro(t)
+                return lambda: queries.synchro(self.tables)
             case "progress":
-                return queries.progress(t)
+                return lambda: queries.progress(self.tables)
 
     def _scope(self, cmd: Command) -> str:
         if cmd.name != "top":
@@ -163,12 +184,13 @@ class App:
         return "campaign" if cmd.args[0].lower() in ("normal", "hard") else "tower"
 
     def search(self, cmd: Command) -> None:
+        run = self._prepare(cmd)
         if not self.tables.clears:
             self.out.print("[yellow]no data yet — run sync, then fetch[/]")
             return
         path = self.store.export_path(self._scope(cmd), export_name(cmd.name, cmd.args))
         cached = None if cmd.force else self.store.read_export(path)
-        result = cached or self._search(cmd)
+        result = cached or run()
         if not cached:
             self.store.write_export(path, result)
         self.render(result)
@@ -210,9 +232,10 @@ class App:
         self.out.print("[green]cookie saved to config/cookie.txt[/]")
 
     def do_fetch(self, cmd: Command) -> None:
-        if len(cmd.args) != 1 or cmd.args[0] not in ("campaign", "tower", "all"):
+        which = cmd.args[0].lower() if len(cmd.args) == 1 else ""
+        if which not in ("campaign", "tower", "all"):
             raise QueryError("usage: " + COMMANDS["fetch"][0])
-        sources = SOURCES if cmd.args[0] == "all" else (cmd.args[0],)
+        sources = SOURCES if which == "all" else (which,)
         if any(self.store.load_raw(f"{s}_level") is None for s in sources):
             raise QueryError("no level list yet — run sync first")
         try:
@@ -231,6 +254,7 @@ class App:
         finally:
             # whatever stopped the fetch, clears already saved must reach the parsed csv and wipe exports
             added = {s: len(self.store.load_clears(s)) - before[s] for s in sources}
+            self.store.mark("fetch")
             self.out.print(" · ".join(f"{s}: +{n}" for s, n in added.items()))
             self.refresh(fetched={s for s, n in added.items() if n})
 
@@ -248,6 +272,8 @@ class App:
             async with httpx.AsyncClient() as client:
                 return await sync_reference(self.store, client)
         results = asyncio.run(run())
+        if any(not s.startswith("failed") for s in results.values()):
+            self.store.mark("sync")
         for name, status in results.items():
             colour = {"changed": "green", "unchanged": "dim"}.get(status, "red")
             self.out.print(f"[{colour}]{name}: {status}[/]")
@@ -273,25 +299,15 @@ def main(root: Path) -> None:
     import sys
 
     from prompt_toolkit import PromptSession
-    from prompt_toolkit.completion import NestedCompleter, WordCompleter
+    from prompt_toolkit.completion import DynamicCompleter
     from prompt_toolkit.history import FileHistory
 
     console = Console(file=utf8(sys.stdout))
     store = Store(root)
     app = App(store, console)
-    towers = sorted({c["mode"].lower() for c in app.tables.clears if c["source"] == "tower"})
-    completer = NestedCompleter.from_nested_dict({
-        **{name: None for name in COMMANDS},
-        "nikke": WordCompleter(app.tables.nikke_names, ignore_case=True, sentence=True),
-        "floor": set(towers),
-        "top": set(towers) | {"normal", "hard"},
-        "stage": {"normal", "hard"},
-        "fetch": {"campaign", "tower", "all"},
-        "help": set(COMMANDS),
-    })
     history = root / "data" / ".history"
     history.parent.mkdir(parents=True, exist_ok=True)
-    session = PromptSession(history=FileHistory(str(history)), completer=completer,
+    session = PromptSession(history=FileHistory(str(history)), completer=DynamicCompleter(app.completer),
                             bottom_toolbar=lambda: app.status())
     console.print("[bold magenta]blablalink[/]  " + app.status())
     app.do_help(Command("help", [], False))
