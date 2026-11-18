@@ -65,3 +65,42 @@ def test_resolve_member(union):
         resolve_member(union, "a")
     with pytest.raises(QueryError, match="no member"):
         resolve_member(union, "zzz")
+
+
+from blablalink.union_queries import boss, growth, member, members, top
+
+
+def test_top(union):
+    assert top(union, None, None).rows == [["Anis: Star", 20], ["Crown", 20]]
+    assert top(union, 46, "d").rows == [["Anis: Star", 3], ["Crown", 3]]
+
+
+def test_member_tendencies(union):
+    r = member(union, "a")
+    assert [row[0] for row in r.rows] == ["s45", "s46"]
+    assert r.rows[1] == ["s46", 5, 2, 3, "184.0B"]
+    assert "bosses: HSTA 5, ZEUS 1" in r.summary
+    assert "same boss twice in a day: 2" in r.summary
+    assert "weakness Nikkes per squad: 0.2" in r.summary
+    assert "favourites: Anis: Star 8, Crown 8" in r.summary
+
+
+def test_members_arrivals(union):
+    r = members(union)
+    assert "s46: +DELTA −CHARLIE" in r.summary
+    assert r.rows[-1] == ["CHARLIE", "s45", "s45", 1]
+
+
+def test_growth(union):
+    assert growth(union, []).rows[1][2] == "250.0B"
+    r = growth(union, ["a", "b"])
+    assert r.columns == ["season", "union median", "ALPHA", "BRAVO"]
+    assert r.rows[1] == ["s46", "40.0B", "180.0B", "40.0B"]
+
+
+def test_boss(union):
+    r = boss(union, "hsta")
+    assert [row[0] for row in r.rows] == ["s45", "s46"]
+    assert r.rows[0][2:] == ["360.0B", "120.0B"] and r.rows[1][2:] == ["150.0B", "150.0B"]
+    with pytest.raises(QueryError, match="HSTA, PSID"):
+        boss(union, "xyz")

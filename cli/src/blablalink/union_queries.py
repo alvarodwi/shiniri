@@ -149,3 +149,79 @@ def normal(u: UnionData, n: int) -> Result:
     rows = [[u.names[o], count[o], fmt_dmg(d)] for o, d in dmg.most_common()]
     return Result("union", ["member", "hits", "damage"], rows,
                   f"{len(rows)} members · {len(found)} hits · {fmt_dmg(sum(dmg.values()))}")
+
+
+def top(u: UnionData, season: int | None, member: str | None) -> Result:
+    counts = Counter(s["name"] for h in u.hits
+                     if (season is None or h["season"] == season) and (member is None or h["openid"] == member)
+                     for s in h["squad"])
+    rows = sorted(([name, c] for name, c in counts.items()), key=lambda r: (-r[1], r[0]))
+    return Result("union", ["name", "hits"], rows)
+
+
+def member(u: UnionData, openid: str) -> Result:
+    mine = [h for h in u.hits if h["openid"] == openid]
+    rows = []
+    for n in sorted({h["season"] for h in mine}):
+        hs = [h for h in mine if h["season"] == n]
+        rows.append([f"s{n}", len(hs), sum(h["mode"] == "normal" for h in hs), sum(h["mode"] == "hard" for h in hs),
+                     fmt_dmg(sum(h["damage"] for h in hs))])
+    hard = [h for h in mine if h["mode"] == "hard"]
+    bosses = Counter(h["code"] for h in hard)
+    groups = Counter((h["season"], h["day"], h["code"]) for h in hard)
+    weak = [sum(s["element"] == WEAK_TO.get(h["boss_element"]) for s in h["squad"]) for h in hard]
+    favs = sorted(Counter(s["name"] for h in mine for s in h["squad"]).items(), key=lambda x: (-x[1], x[0]))[:5]
+    summary = "\n".join([
+        f"{u.names.get(openid, openid)}",
+        "bosses: " + ", ".join(f"{c} {k}" for c, k in sorted(bosses.items(), key=lambda x: (-x[1], x[0]))),
+        f"same boss twice in a day: {sum(1 for c in groups.values() if c >= 2)}",
+        f"weakness Nikkes per squad: {sum(weak) / len(weak):.1f}" if weak else "weakness Nikkes per squad: -",
+        "favourites: " + ", ".join(f"{name} {c}" for name, c in favs),
+    ])
+    return Result("union", ["season", "hits", "normal", "hard", "damage"], rows, summary)
+
+
+def members(u: UnionData) -> Result:
+    by_member = defaultdict(set)
+    for h in u.hits:
+        by_member[h["openid"]].add(h["season"])
+    rows = sorted(([u.names[o], f"s{min(s)}", f"s{max(s)}", len(s)] for o, s in by_member.items()),
+                  key=lambda r: (-int(r[2][1:]), r[0].lower()))
+    lines, prev = [], None
+    for n in sorted(u.seasons):
+        now = {o for o, s in by_member.items() if n in s}
+        if prev is not None and (now - prev or prev - now):
+            change = [f"+{u.names[o]}" for o in sorted(now - prev, key=u.names.get)]
+            change += [f"−{u.names[o]}" for o in sorted(prev - now, key=u.names.get)]
+            lines.append(f"s{n}: {' '.join(change)}")
+        prev = now
+    return Result("union", ["member", "first", "last", "seasons"], rows, "\n".join(lines))
+
+
+def growth(u: UnionData, openids: list[str]) -> Result:
+    if not openids:
+        rows = [[f"s{n}", _hard_result(u, n), fmt_dmg(sum(h["damage"] for h in _season_hits(u, n, "hard"))),
+                 _normal_cleared(u, n)] for n in sorted(u.seasons)]
+        return Result("union", ["season", "hard result", "hard damage", "normal cleared"], rows)
+    rows = []
+    for n in sorted(u.seasons):
+        per = Counter()
+        for h in _season_hits(u, n, "hard"):
+            per[h["openid"]] += h["damage"]
+        rows.append([f"s{n}", fmt_dmg(median(per.values())) if per else "-",
+                     *(fmt_dmg(per[o]) if o in per else "-" for o in openids)])
+    return Result("union", ["season", "union median", *(u.names[o] for o in openids)], rows)
+
+
+def boss(u: UnionData, code: str) -> Result:
+    c = code.upper()
+    if c not in CODES:
+        raise QueryError(f"boss codes are {', '.join(CODES)}, not '{code}'")
+    rows = []
+    for n in sorted(u.seasons):
+        hs = [h for h in _season_hits(u, n) if h["code"] == c]
+        if not hs:
+            continue
+        me = sum(h["damage"] for h in hs if h["openid"] == u.me)
+        rows.append([f"s{n}", hs[0]["boss"], fmt_dmg(sum(h["damage"] for h in hs)), fmt_dmg(me) if u.me else "-"])
+    return Result("union", ["season", "boss", "union", "me"], rows)
