@@ -53,8 +53,9 @@ def _fmt(dt: datetime | None) -> str:
 
 
 def export_name(command: str, args: list[str]) -> str:
-    # only [a-z0-9_] so names like "anis: star" are valid Windows filenames
-    return re.sub(r"[^a-z0-9]+", "_", " ".join([command, *args]).lower()).strip("_")
+    # only [a-z0-9_] so names like "anis: star" are valid Windows filenames;
+    # "__" between parts (never produced inside one) keeps "rapi + red hood" apart from "rapi: red hood"
+    return "__".join(re.sub(r"[^a-z0-9]+", "_", p.lower()).strip("_") for p in [command, *args])
 
 
 def scopes_to_wipe(fetched: set[str] = frozenset(), synced: set[str] = frozenset()) -> set[str]:

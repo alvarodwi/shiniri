@@ -14,7 +14,7 @@ from . import queries
 from .fetch import (AuthError, campaign_targets, fetch_clears, load_cookie, make_client, save_cookie,
                     sync_reference, tower_targets)
 from .queries import QueryError, Result
-from .store import SOURCES, Store, export_name, scopes_to_wipe
+from .store import SCOPES, SOURCES, Store, export_name, scopes_to_wipe
 
 COMMANDS: dict[str, tuple[str, str, list[str]]] = {
     "fetch": ("fetch campaign|tower|all", "get new clears (needs cookie)", ["fetch tower", "fe all"]),
@@ -56,7 +56,7 @@ def parse_command(line: str) -> Command:
     if name == "nikke":
         args = [a.strip() for a in rest.split("+") if a.strip()]
     elif name == "cookie":
-        args = [rest.strip()] if rest.strip() else []
+        args = []  # only via the hidden prompt, so the token never lands in history
     else:
         args = rest.split()
     return Command(name, args, force)
@@ -82,8 +82,15 @@ class App:
         for line in store.migrate():
             self.out.print(f"[cyan]{line}[/]")
         self.tables = store.build_tables()
-        if not all((store.parsed_dir / f).exists() for f in ("campaign_clears.csv", "tower_clears.csv", "lineups.csv")):
+        parsed = [store.parsed_dir / f for f in ("campaign_clears.csv", "tower_clears.csv", "lineups.csv")]
+        raw_times = [f.stat().st_mtime for f in store.raw_dir.glob("*.json")]
+        if not all(p.exists() for p in parsed):
             store.write_parsed(self.tables)
+        elif raw_times and max(raw_times) > min(p.stat().st_mtime for p in parsed):
+            # raw changed without a clean refresh (crash, hand edit): nothing derived can be trusted
+            store.write_parsed(self.tables)
+            store.wipe_exports(set(SCOPES))
+            self.out.print("[dim]raw data changed since last run · rebuilt parsed csv · cleared exports[/]")
 
     # --- plumbing -------------------------------------------------------
     def refresh(self, fetched: set[str] = frozenset(), synced: set[str] = frozenset()) -> None:
@@ -112,6 +119,12 @@ class App:
             getattr(self, f"do_{cmd.name}")(cmd)
         except (QueryError, ValueError) as e:
             self.out.print(f"[red]{e}[/]")
+        except OSError as e:
+            self.out.print(f"[red]can't use {e.filename or 'a file'} — is it open in Excel? ({e.strerror or e})[/]")
+        except KeyboardInterrupt:
+            self.out.print("[yellow]cancelled[/]")
+        except Exception as e:
+            self.out.print(f"[red]{type(e).__name__}: {e}[/]")
         return True
 
     # --- searches -------------------------------------------------------
@@ -191,11 +204,8 @@ class App:
         self.out.print("[dim]any unique prefix works (n, st, fl) · prefix a search with ! to rebuild its export[/]")
 
     def do_cookie(self, cmd: Command) -> None:
-        if cmd.args:
-            header = cmd.args[0]
-        else:
-            from prompt_toolkit import prompt
-            header = prompt("paste the Cookie header: ", is_password=True)
+        from prompt_toolkit import prompt
+        header = prompt("paste the Cookie header: ", is_password=True)
         save_cookie(self.store, header)
         self.out.print("[green]cookie saved to config/cookie.txt[/]")
 
@@ -216,9 +226,13 @@ class App:
             self.out.print("[red]cookie rejected (game not login) — run cookie[/]")
         except KeyboardInterrupt:
             self.out.print("[yellow]fetch interrupted — clears so far are saved[/]")
-        added = {s: len(self.store.load_clears(s)) - before[s] for s in sources}
-        self.out.print(" · ".join(f"{s}: +{n}" for s, n in added.items()))
-        self.refresh(fetched={s for s, n in added.items() if n})
+        except Exception as e:
+            self.out.print(f"[red]fetch stopped: {type(e).__name__}: {e} — clears so far are saved[/]")
+        finally:
+            # whatever stopped the fetch, clears already saved must reach the parsed csv and wipe exports
+            added = {s: len(self.store.load_clears(s)) - before[s] for s in sources}
+            self.out.print(" · ".join(f"{s}: +{n}" for s, n in added.items()))
+            self.refresh(fetched={s for s, n in added.items() if n})
 
     async def _fetch(self, sources, cookies) -> None:
         async with make_client(cookies) as client:

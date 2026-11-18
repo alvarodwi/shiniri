@@ -64,12 +64,12 @@ def test_empty_store_builds_empty_tables(tmp_path):
 
 
 def test_export_name_windows_safe():
-    assert export_name("nikke", ["crown", "anis: star"]) == "nikke_crown_anis_star"
-    assert export_name("date", ["2026-11-01..2026-11-11"]) == "date_2026_11_01_2026_11_11"
+    assert export_name("nikke", ["crown", "anis: star"]) == "nikke__crown__anis_star"
+    assert export_name("date", ["2026-11-01..2026-11-11"]) == "date__2026_11_01_2026_11_11"
 
 
 def test_export_roundtrip(store):
-    p = store.export_path("all", "nikke_crown")
+    p = store.export_path("all", "nikke__crown")
     store.write_export(p, Result("all", ["a", "b"], [[1, "x"]], "1 clears"))
     r = store.read_export(p)
     assert (r.scope, r.columns, r.rows, r.summary) == ("all", ["a", "b"], [["1", "x"]], "1 clears")
@@ -88,3 +88,7 @@ def test_wipe_only_scope(store):
         store.write_export(store.export_path(scope, "x"), Result(scope, ["a"], []))
     store.wipe_exports({"tower"})
     assert store.export_path("campaign", "x").exists() and not store.export_path("tower", "x").exists()
+
+
+def test_export_name_keeps_args_apart():
+    assert export_name("nikke", ["rapi", "red hood"]) != export_name("nikke", ["rapi: red hood"])
