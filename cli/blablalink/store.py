@@ -180,6 +180,16 @@ class Store:
         write_csv(self.parsed_dir / "lineups.csv", list(LINEUP_KEYS),
                   [[_fmt(u[k]) if k == "cleared_at" else u[k] for k in LINEUP_KEYS] for u in tables.lineups])
 
+    def state(self) -> dict[str, str]:
+        """When fetch / sync last ran. Lives outside raw/ so it never marks raw as changed."""
+        path = self.root / "data" / "state.json"
+        return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+
+    def mark(self, event: str) -> None:
+        state = self.state()
+        state[event] = datetime.now().strftime("%Y-%m-%d %H:%M")
+        atomic_write(self.root / "data" / "state.json", json.dumps(state))
+
     def export_path(self, scope: str, name: str) -> Path:
         return self.exports_dir / scope / f"{name}.csv"
 
@@ -193,7 +203,10 @@ class Store:
         if not path.exists():
             return None
         with open(path, encoding="utf-8-sig", newline="") as f:
-            header, *rows = list(csv.reader(f))
+            lines = list(csv.reader(f))
+        if not lines:  # damaged or truncated: treat as missing so it gets rebuilt
+            return None
+        header, *rows = lines
         summary = path.with_suffix(".summary.txt")
         return Result(path.parent.name, header, rows,
                       summary.read_text(encoding="utf-8") if summary.exists() else "")

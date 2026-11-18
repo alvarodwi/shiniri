@@ -111,3 +111,57 @@ def test_start_rebuilds_when_raw_newer_than_parsed(store):
     os.utime(lineups, (1, 1))
     make_app(store)
     assert lineups.stat().st_mtime > 1 and not store.export_path("tower", "top__tribe").exists()
+
+
+def test_fetch_arg_any_case(store):
+    app, out = make_app(store)
+    app.execute("fetch Tower")
+    assert "no cookie saved" in out.export_text()
+
+
+def test_reversed_date_range_is_swapped(store):
+    app, _ = make_app(store)
+    app.execute("date 2026-12-31..2026-10-01")
+    rows = store.read_export(store.export_path("all", "date__2026_12_31_2026_10_01")).rows
+    assert [r[1] for r in rows] == ["campaign", "tower"]
+
+
+def test_completer_follows_new_data(store):
+    from prompt_toolkit.document import Document
+    app, _ = make_app(store)
+    def words(text):
+        return {c.text for c in app.completer().get_completions(Document(text), None)}
+    assert "Crown" in words("nikke cro")
+    nikke = store.load_raw("nikke") + [{"id": 1, "resource_id": 1, "name_localkey": {"name": "Crow Bar"}}]
+    store.save_raw("nikke", nikke)
+    app.refresh(synced={"nikke"})
+    assert "Crow Bar" in words("nikke cro")
+
+
+def test_status_shows_last_fetch_and_sync(store, monkeypatch):
+    import blablalink.cli as cli
+    from blablalink.fetch import save_cookie
+    app, _ = make_app(store)
+    assert "fetched never" in app.status() and "synced never" in app.status()
+
+    async def nothing(*a, **k):
+        return 0
+    monkeypatch.setattr(cli, "fetch_clears", nothing)
+    save_cookie(store, "game_token=t; game_openid=o")
+    app.execute("fetch tower")
+    assert "fetched never" not in app.status()
+
+
+def test_usage_error_before_empty_hint(tmp_path):
+    app, out = make_app(Store(tmp_path))
+    app.execute("stage hard x")
+    assert "chapter must be a number" in out.export_text()
+
+
+def test_damaged_export_is_rebuilt(store):
+    app, out = make_app(store)
+    path = store.export_path("all", "progress")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("", encoding="utf-8")
+    app.execute("progress")
+    assert "Tribe" in out.export_text() and store.read_export(path).rows
