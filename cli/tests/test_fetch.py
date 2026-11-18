@@ -26,6 +26,11 @@ def test_cdn_url_keeps_multi_dot_extension():
     assert cdn_url("x/a.atlas.txt").endswith(".atlas.txt")
 
 
+def test_cdn_url_no_extension_matches_js():
+    import hashlib
+    assert cdn_url("a/noext").endswith("/" + hashlib.md5(b"a/noext").hexdigest() + ".")
+
+
 def test_roledata_template():
     assert cdn_url(ROLEDATA_PATH.format(resource_id=511)).endswith(
         "oz-20/72fa6824d2d0e69adc7aace692678372.json")
@@ -100,7 +105,7 @@ def test_auth_error_keeps_earlier_clears(store):
 def test_sync_reference(store):
     store.config_dir.mkdir(parents=True, exist_ok=True)
     (store.config_dir / "sources.json").write_text(json.dumps(
-        {"nikke": "n/n.json", "tower_level": "t/t.json", "slow": "s/s.json"}))
+        {"nikke": "n/n.json", "tower_level": "t/t.json", "slow": "s/s.json", "html": "h/h.json"}))
     old_tower = store.load_raw("tower_level")
 
     def handler(req):
@@ -108,6 +113,8 @@ def test_sync_reference(store):
             return httpx.Response(200, json=[{"id": 1}])
         if str(req.url) == cdn_url("t/t.json"):
             return httpx.Response(404)
+        if str(req.url) == cdn_url("h/h.json"):
+            return httpx.Response(200, text="<html>")
         raise httpx.ConnectTimeout("x")
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
@@ -115,5 +122,6 @@ def test_sync_reference(store):
     assert res["nikke"] == "changed"
     assert res["tower_level"] == "failed: HTTPStatusError (site may have changed its URL scheme)"
     assert res["slow"] == "failed: ConnectTimeout"
+    assert res["html"] == "failed: JSONDecodeError"
     assert store.load_raw("tower_level") == old_tower
     assert asyncio.run(sync_reference(store, httpx.AsyncClient(transport=httpx.MockTransport(handler))))["nikke"] == "unchanged"

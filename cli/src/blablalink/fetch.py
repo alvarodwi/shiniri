@@ -168,7 +168,7 @@ def cdn_url(path: str) -> str:
     for p in PRIMES[:len(folders)]:
         r = (_djb2(path, p) % p + p) % p
         segs.append(f"{chr(97 + r // 26 % 26)}{chr(97 + r % 26)}-{r % 99:02d}")
-    ext = name.split(".", 1)[1]
+    ext = name.partition(".")[2]
     return CDN_HOST + "/".join(segs + [f"{hashlib.md5(path.encode()).hexdigest()}.{ext}"])
 
 
