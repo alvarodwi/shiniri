@@ -4,7 +4,7 @@ import json
 import httpx
 import pytest
 
-from blablalink.fetch import (ROLEDATA_PATH, AuthError, campaign_targets, cdn_url, fetch_clears,
+from shiniri_cli.fetch import (ROLEDATA_PATH, AuthError, campaign_targets, cdn_url, fetch_clears,
                               load_cookie, parse_cookie, save_cookie, sync_reference)
 
 KNOWN = {

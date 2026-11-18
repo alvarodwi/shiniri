@@ -1,7 +1,7 @@
 import pytest
 
-from blablalink.queries import QueryError
-from blablalink.union_queries import fmt_dmg, short_dmg, hits, missed, normal, pick_season, recap, resolve_member
+from shiniri_cli.queries import QueryError
+from shiniri_cli.union_queries import fmt_dmg, short_dmg, hits, missed, normal, pick_season, recap, resolve_member
 
 
 def test_fmt_dmg():
@@ -69,7 +69,7 @@ def test_resolve_member(union):
         resolve_member(union, "zzz")
 
 
-from blablalink.union_queries import boss, growth, member, members, top
+from shiniri_cli.union_queries import boss, growth, member, members, top
 
 
 def test_top(union):

@@ -1,4 +1,4 @@
-# blablalink
+# shiniri-cli
 
 An interactive shell that fetches your NIKKE clear history from blablalink
 (campaign and tower lineups, plus the CDN reference files) and lets you search it.
@@ -11,7 +11,7 @@ There is no `requirements.txt`, so don't use `pip` or a hand-made venv.
 
 ```sh
 uv sync                 # installs Python 3.14 and the locked dependencies into .venv
-uv run blablalink       # starts the shell
+uv run shiniri-cli      # starts the shell
 uv run pytest           # runs the tests
 ```
 
@@ -92,7 +92,7 @@ config/cookie.txt        your cookie (git-ignored)
 data/raw/json/           what the server sent: the source of truth (union/ holds one file per raid season)
 data/parsed/csv/         campaign_clears.csv, tower_clears.csv, lineups.csv (rebuilt from raw)
 data/exports/            one CSV per search, grouped into campaign/, tower/ and all/
-src/blablalink/          the code: store, queries, fetch, cli
+src/shiniri_cli/         the code: store, queries, fetch, cli
 ```
 
 `data/` and `config/cookie.txt` hold personal data and are never committed.

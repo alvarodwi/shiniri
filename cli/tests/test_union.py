@@ -2,7 +2,7 @@ import json
 
 from conftest import UNION_FIXTURE
 
-from blablalink.union import boss_code, build_union, season_number, write_union_parsed
+from shiniri_cli.union import boss_code, build_union, season_number, write_union_parsed
 
 
 def test_boss_code_and_season_number():
@@ -51,8 +51,8 @@ import asyncio
 import httpx
 import pytest
 
-from blablalink.fetch import AuthError
-from blablalink.union import UnionError, fetch_union, is_final
+from shiniri_cli.fetch import AuthError
+from shiniri_cli.union import UnionError, fetch_union, is_final
 
 GUILD_OK = {"code": 0, "data": {"card": {"guild_id": "1", "guild_name": "TEST", "guild_member_cnt": 4}}}
 

@@ -1,5 +1,5 @@
 [project]
-name = "blablalink"
+name = "shiniri-cli"
 version = "0.1.0"
 description = "Interactive shell to fetch and search NIKKE clear history from blablalink"
 readme = "README.md"
@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [project.scripts]
-blablalink = "blablalink.cli:run"
+shiniri-cli = "shiniri_cli.cli:run"
 
 [dependency-groups]
 dev = [

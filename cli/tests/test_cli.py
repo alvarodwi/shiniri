@@ -1,10 +1,10 @@
 import pytest
 from rich.console import Console
 
-from blablalink.cli import COMMANDS, UNION_COMMANDS, App, parse_command
-from blablalink.fetch import save_cookie
-from blablalink.queries import QueryError
-from blablalink.store import Store
+from shiniri_cli.cli import COMMANDS, UNION_COMMANDS, App, parse_command
+from shiniri_cli.fetch import save_cookie
+from shiniri_cli.queries import QueryError
+from shiniri_cli.store import Store
 
 
 def make_app(store):
@@ -61,7 +61,7 @@ def test_quit(store):
 
 def test_utf8_stream_survives_cp1252():
     import io
-    from blablalink.cli import utf8
+    from shiniri_cli.cli import utf8
     raw = io.BytesIO()
     stream = utf8(io.TextIOWrapper(raw, encoding="cp1252"))
     stream.write("→ · Anis: Star")
@@ -86,8 +86,8 @@ def test_unexpected_errors_keep_shell(store):
 
 
 def test_fetch_failure_still_refreshes(store, monkeypatch):
-    import blablalink.cli as cli
-    from blablalink.fetch import save_cookie
+    import shiniri_cli.cli as cli
+    from shiniri_cli.fetch import save_cookie
     save_cookie(store, "game_token=t; game_openid=o")
     app, out = make_app(store)
     app.execute("top tribe")
@@ -140,8 +140,8 @@ def test_completer_follows_new_data(store):
 
 
 def test_status_shows_last_fetch_and_sync(store, monkeypatch):
-    import blablalink.cli as cli
-    from blablalink.fetch import save_cookie
+    import shiniri_cli.cli as cli
+    from shiniri_cli.fetch import save_cookie
     app, _ = make_app(store)
     assert "fetched never" in app.status() and "synced never" in app.status()
 
@@ -245,7 +245,7 @@ def test_live_wipes_union_exports(union_store, monkeypatch):
 
     async def fake(*a, **k):
         return {46: "saved"}
-    monkeypatch.setattr("blablalink.cli.fetch_union", fake)
+    monkeypatch.setattr("shiniri_cli.cli.fetch_union", fake)
     app.execute("union live")
     assert not path.exists()
 
