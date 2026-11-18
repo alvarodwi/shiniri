@@ -105,7 +105,7 @@ def recap(u: UnionData, n: int) -> Result:
         ["hard", _hard_result(u, n)],
         ["normal damage", fmt_dmg(totals["normal"])],
         ["hard damage", fmt_dmg(totals["hard"])],
-        ["hard day", f"D{day} · {hitters} members hit · {sum(3 - c for _, c in short)} hits missed" if day else "not reached"],
+        ["hard day", f"D{day} · {hitters} members hit · {sum(3 - c for _, c in short)} missed" if day else "not reached"],
     ]
     rows += [[f"top {i}", f"{u.names[o]} · {fmt_dmg(d)}"] for i, (o, d) in enumerate(per_member.most_common(5), 1)]
     return Result("union", ["", ""], rows)

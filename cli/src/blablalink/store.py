@@ -66,7 +66,10 @@ def scopes_to_wipe(fetched: set[str] = frozenset(), synced: set[str] = frozenset
         return set(SCOPES)
     out = set(fetched)
     out |= {source for source, name in LEVELS.items() if name in synced}
-    return out | {"all"} if out else set()
+    out = out | {"all"} if out else set()
+    if "raid_list" in synced:  # the live season comes from it
+        out.add("union")
+    return out
 
 
 def write_csv(path: Path, header: list[str], rows: list[list]) -> None:
