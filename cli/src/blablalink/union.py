@@ -73,6 +73,65 @@ def build_union(store: Store, me: str | None, now: float) -> UnionData:
     return UnionData(seasons, hits, names, me, live if live in seasons else None)
 
 
+def is_final(stored: dict | None, season: dict) -> bool:
+    return bool(stored) and stored.get("fetched_ts", 0) > season.get("end_ts", 0)
+
+
+async def _call(client: httpx.AsyncClient, name: str, body: dict) -> dict:
+    """The response body; AuthError on a rejected cookie, a {"msg"} dict on transport errors."""
+    for attempt in range(2):
+        try:
+            resp = await client.post(API + name, json=body, timeout=20.0)
+        except httpx.HTTPError as e:
+            err = {"code": -1, "msg": type(e).__name__}
+        else:
+            if resp.status_code == 200:
+                try:
+                    data = resp.json()
+                except ValueError:
+                    data = {"code": -1, "msg": "not json"}
+                if data.get("code") == AUTH_CODE:
+                    raise AuthError(data.get("msg", "game not login"))
+                return data
+            err = {"code": -1, "msg": f"HTTP {resp.status_code}"}
+        if attempt == 0:
+            await asyncio.sleep(1.5)
+    return err
+
+
+def _ok(resp: dict) -> bool:
+    return resp.get("code") == 0 and isinstance(resp.get("data"), dict)
+
+
+async def fetch_union(store: Store, client: httpx.AsyncClient, now: float, live_only: bool = False,
+                      delay: tuple[float, float] = (0.5, 1.0)) -> dict[int, str]:
+    guild = await _call(client, "GetMyGuildInfo", {"ignore_toast": True})
+    card = (guild.get("data") or {}).get("card") if isinstance(guild.get("data"), dict) else None
+    if guild.get("code") != 0 or not card:
+        raise UnionError(guild.get("msg") or "no union info")
+    out = {}
+    for season in store.load_raw("raid_list", []):
+        if season.get("start_ts", 0) > now:
+            continue
+        if live_only and now > season.get("end_ts", 0):
+            continue
+        n, sid = season_number(season["id"]), str(season["id"])
+        if is_final(store.load_raw(f"union/{sid}"), season):
+            out[n] = "kept"
+            continue
+        body = {"area_id": AREA_ID, "guild_id": str(card["guild_id"]), "season_id": sid}
+        level = await _call(client, "GetUnionRaidLevelDataOfGuildSeason", body)
+        raid = await _call(client, "GetUnionRaidDataOfGuildSeason", body) if _ok(level) else level
+        if _ok(level) and _ok(raid):
+            store.save_raw(f"union/{sid}", {"guild": card, "level": level["data"], "raid": raid["data"],
+                                           "fetched_ts": int(now)})
+            out[n] = "saved"
+        else:
+            out[n] = f"failed: {raid.get('msg') or level.get('msg') or 'no data'}"
+        await asyncio.sleep(random.uniform(*delay))
+    return out
+
+
 def write_union_parsed(store: Store, u: UnionData) -> None:
     header = ["season", "day", "mode", "level", "step", "code", "boss", "member", "damage", "final",
               "slot1", "slot2", "slot3", "slot4", "slot5"]
