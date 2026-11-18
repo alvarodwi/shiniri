@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from blablalink.store import Store
+from shiniri_cli.store import Store
 
 
 def _nikke(id_, rid, name, corp=None, element=None, weapon=None, burst=None):
@@ -134,5 +134,5 @@ def union_store(store):
 
 @pytest.fixture
 def union(union_store):
-    from blablalink.union import build_union
+    from shiniri_cli.union import build_union
     return build_union(union_store, me="a", now=1000)

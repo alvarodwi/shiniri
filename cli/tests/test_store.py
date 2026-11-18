@@ -2,8 +2,8 @@ import csv
 import json
 from datetime import datetime
 
-from blablalink.queries import Result
-from blablalink.store import Store, export_name, format_dupes, scopes_to_wipe
+from shiniri_cli.queries import Result
+from shiniri_cli.store import Store, export_name, format_dupes, scopes_to_wipe
 
 
 def test_format_dupes():

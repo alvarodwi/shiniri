@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 
-from blablalink.queries import (QueryError, compress_synchro, date_range, floor, nikke, progress,
+from shiniri_cli.queries import (QueryError, compress_synchro, date_range, floor, nikke, progress,
                                 resolve_nikke, stage, synchro, top)
 
 
@@ -66,7 +66,7 @@ def test_stage_single_entry(tables):
 
 
 def test_spread_buckets_with_gaps(tables):
-    from blablalink.queries import spread
+    from shiniri_cli.queries import spread
     r = spread(tables, 5)
     assert r.scope == "all" and r.columns == ["level", "from", "to", "clears"]
     assert r.rows[0] == ["740–744", "2026-10-31", "2026-10-31", 1]
@@ -76,7 +76,7 @@ def test_spread_buckets_with_gaps(tables):
 
 
 def test_synchro_ignores_fixed_level_ex_stages(store):
-    from blablalink.queries import spread
+    from shiniri_cli.queries import spread
     levels = store.load_raw("stage_list") + [
         {"id": 6002099, "chapter_id": 3, "chapter_mod": "Normal", "standard_battle_power": 0, "name_localkey": {"name": "EX STAGE"}}]
     store.save_raw("stage_list", levels)
