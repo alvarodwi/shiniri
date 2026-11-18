@@ -248,12 +248,21 @@ class App:
                 self.out.print(f"{source}: {n} stages to check on next fetch {source}")
 
 
+def utf8(stream):
+    # Windows falls back to cp1252 when output isn't a UTF-8 terminal; it can't print → or ·
+    if hasattr(stream, "reconfigure"):
+        stream.reconfigure(encoding="utf-8", errors="replace")
+    return stream
+
+
 def main(root: Path) -> None:
+    import sys
+
     from prompt_toolkit import PromptSession
     from prompt_toolkit.completion import NestedCompleter, WordCompleter
     from prompt_toolkit.history import FileHistory
 
-    console = Console()
+    console = Console(file=utf8(sys.stdout))
     store = Store(root)
     app = App(store, console)
     towers = sorted({c["mode"].lower() for c in app.tables.clears if c["source"] == "tower"})

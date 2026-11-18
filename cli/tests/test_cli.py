@@ -56,3 +56,13 @@ def test_help_lists_every_command(store):
 def test_quit(store):
     app, _ = make_app(store)
     assert app.execute("quit") is False
+
+
+def test_utf8_stream_survives_cp1252():
+    import io
+    from blablalink.cli import utf8
+    raw = io.BytesIO()
+    stream = utf8(io.TextIOWrapper(raw, encoding="cp1252"))
+    stream.write("→ · Anis: Star")
+    stream.flush()
+    assert raw.getvalue().decode("utf-8") == "→ · Anis: Star"
