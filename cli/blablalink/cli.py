@@ -1,0 +1,283 @@
+"""The interactive shell: command parsing, help, rendering, prompt loop."""
+
+import asyncio
+from dataclasses import dataclass
+from datetime import date, datetime
+from pathlib import Path
+
+import httpx
+from rich.console import Console
+from rich.progress import Progress
+from rich.table import Table
+
+from . import queries
+from .fetch import (AuthError, campaign_targets, fetch_clears, load_cookie, make_client, save_cookie,
+                    sync_reference, tower_targets)
+from .queries import QueryError, Result
+from .store import SOURCES, Store, export_name, scopes_to_wipe
+
+COMMANDS: dict[str, tuple[str, str, list[str]]] = {
+    "fetch": ("fetch campaign|tower|all", "get new clears (needs cookie)", ["fetch tower", "fe all"]),
+    "sync": ("sync", "re-download CDN reference files", ["sync"]),
+    "cookie": ("cookie", "paste your Cookie header", ["cookie"]),
+    "nikke": ("nikke <name> [+ <name>]", "clears that used a Nikke (both, if two)", ["nikke crown", "n crown + anis: star"]),
+    "stage": ("stage <normal|hard> <ch>", "campaign chapter clears", ["stage hard 50", "st normal 12"]),
+    "floor": ("floor <tower> <n>", "tower floor clear", ["floor tribe 1030", "fl pilgrim 500"]),
+    "date": ("date <from>[..<to>]", "clears in a date range", ["date 2026-11-11", "d 2026-11-01..2026-11-11"]),
+    "top": ("top [tower|mode]", "most-used Nikkes", ["top", "top pilgrim", "t hard"]),
+    "synchro": ("synchro", "synchro level timeline", ["synchro"]),
+    "progress": ("progress", "highest chapter / floor per mode", ["progress"]),
+    "help": ("help [cmd]", "list commands, or show one in detail", ["help", "help nikke"]),
+    "quit": ("quit", "leave", ["quit"]),
+}
+SEARCHES = ("nikke", "stage", "floor", "date", "top", "synchro", "progress")
+FIXED_SCOPE = {"nikke": "all", "stage": "campaign", "floor": "tower", "date": "all", "synchro": "all", "progress": "all"}
+
+
+@dataclass
+class Command:
+    name: str
+    args: list[str]
+    force: bool
+
+
+def parse_command(line: str) -> Command:
+    line = line.strip()
+    force = line.startswith("!")
+    word, _, rest = line.lstrip("!").strip().partition(" ")
+    word = word.lower()
+    if word in COMMANDS:
+        name = word
+    else:
+        hits = [c for c in COMMANDS if c.startswith(word)] if word else []
+        if len(hits) != 1:
+            raise QueryError(f"'{word}' could be: {', '.join(hits)}" if hits else f"unknown command '{word}' — try help")
+        name = hits[0]
+    if name == "nikke":
+        args = [a.strip() for a in rest.split("+") if a.strip()]
+    elif name == "cookie":
+        args = [rest.strip()] if rest.strip() else []
+    else:
+        args = rest.split()
+    return Command(name, args, force)
+
+
+def _int(text: str, what: str) -> int:
+    try:
+        return int(text)
+    except ValueError:
+        raise QueryError(f"{what} must be a number, not '{text}'") from None
+
+
+def _date(text: str) -> date:
+    try:
+        return date.fromisoformat(text)
+    except ValueError:
+        raise QueryError(f"dates look like 2026-11-11, not '{text}'") from None
+
+
+class App:
+    def __init__(self, store: Store, console: Console):
+        self.store, self.out = store, console
+        for line in store.migrate():
+            self.out.print(f"[cyan]{line}[/]")
+        self.tables = store.build_tables()
+        if not all((store.parsed_dir / f).exists() for f in ("campaign_clears.csv", "tower_clears.csv", "lineups.csv")):
+            store.write_parsed(self.tables)
+
+    # --- plumbing -------------------------------------------------------
+    def refresh(self, fetched: set[str] = frozenset(), synced: set[str] = frozenset()) -> None:
+        scopes = scopes_to_wipe(fetched=set(fetched), synced=set(synced))
+        if not scopes:
+            return
+        self.tables = self.store.build_tables()
+        self.store.write_parsed(self.tables)
+        self.store.wipe_exports(scopes)
+        self.out.print(f"[dim]rebuilt parsed csv · cleared exports: {', '.join(sorted(scopes))}[/]")
+
+    def status(self) -> str:
+        counts = {s: sum(1 for c in self.tables.clears if c["source"] == s) for s in SOURCES}
+        files = [self.store.raw_dir / f"{s}_clears.json" for s in SOURCES]
+        times = [f.stat().st_mtime for f in files if f.exists()]
+        when = datetime.fromtimestamp(max(times)).strftime("%Y-%m-%d %H:%M") if times else "never"
+        return f"campaign {counts['campaign']} · tower {counts['tower']} · raw updated {when}"
+
+    def execute(self, line: str) -> bool:
+        if not line.strip():
+            return True
+        try:
+            cmd = parse_command(line)
+            if cmd.name == "quit":
+                return False
+            getattr(self, f"do_{cmd.name}")(cmd)
+        except (QueryError, ValueError) as e:
+            self.out.print(f"[red]{e}[/]")
+        return True
+
+    # --- searches -------------------------------------------------------
+    def _search(self, cmd: Command) -> Result:
+        a, t = cmd.args, self.tables
+        match cmd.name:
+            case "nikke":
+                if not a:
+                    raise QueryError("usage: " + COMMANDS["nikke"][0])
+                return queries.nikke(t, a)
+            case "stage":
+                if len(a) != 2:
+                    raise QueryError("usage: " + COMMANDS["stage"][0])
+                return queries.stage(t, a[0], _int(a[1], "chapter"))
+            case "floor":
+                if len(a) != 2:
+                    raise QueryError("usage: " + COMMANDS["floor"][0])
+                return queries.floor(t, a[0], _int(a[1], "floor"))
+            case "date":
+                if len(a) != 1:
+                    raise QueryError("usage: " + COMMANDS["date"][0])
+                start, _, end = a[0].partition("..")
+                return queries.date_range(t, _date(start), _date(end or start))
+            case "top":
+                return queries.top(t, a[0] if a else None)
+            case "synchro":
+                return queries.synchro(t)
+            case "progress":
+                return queries.progress(t)
+
+    def _scope(self, cmd: Command) -> str:
+        if cmd.name != "top":
+            return FIXED_SCOPE[cmd.name]
+        if not cmd.args:
+            return "all"
+        return "campaign" if cmd.args[0].lower() in ("normal", "hard") else "tower"
+
+    def search(self, cmd: Command) -> None:
+        if not self.tables.clears:
+            self.out.print("[yellow]no data yet — run sync, then fetch[/]")
+            return
+        path = self.store.export_path(self._scope(cmd), export_name(cmd.name, cmd.args))
+        cached = None if cmd.force else self.store.read_export(path)
+        result = cached or self._search(cmd)
+        if not cached:
+            self.store.write_export(path, result)
+        self.render(result)
+        rel = path.relative_to(self.store.root)
+        self.out.print(f"[dim]{'cached · !' + cmd.name + ' to rebuild · ' if cached else ''}{rel}[/]")
+
+    def render(self, result: Result) -> None:
+        if not result.rows:
+            self.out.print("[yellow]no matching clears[/]")
+        else:
+            table = Table(*result.columns, header_style="bold magenta")
+            for row in result.rows:
+                table.add_row(*(str(v) for v in row))
+            self.out.print(table)
+        if result.summary:
+            self.out.print(f"[bold]{result.summary}[/]")
+
+    do_nikke = do_stage = do_floor = do_date = do_top = do_synchro = do_progress = search
+
+    # --- actions --------------------------------------------------------
+    def do_help(self, cmd: Command) -> None:
+        if cmd.args:
+            name = parse_command(cmd.args[0]).name
+            usage, desc, examples = COMMANDS[name]
+            self.out.print(f"[bold]{usage}[/]\n  {desc}")
+            for ex in examples:
+                self.out.print(f"  [green]> {ex}[/]")
+            return
+        table = Table(show_header=False, box=None)
+        for usage, desc, _ in COMMANDS.values():
+            table.add_row(f"[bold]{usage}[/]", desc)
+        self.out.print(table)
+        self.out.print("[dim]any unique prefix works (n, st, fl) · prefix a search with ! to rebuild its export[/]")
+
+    def do_cookie(self, cmd: Command) -> None:
+        if cmd.args:
+            header = cmd.args[0]
+        else:
+            from prompt_toolkit import prompt
+            header = prompt("paste the Cookie header: ", is_password=True)
+        save_cookie(self.store, header)
+        self.out.print("[green]cookie saved to config/cookie.txt[/]")
+
+    def do_fetch(self, cmd: Command) -> None:
+        if len(cmd.args) != 1 or cmd.args[0] not in ("campaign", "tower", "all"):
+            raise QueryError("usage: " + COMMANDS["fetch"][0])
+        sources = SOURCES if cmd.args[0] == "all" else (cmd.args[0],)
+        if any(self.store.load_raw(f"{s}_level") is None for s in sources):
+            raise QueryError("no level list yet — run sync first")
+        try:
+            cookies = load_cookie(self.store)
+        except FileNotFoundError:
+            raise QueryError("no cookie saved — run cookie first") from None
+        before = {s: len(self.store.load_clears(s)) for s in sources}
+        try:
+            asyncio.run(self._fetch(sources, cookies))
+        except AuthError:
+            self.out.print("[red]cookie rejected (game not login) — run cookie[/]")
+        except KeyboardInterrupt:
+            self.out.print("[yellow]fetch interrupted — clears so far are saved[/]")
+        added = {s: len(self.store.load_clears(s)) - before[s] for s in sources}
+        self.out.print(" · ".join(f"{s}: +{n}" for s, n in added.items()))
+        self.refresh(fetched={s for s, n in added.items() if n})
+
+    async def _fetch(self, sources, cookies) -> None:
+        async with make_client(cookies) as client:
+            with Progress(console=self.out, transient=True) as bar:
+                for source in sources:
+                    task = bar.add_task(source, total=None)
+                    def tick(label, done, total, task=task, source=source):
+                        bar.update(task, description=f"{source} · {label}", completed=done, total=total)
+                    await fetch_clears(self.store, source, client, tick)
+
+    def do_sync(self, cmd: Command) -> None:
+        async def run():
+            async with httpx.AsyncClient() as client:
+                return await sync_reference(self.store, client)
+        results = asyncio.run(run())
+        for name, status in results.items():
+            colour = {"changed": "green", "unchanged": "dim"}.get(status, "red")
+            self.out.print(f"[{colour}]{name}: {status}[/]")
+        changed = {n for n, s in results.items() if s == "changed"}
+        self.refresh(synced=changed)
+        for source in SOURCES:
+            if f"{source}_level" in changed:
+                stored = {int(k) for k in self.store.load_clears(source)}
+                levels = self.store.load_raw(f"{source}_level", [])
+                n = (len(campaign_targets(levels, stored)) if source == "campaign"
+                     else sum(map(len, tower_targets(levels, stored).values())))
+                self.out.print(f"{source}: {n} stages to check on next fetch {source}")
+
+
+def main(root: Path) -> None:
+    from prompt_toolkit import PromptSession
+    from prompt_toolkit.completion import NestedCompleter, WordCompleter
+    from prompt_toolkit.history import FileHistory
+
+    console = Console()
+    store = Store(root)
+    app = App(store, console)
+    towers = sorted({c["mode"].lower() for c in app.tables.clears if c["source"] == "tower"})
+    completer = NestedCompleter.from_nested_dict({
+        **{name: None for name in COMMANDS},
+        "nikke": WordCompleter(app.tables.nikke_names, ignore_case=True, sentence=True),
+        "floor": set(towers),
+        "top": set(towers) | {"normal", "hard"},
+        "stage": {"normal", "hard"},
+        "fetch": {"campaign", "tower", "all"},
+        "help": set(COMMANDS),
+    })
+    history = root / "data" / ".history"
+    history.parent.mkdir(parents=True, exist_ok=True)
+    session = PromptSession(history=FileHistory(str(history)), completer=completer,
+                            bottom_toolbar=lambda: app.status())
+    console.print("[bold magenta]blablalink[/]  " + app.status())
+    app.do_help(Command("help", [], False))
+    while True:
+        try:
+            line = session.prompt("> ")
+        except KeyboardInterrupt:
+            continue
+        except EOFError:
+            break
+        if not app.execute(line):
+            break
