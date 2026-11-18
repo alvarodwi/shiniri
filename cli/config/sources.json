@@ -2,5 +2,6 @@
   "nikke_list_en": "character/en/nikke_list_en_v2.json",
   "character_id_map": "character/character_id_map.json",
   "stage_list": "stage/stage_list.json",
-  "tower_list": "tower/tower_list.json"
+  "tower_list": "tower/tower_list.json",
+  "raid_list": "raid/raid_list.json"
 }

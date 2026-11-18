@@ -15,7 +15,7 @@ SOURCES = ("campaign", "tower")
 LEVELS = {"campaign": "stage_list", "tower": "tower_list"}
 OLD_NAMES = {"nikke": "nikke_list_en", "historical_roster": "character_id_map",
              "campaign_level": "stage_list", "tower_level": "tower_list"}
-SCOPES = ("campaign", "tower", "all")
+SCOPES = ("campaign", "tower", "all", "union")
 
 
 def format_dupes(grade: int, core: int) -> str:
@@ -112,14 +112,34 @@ class Store:
     def save_clears(self, source: str, clears: dict) -> None:
         self.save_raw(f"{source}_clears", clears)
 
-    def build_tables(self) -> "Tables":
-        """Join raw clears with the reference files into flat rows."""
+    def _nikkes(self):
         roster = {r["id"]: r for r in self.load_raw("character_id_map", []) if "id" in r}
         by_rid, by_id = {}, {}
         for n in self.load_raw("nikke_list_en", []):
             if isinstance(n, dict):
                 by_rid.setdefault(n.get("resource_id"), n)
                 by_id.setdefault(n.get("id"), n)
+
+        def lookup(tid) -> tuple[dict, dict | None]:
+            """(nikke_list entry or {}, character_id_map entry or None) for a lineup tid."""
+            r = roster.get(tid)
+            n = by_rid.get(r.get("resource_id")) if r else None
+            return n or by_id.get(tid) or {}, r
+        return lookup, by_id
+
+    def nikke_lookup(self):
+        """tid -> {"name", "element"}, the same join clear lineups use."""
+        lookup, _ = self._nikkes()
+
+        def info(tid) -> dict:
+            n, _ = lookup(tid)
+            return {"name": (n.get("name_localkey") or {}).get("name") or f"NIKKE_{tid}",
+                    "element": ((n.get("element_id") or {}).get("element") or {}).get("element")}
+        return info
+
+    def build_tables(self) -> "Tables":
+        """Join raw clears with the reference files into flat rows."""
+        lookup, by_id = self._nikkes()
         stages = {}
         for s in self.load_raw("stage_list", []):
             stages[("campaign", s["id"])] = {
@@ -144,9 +164,7 @@ class Store:
                 team = []
                 for u in sorted(raw[key].get("list") or [], key=lambda u: u.get("slot", 0)):
                     tid = u.get("tid")
-                    r = roster.get(tid)
-                    n = by_rid.get(r.get("resource_id")) if r else None
-                    n = n or by_id.get(tid) or {}
+                    n, r = lookup(tid)
                     team.append({**base, "slot": u.get("slot"), "tid": tid,
                                  "name": (n.get("name_localkey") or {}).get("name") or f"NIKKE_{tid}",
                                  "dupe": format_dupes(r.get("grade", 0), r.get("core", 0)) if r else "N/A",
