@@ -11,12 +11,19 @@ from .union import CODES, WEAK_TO, UnionData, boss_code
 SIZE_TRUST = 7 * 86400  # the guild card is today's; past this it says nothing about that season
 
 
-def fmt_dmg(n) -> str:
+def short_dmg(n) -> str:
     for size, unit in ((1e12, "T"), (1e9, "B"), (1e6, "M")):
         if abs(n) >= size:
             v = n / size
             return f"{v:.2f}{unit}" if v < 10 else f"{v:.1f}{unit}"
     return str(int(n))
+
+
+def fmt_dmg(n) -> str:
+    """Full number with dot separators, short form in parentheses: 100.234.567.789 (100.2B)."""
+    n = round(n)
+    full = f"{n:,}".replace(",", ".")
+    return f"{full} ({short_dmg(n)})" if abs(n) >= 1e6 else full
 
 
 def pick_season(u: UnionData, arg: str | None) -> int:
@@ -67,7 +74,7 @@ def _hard_result(u: UnionData, n: int) -> str:
         return f"cleared · {fmt_dmg(int(b.get('current_hp') or 0))} on {(b.get('name_localvalues') or {}).get('en', '')}"
     if info.get("difficulty") == 2:
         left = [f"{boss_code((b.get('name_localvalues') or {}).get('en', ''))} "
-                f"{fmt_dmg(int(b.get('current_hp') or 0))}/{fmt_dmg(int(b.get('max_hp') or 0))}"
+                f"{short_dmg(int(b.get('current_hp') or 0))}/{short_dmg(int(b.get('max_hp') or 0))}"
                 for b in bosses if int(b.get("current_hp") or 0) > 0]
         return f"stopped at hard lv{level} · HP left: {', '.join(left)}"
     return f"normal lv{level}" if level else "unknown"
