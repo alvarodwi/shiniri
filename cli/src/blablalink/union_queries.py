@@ -8,6 +8,8 @@ from statistics import median
 from .queries import QueryError, Result
 from .union import CODES, WEAK_TO, UnionData, boss_code
 
+SIZE_TRUST = 7 * 86400  # the guild card is today's; past this it says nothing about that season
+
 
 def fmt_dmg(n) -> str:
     for size, unit in ((1e12, "T"), (1e9, "B"), (1e6, "M")):
@@ -84,14 +86,35 @@ def _missing(u: UnionData, n: int) -> tuple[int | None, list[list], int]:
     return day, short, len(counts)
 
 
+def _size(u: UnionData, n: int) -> int | None:
+    """Union size from the stored guild card, only when it was downloaded close to that season."""
+    s = u.seasons[n]
+    cnt, fetched, end = s["guild"].get("guild_member_cnt"), s.get("fetched_ts"), s.get("end_ts")
+    if cnt and fetched and end is not None and fetched <= end + SIZE_TRUST:
+        return int(cnt)
+    return None
+
+
+def _seen(u: UnionData, n: int) -> int:
+    return len({h["openid"] for h in _season_hits(u, n)})
+
+
 def _date(ts) -> str:
     return datetime.fromtimestamp(ts).strftime("%Y-%m-%d") if ts else "?"
+
+
+def _hard_day_line(u: UnionData, n: int, day: int, short: list[list], hitters: int, size: int | None) -> str:
+    if size:  # every member owes 3 hits, so never-hitters count too
+        made = sum(1 for h in _season_hits(u, n, "hard") if h["day"] == day)
+        return f"D{day} · {hitters} of {size} hit · {max(size * 3 - made, 0)} missed"
+    return f"D{day} · {hitters} hit · {sum(3 - c for _, c in short)} missed"
 
 
 def recap(u: UnionData, n: int) -> Result:
     s = u.seasons[n]
     guild = s["guild"]
     day, short, hitters = _missing(u, n)
+    size = _size(u, n)
     totals = Counter()
     for h in _season_hits(u, n):
         totals[h["mode"]] += h["damage"]
@@ -100,12 +123,12 @@ def recap(u: UnionData, n: int) -> Result:
         per_member[h["openid"]] += h["damage"]
     rows = [
         ["season", f"s{n} · {_date(s['start_ts'])} → {_date(s['end_ts'])}"],
-        ["union", f"{guild.get('guild_name', '?')} · {guild.get('guild_member_cnt', '?')} members"],
+        ["union", f"{guild.get('guild_name', '?')} · " + (f"{size} members" if size else f"{_seen(u, n)} seen")],
         ["normal cleared", _normal_cleared(u, n)],
         ["hard", _hard_result(u, n)],
         ["normal damage", fmt_dmg(totals["normal"])],
         ["hard damage", fmt_dmg(totals["hard"])],
-        ["hard day", f"D{day} · {hitters} members hit · {sum(3 - c for _, c in short)} missed" if day else "not reached"],
+        ["hard day", _hard_day_line(u, n, day, short, hitters, size) if day else "not reached"],
     ]
     rows += [[f"top {i}", f"{u.names[o]} · {fmt_dmg(d)}"] for i, (o, d) in enumerate(per_member.most_common(5), 1)]
     return Result("union", ["", ""], rows)
@@ -143,8 +166,12 @@ def missed(u: UnionData, n: int) -> Result:
     day, short, hitters = _missing(u, n)
     if day is None:
         return Result("union", ["member", "hits"], [], "hard mode not reached yet")
-    size = u.seasons[n]["guild"].get("guild_member_cnt", "?")
-    return Result("union", ["member", "hits"], short, f"{hitters} of {size} members hit on hard day D{day}")
+    size = _size(u, n)
+    if not size:
+        return Result("union", ["member", "hits"], short, f"{hitters} members hit on hard day D{day}")
+    never = size - _seen(u, n)
+    return Result("union", ["member", "hits"], short, f"{hitters} of {size} members hit on hard day D{day}"
+                  + (f" · {never} never hit" if never > 0 else ""))
 
 
 def normal(u: UnionData, n: int) -> Result:
@@ -197,9 +224,13 @@ def members(u: UnionData) -> Result:
     lines, prev = [], None
     for n in sorted(u.seasons):
         now = {o for o, s in by_member.items() if n in s}
-        if prev is not None and (now - prev or prev - now):
+        live = n == u.live  # members who haven't hit yet aren't gone
+        if prev is not None and (now - prev or (prev - now and not live)):
             change = [f"+{u.names[o]}" for o in sorted(now - prev, key=u.names.get)]
-            change += [f"−{u.names[o]}" for o in sorted(prev - now, key=u.names.get)]
+            if live:
+                change.append("(live: departures not known yet)")
+            else:
+                change += [f"−{u.names[o]}" for o in sorted(prev - now, key=u.names.get)]
             lines.append(f"s{n}: {' '.join(change)}")
         prev = now
     return Result("union", ["member", "first", "last", "seasons"], rows, "\n".join(lines))

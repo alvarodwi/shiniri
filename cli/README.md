@@ -70,7 +70,7 @@ union> s46          season recap
 | `fetch` | download seasons not stored yet |
 | `live` | re-download the running season |
 | `sN` / `season [sN]` | recap: normal clear day, hard result, damage, top hitters |
-| `hits [sN] [normal\|hard] [lv<n>] [d<n>] [boss] [member]` | every hit, filtered, biggest first |
+| `hits [sN] [normal|hard] [lv<n>] [d<n>] [boss] [member]` | every hit, filtered, biggest first (`"two words"` for names with spaces, `@name` for a name that looks like a filter) |\|hard] [lv<n>] [d<n>] [boss] [member]` | every hit, filtered, biggest first |
 | `missed [sN]` | members under 3 hits on the hard-mode day |
 | `normal [sN]` | who hit normal mode |
 | `top [sN\|all] [member]` | most-used Nikkes in hits |

@@ -44,7 +44,7 @@ def test_hits_filters(union):
 
 def test_missed(union):
     r = missed(union, 46)
-    assert r.rows == [["BRAVO", 2]] and r.summary == "3 of 4 members hit on hard day D2"
+    assert r.rows == [["BRAVO", 2]]
 
 
 def test_missed_before_hard(union):
@@ -104,3 +104,21 @@ def test_boss(union):
     assert r.rows[0][2:] == ["360.0B", "120.0B"] and r.rows[1][2:] == ["150.0B", "150.0B"]
     with pytest.raises(QueryError, match="HSTA, PSID"):
         boss(union, "xyz")
+
+
+def test_size_trusted_near_season_end(union):
+    assert "D2 · 3 of 4 hit · 4 missed" in str(recap(union, 46).rows)  # BRAVO 1 + one never-hitter's 3
+    assert "TEST · 4 members" in str(recap(union, 46).rows)
+    union.seasons[45]["fetched_ts"] = 400 + 10**6  # downloaded long after: today's union size says nothing
+    rows = str(recap(union, 45).rows)
+    assert "3 seen" in rows and "D3 · 3 hit · 0 missed" in rows
+    assert missed(union, 45).summary == "3 members hit on hard day D3"
+
+
+def test_missed_counts_never_hit(union):
+    assert missed(union, 46).summary == "3 of 4 members hit on hard day D2 · 1 never hit"
+
+
+def test_members_live_season_has_no_departures(union):
+    union.live = 46
+    assert "s46: +DELTA (live: departures not known yet)" in members(union).summary

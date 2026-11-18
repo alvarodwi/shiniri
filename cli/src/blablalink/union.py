@@ -55,6 +55,7 @@ def build_union(store: Store, me: str | None, now: float) -> UnionData:
     for n, raw in _season_files(store):
         meta = raid_list.get(n, {})
         seasons[n] = {"id": n + 1000000, "start_ts": meta.get("start_ts"), "end_ts": meta.get("end_ts"),
+                      "fetched_ts": raw.get("fetched_ts"),
                       "guild": raw.get("guild") or {}, "level": raw.get("level") or {}}
         for h in (raw.get("raid") or {}).get("participate_data") or []:
             mode = MODES.get(h.get("difficulty"))
@@ -110,8 +111,10 @@ async def fetch_union(store: Store, client: httpx.AsyncClient, now: float, live_
     """Season number -> status. Pass `results` to keep the statuses of seasons done before an error."""
     guild = await _call(client, "GetMyGuildInfo", {"ignore_toast": True})
     card = (guild.get("data") or {}).get("card") if isinstance(guild.get("data"), dict) else None
+    if guild.get("code") == -1:  # _call's transport failure, not a server answer
+        raise UnionError(f"can't reach blablalink ({guild.get('msg')})")
     if guild.get("code") != 0 or not card:
-        raise UnionError(guild.get("msg") or "no union info")
+        raise UnionError(f"union info refused: {guild.get('msg') or 'no union info'}")
     out = {} if results is None else results
     for season in store.load_raw("raid_list", []):
         if season.get("start_ts", 0) > now:
