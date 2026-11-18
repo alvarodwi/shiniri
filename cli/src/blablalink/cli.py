@@ -328,3 +328,8 @@ def main(root: Path) -> None:
             break
         if not app.execute(line):
             break
+
+
+def run() -> None:
+    """`uv run blablalink` entry point. Data lives in the repo root, two levels above src/blablalink/."""
+    main(Path(__file__).resolve().parents[2])

@@ -1,3 +1,0 @@
-httpx
-prompt_toolkit
-rich
