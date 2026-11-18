@@ -92,7 +92,7 @@ def _season_file(sid, member_cnt, hits, level_info):
     manager = {"id": str(sid)}
     return {"guild": {"guild_id": "1", "guild_name": "TEST", "guild_member_cnt": member_cnt},
             "level": {"level_info": level_info, "manager_info": manager},
-            "raid": {"manager_info": manager, "participate_data": hits}, "fetched_ts": 1000}
+            "raid": {"manager_info": manager, "participate_data": hits}, "fetched_ts": 10000}
 
 
 UNION_FIXTURE = {

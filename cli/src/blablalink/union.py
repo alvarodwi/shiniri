@@ -14,6 +14,7 @@ ELEMENTS = {"100001": "Fire", "200001": "Water", "300001": "Wind", "400001": "El
 WEAK_TO = {"Fire": "Water", "Water": "Electronic", "Electronic": "Iron", "Iron": "Wind", "Wind": "Fire"}
 CODES = ("HSTA", "PSID", "ZEUS", "DMTR", "ANMI")
 MODES = {1: "normal", 2: "hard"}
+FINAL_GRACE = 3600
 
 
 class UnionError(Exception):
@@ -74,7 +75,8 @@ def build_union(store: Store, me: str | None, now: float) -> UnionData:
 
 
 def is_final(stored: dict | None, season: dict) -> bool:
-    return bool(stored) and stored.get("fetched_ts", 0) > season.get("end_ts", 0)
+    # an hour past the end, so the server's ~5 minute lag has caught up before the season locks
+    return bool(stored) and stored.get("fetched_ts", 0) > season.get("end_ts", 0) + FINAL_GRACE
 
 
 async def _call(client: httpx.AsyncClient, name: str, body: dict) -> dict:
@@ -104,25 +106,34 @@ def _ok(resp: dict) -> bool:
 
 
 async def fetch_union(store: Store, client: httpx.AsyncClient, now: float, live_only: bool = False,
-                      delay: tuple[float, float] = (0.5, 1.0)) -> dict[int, str]:
+                      delay: tuple[float, float] = (0.5, 1.0), results: dict | None = None) -> dict[int, str]:
+    """Season number -> status. Pass `results` to keep the statuses of seasons done before an error."""
     guild = await _call(client, "GetMyGuildInfo", {"ignore_toast": True})
     card = (guild.get("data") or {}).get("card") if isinstance(guild.get("data"), dict) else None
     if guild.get("code") != 0 or not card:
         raise UnionError(guild.get("msg") or "no union info")
-    out = {}
+    out = {} if results is None else results
     for season in store.load_raw("raid_list", []):
         if season.get("start_ts", 0) > now:
             continue
         if live_only and now > season.get("end_ts", 0):
             continue
         n, sid = season_number(season["id"]), str(season["id"])
-        if is_final(store.load_raw(f"union/{sid}"), season):
+        stored = store.load_raw(f"union/{sid}")
+        if is_final(stored, season):
             out[n] = "kept"
+            continue
+        if stored and str((stored.get("guild") or {}).get("guild_id")) != str(card["guild_id"]):
+            out[n] = "kept (other union)"  # a past union's season can't be fetched again
             continue
         body = {"area_id": AREA_ID, "guild_id": str(card["guild_id"]), "season_id": sid}
         level = await _call(client, "GetUnionRaidLevelDataOfGuildSeason", body)
         raid = await _call(client, "GetUnionRaidDataOfGuildSeason", body) if _ok(level) else level
-        if _ok(level) and _ok(raid):
+        old_hits = len(((stored or {}).get("raid") or {}).get("participate_data") or [])
+        new_hits = len(raid["data"].get("participate_data") or []) if _ok(raid) else 0
+        if _ok(level) and _ok(raid) and new_hits < old_hits:
+            out[n] = f"failed: fewer hits than stored ({old_hits} → {new_hits})"
+        elif _ok(level) and _ok(raid):
             store.save_raw(f"union/{sid}", {"guild": card, "level": level["data"], "raid": raid["data"],
                                            "fetched_ts": int(now)})
             out[n] = "saved"

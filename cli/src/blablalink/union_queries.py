@@ -111,7 +111,14 @@ def recap(u: UnionData, n: int) -> Result:
     return Result("union", ["", ""], rows)
 
 
+def is_filter(f: str) -> bool:
+    """A hits token that isn't a member name."""
+    fl = f.lower()
+    return fl in ("normal", "hard") or bool(re.fullmatch(r"(lv|d)\d+", fl)) or fl.upper() in CODES
+
+
 def hits(u: UnionData, n: int, filters: list[str]) -> Result:
+    """Filters: normal/hard, lv<n>, d<n>, a boss code, or a member (openid or name)."""
     keep = []
     for f in filters:
         fl = f.lower()
@@ -124,7 +131,7 @@ def hits(u: UnionData, n: int, filters: list[str]) -> Result:
         elif fl.upper() in CODES:
             keep.append(lambda h, c=fl.upper(): h["code"] == c)
         else:
-            keep.append(lambda h, o=resolve_member(u, f): h["openid"] == o)
+            keep.append(lambda h, o=f if f in u.names else resolve_member(u, f): h["openid"] == o)
     found = sorted((h for h in _season_hits(u, n) if all(k(h) for k in keep)), key=lambda h: -h["damage"])
     rows = [[f"D{h['day']}", h["mode"], h["level"], h["code"], u.names[h["openid"]], fmt_dmg(h["damage"]),
              "✓" if h["final"] else "", _squad(h)] for h in found]

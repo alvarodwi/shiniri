@@ -271,3 +271,19 @@ def test_help_keeps_brackets_and_names_with_brackets(union_store):
     app.execute("union hits s46 red")
     text = out.export_text()
     assert "hits [sN]" in text and "help [cmd]" in text and "[red]DELTA" in text
+
+
+def test_union_exports_keyed_by_member_not_name(union_store):
+    raw = union_store.load_raw("union/1000046")
+    for h in raw["raid"]["participate_data"]:
+        h["nickname"] = {"a": "ゆき", "b": "はる", "d": "なつ"}[h["openid"]]
+    union_store.save_raw("union/1000046", raw)
+    save_cookie(union_store, "game_token=t; game_openid=a")
+    app, out = make_app(union_store)
+    app.execute("union member ゆき")
+    out.export_text()
+    app.execute("union member はる")
+    text = out.export_text()
+    assert "cached" not in text and "はる" in text
+    app.execute("union hits s46 me")
+    assert "5 hits" in out.export_text()

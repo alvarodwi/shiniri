@@ -343,6 +343,8 @@ class App:
         rest = a[1:] if season_arg else a
         if name in ("season", "missed", "normal") and rest:
             raise QueryError("usage: " + UNION_COMMANDS[name][0])
+        if name == "hits":  # members as openids: export names keep only [a-z0-9], so CJK names would collide
+            rest = [f.lower() if uq.is_filter(f) else self._member(f) for f in rest]
         if name in ("season", "missed", "normal", "hits"):
             n = uq.pick_season(u, season_arg)
             key = [f"s{n}", *rest]
@@ -353,7 +355,7 @@ class App:
             rest = rest[1:] if everything else rest
             n = None if everything else uq.pick_season(u, season_arg)
             who = self._member(" ".join(rest)) if rest else None
-            key = ["all" if n is None else f"s{n}", *rest]
+            key = ["all" if n is None else f"s{n}", *([who] if who else [])]
             run = lambda: uq.top(u, n, who)
         elif name == "member":
             if a:
@@ -362,13 +364,13 @@ class App:
                 who = u.me
             else:
                 raise QueryError("no cookie saved, so I don't know which member is you — give a name")
-            key = [u.names.get(who, who)]
+            key = [who]
             run = lambda: uq.member(u, who)
         elif name == "members":
             key, run = [], lambda: uq.members(u)
         elif name == "growth":
             who = [self._member(x) for x in a]
-            key, run = a, lambda: uq.growth(u, who)
+            key, run = who, lambda: uq.growth(u, who)
         else:  # boss
             if len(a) != 1:
                 raise QueryError("usage: " + UNION_COMMANDS["boss"][0])

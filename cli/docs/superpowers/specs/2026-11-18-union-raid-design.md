@@ -58,9 +58,11 @@ the same lookup `build_tables` uses for clear lineups.
 
 ### Storage
 - `data/raw/json/union/<season_id>.json` = `{"guild": <GetMyGuildInfo data.card>, "level": <level data>,
-  "raid": <raid data>, "fetched_at": "<iso>"}`. This is the source of truth.
-- A season is **finished** when now > its `end_ts`. A finished season that saved cleanly (both calls
-  `code 0`, data present) is **never overwritten**, by any command.
+  "raid": <raid data>, "fetched_ts": <int epoch>}`. This is the source of truth.
+- A season file is **final** when it was fetched more than an hour after the season's `end_ts`
+  (the server lags ~5 minutes). A final file is **never overwritten**, by any command.
+- A stored season from another union (different `guild_id`) is never overwritten, and neither is
+  a stored season whose new download has fewer hits.
 - A failed or "not in guild" answer never replaces a stored file. It is reported per season.
 - The parsed flat table `data/parsed/csv/union_hits.csv` (one row per hit, squad flattened with
   Nikke names) is rebuilt from raw, like the clear csvs.

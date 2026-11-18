@@ -1,5 +1,7 @@
 import json
 
+from conftest import UNION_FIXTURE
+
 from blablalink.union import boss_code, build_union, season_number, write_union_parsed
 
 
@@ -50,12 +52,17 @@ import httpx
 import pytest
 
 from blablalink.fetch import AuthError
-from blablalink.union import UnionError, fetch_union
+from blablalink.union import UnionError, fetch_union, is_final
 
 GUILD_OK = {"code": 0, "data": {"card": {"guild_id": "1", "guild_name": "TEST", "guild_member_cnt": 4}}}
 
 
-def _client(seen, raid=lambda body: {"code": 0, "data": {"participate_data": []}}, guild=GUILD_OK):
+def _stored_hits(body):  # the server answering with what's already stored, so the hit count never drops
+    return {"code": 0, "data": {"participate_data": UNION_FIXTURE.get(f"union/{body['season_id']}", {}).get(
+        "raid", {}).get("participate_data", [])}}
+
+
+def _client(seen, raid=_stored_hits, guild=GUILD_OK):
     def handler(req):
         name = req.url.path.rsplit("/", 1)[-1]
         body = json.loads(req.content)
@@ -100,9 +107,10 @@ def test_fetch_body(union_store):
 def test_fetch_refreshes_unfinal_then_locks(union_store):
     raw = union_store.load_raw("union/1000046")
     union_store.save_raw("union/1000046", {**raw, "fetched_ts": 350})
-    assert _run(union_store, _client([]), 1000)[46] == "saved"
+    assert _run(union_store, _client([]), 1000)[46] == "saved"  # ended, but inside the grace hour
+    assert _run(union_store, _client([]), 5000)[46] == "saved"
     seen = []
-    assert _run(union_store, _client(seen), 2000)[46] == "kept"
+    assert _run(union_store, _client(seen), 6000)[46] == "kept"
     assert [s for _, s in seen if s] == []
 
 
@@ -130,3 +138,44 @@ def test_live_only(union_store):
     seen = []
     assert _run(union_store, _client(seen), 350, live_only=True) == {46: "saved"}
     assert _run(union_store, _client([]), 1000, live_only=True) == {}
+
+
+def test_other_union_never_overwrites(union_store):
+    raw = union_store.load_raw("union/1000046")
+    union_store.save_raw("union/1000046", {**raw, "fetched_ts": 350})
+    other = {"code": 0, "data": {"card": {"guild_id": "999", "guild_name": "NEW", "guild_member_cnt": 30}}}
+    assert _run(union_store, _client([], guild=other), 1000)[46] == "kept (other union)"
+    assert union_store.load_raw("union/1000046")["guild"]["guild_id"] == "1"
+
+
+def test_fewer_hits_never_replace(union_store):
+    raw = union_store.load_raw("union/1000046")
+    union_store.save_raw("union/1000046", {**raw, "fetched_ts": 350})
+    empty = _client([], raid=lambda b: {"code": 0, "data": {"participate_data": []}})
+    assert _run(union_store, empty, 1000)[46] == "failed: fewer hits than stored (11 → 0)"
+    assert len(union_store.load_raw("union/1000046")["raid"]["participate_data"]) == 11
+
+
+def test_not_final_right_after_end(union_store):
+    season = {"end_ts": 400}
+    assert not is_final({"fetched_ts": 401}, season) and is_final({"fetched_ts": 400 + 3601}, season)
+
+
+def test_partial_results_survive_auth_error(union_store):
+    _add_season(union_store, 1000047, 900, 1100)
+    _add_season(union_store, 1000048, 900, 1100)
+    calls = []
+    def handler(req):
+        name = req.url.path.rsplit("/", 1)[-1]
+        if name == "GetMyGuildInfo":
+            return httpx.Response(200, json=GUILD_OK)
+        sid = json.loads(req.content)["season_id"]
+        calls.append(sid)
+        if sid == "1000048":
+            return httpx.Response(200, json={"code": 300001, "msg": "game not login"})
+        return httpx.Response(200, json={"code": 0, "data": {"participate_data": []}})
+    results = {}
+    with pytest.raises(AuthError):
+        asyncio.run(fetch_union(union_store, httpx.AsyncClient(transport=httpx.MockTransport(handler)), 99999,
+                                delay=(0, 0), results=results))
+    assert results[47] == "saved"
