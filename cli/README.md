@@ -9,7 +9,7 @@ An interactive shell that fetches your NIKKE clear history from blablalink
 (`.python-version`) and its dependencies (`uv.lock`) are managed by uv only.
 There is no `requirements.txt`, so don't use `pip` or a hand-made venv.
 
-```powershell
+```sh
 uv sync                 # installs Python 3.14 and the locked dependencies into .venv
 uv run blablalink       # starts the shell
 uv run pytest           # runs the tests
