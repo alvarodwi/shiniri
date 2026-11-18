@@ -26,6 +26,11 @@ def fmt_dmg(n) -> str:
     return f"{full} ({short_dmg(n)})" if abs(n) >= 1e6 else full
 
 
+def _dmg(hs: list[dict]) -> str:
+    """Summed damage, or '-' when that mode wasn't played at all."""
+    return fmt_dmg(sum(h["damage"] for h in hs)) if hs else "-"
+
+
 def pick_season(u: UnionData, arg: str | None) -> int:
     if not u.seasons:
         raise QueryError("no union data yet — run sync, then fetch")
@@ -205,8 +210,8 @@ def member(u: UnionData, openid: str) -> Result:
     rows = []
     for n in sorted({h["season"] for h in mine}):
         hs = [h for h in mine if h["season"] == n]
-        rows.append([f"s{n}", len(hs), sum(h["mode"] == "normal" for h in hs), sum(h["mode"] == "hard" for h in hs),
-                     fmt_dmg(sum(h["damage"] for h in hs))])
+        nrm, hrd = [h for h in hs if h["mode"] == "normal"], [h for h in hs if h["mode"] == "hard"]
+        rows.append([f"s{n}", len(hs), len(nrm), len(hrd), _dmg(nrm), _dmg(hrd)])
     hard = [h for h in mine if h["mode"] == "hard"]
     bosses = Counter(h["code"] for h in hard)
     groups = Counter((h["season"], h["day"], h["code"]) for h in hard)
@@ -219,7 +224,7 @@ def member(u: UnionData, openid: str) -> Result:
         f"weakness Nikkes per squad: {sum(weak) / len(weak):.1f}" if weak else "weakness Nikkes per squad: -",
         "favourites: " + ", ".join(f"{name} {c}" for name, c in favs),
     ])
-    return Result("union", ["season", "hits", "normal", "hard", "damage"], rows, summary)
+    return Result("union", ["season", "hits", "normal", "hard", "normal dmg", "hard dmg"], rows, summary)
 
 
 def members(u: UnionData) -> Result:
@@ -267,6 +272,8 @@ def boss(u: UnionData, code: str) -> Result:
         hs = [h for h in _season_hits(u, n) if h["code"] == c]
         if not hs:
             continue
-        me = sum(h["damage"] for h in hs if h["openid"] == u.me)
-        rows.append([f"s{n}", hs[0]["boss"], fmt_dmg(sum(h["damage"] for h in hs)), fmt_dmg(me) if u.me else "-"])
-    return Result("union", ["season", "boss", "union", "me"], rows)
+        by = {m: [h for h in hs if h["mode"] == m] for m in ("hard", "normal")}
+        mine = {m: [h for h in by[m] if h["openid"] == u.me] for m in by}
+        rows.append([f"s{n}", hs[0]["boss"], _dmg(by["hard"]), _dmg(by["normal"]),
+                     *((_dmg(mine["hard"]), _dmg(mine["normal"])) if u.me else ("-", "-"))])
+    return Result("union", ["season", "boss", "union hard", "union normal", "me hard", "me normal"], rows)
