@@ -4,6 +4,7 @@ import csv
 import io
 import json
 import os
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -49,6 +50,22 @@ def _local_time(ts) -> datetime | None:
 
 def _fmt(dt: datetime | None) -> str:
     return dt.strftime("%Y-%m-%d %H:%M:%S") if dt else ""
+
+
+def export_name(command: str, args: list[str]) -> str:
+    # only [a-z0-9_] so names like "anis: star" are valid Windows filenames
+    return re.sub(r"[^a-z0-9]+", "_", " ".join([command, *args]).lower()).strip("_")
+
+
+def scopes_to_wipe(fetched: set[str] = frozenset(), synced: set[str] = frozenset()) -> set[str]:
+    if synced & {"nikke", "historical_roster"}:
+        return set(SCOPES)
+    out = set(fetched)
+    if "campaign_level" in synced:
+        out.add("campaign")
+    if "tower_level" in synced:
+        out.add("tower")
+    return out | {"all"} if out else set()
 
 
 def write_csv(path: Path, header: list[str], rows: list[list]) -> None:
@@ -161,6 +178,29 @@ class Store:
             write_csv(self.parsed_dir / f"{source}_clears.csv", header, rows)
         write_csv(self.parsed_dir / "lineups.csv", list(LINEUP_KEYS),
                   [[_fmt(u[k]) if k == "cleared_at" else u[k] for k in LINEUP_KEYS] for u in tables.lineups])
+
+    def export_path(self, scope: str, name: str) -> Path:
+        return self.exports_dir / scope / f"{name}.csv"
+
+    def write_export(self, path: Path, result) -> None:
+        write_csv(path, result.columns, result.rows)
+        if result.summary:
+            atomic_write(path.with_suffix(".summary.txt"), result.summary)
+
+    def read_export(self, path: Path):
+        from .queries import Result  # queries imports store
+        if not path.exists():
+            return None
+        with open(path, encoding="utf-8-sig", newline="") as f:
+            header, *rows = list(csv.reader(f))
+        summary = path.with_suffix(".summary.txt")
+        return Result(path.parent.name, header, rows,
+                      summary.read_text(encoding="utf-8") if summary.exists() else "")
+
+    def wipe_exports(self, scopes: set[str]) -> None:
+        for scope in scopes:
+            for f in (self.exports_dir / scope).glob("*"):
+                f.unlink()
 
     def migrate(self) -> list[str]:
         """One-time move of the old root-level files into data/raw/json."""

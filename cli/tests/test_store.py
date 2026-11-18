@@ -2,7 +2,8 @@ import csv
 import json
 from datetime import datetime
 
-from blablalink.store import Store, format_dupes
+from blablalink.queries import Result
+from blablalink.store import Store, export_name, format_dupes, scopes_to_wipe
 
 
 def test_format_dupes():
@@ -60,3 +61,30 @@ def test_write_parsed(store):
 def test_empty_store_builds_empty_tables(tmp_path):
     t = Store(tmp_path).build_tables()
     assert (t.clears, t.lineups, t.nikke_names) == ([], [], [])
+
+
+def test_export_name_windows_safe():
+    assert export_name("nikke", ["crown", "anis: star"]) == "nikke_crown_anis_star"
+    assert export_name("date", ["2026-11-01..2026-11-11"]) == "date_2026_11_01_2026_11_11"
+
+
+def test_export_roundtrip(store):
+    p = store.export_path("all", "nikke_crown")
+    store.write_export(p, Result("all", ["a", "b"], [[1, "x"]], "1 clears"))
+    r = store.read_export(p)
+    assert (r.scope, r.columns, r.rows, r.summary) == ("all", ["a", "b"], [["1", "x"]], "1 clears")
+    assert store.read_export(store.export_path("all", "missing")) is None
+
+
+def test_scopes_to_wipe():
+    assert scopes_to_wipe(fetched={"tower"}) == {"tower", "all"}
+    assert scopes_to_wipe(synced={"nikke"}) == {"campaign", "tower", "all"}
+    assert scopes_to_wipe(synced={"campaign_level"}) == {"campaign", "all"}
+    assert scopes_to_wipe() == set()
+
+
+def test_wipe_only_scope(store):
+    for scope in ("campaign", "tower"):
+        store.write_export(store.export_path(scope, "x"), Result(scope, ["a"], []))
+    store.wipe_exports({"tower"})
+    assert store.export_path("campaign", "x").exists() and not store.export_path("tower", "x").exists()
