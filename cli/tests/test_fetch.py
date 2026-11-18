@@ -4,8 +4,31 @@ import json
 import httpx
 import pytest
 
-from blablalink.fetch import (AuthError, campaign_targets, fetch_clears, load_cookie, parse_cookie,
-                              save_cookie, sync_reference)
+from blablalink.fetch import (ROLEDATA_PATH, AuthError, campaign_targets, cdn_url, fetch_clears,
+                              load_cookie, parse_cookie, save_cookie, sync_reference)
+
+KNOWN = {
+    "character/en/nikke_list_en_v2.json": "yl-57/hd-03/1bf030193826e243c2e195f951a4be00.json",
+    "character/character_id_map.json": "kx-19/bc64a706accd3c7ec1f9a9f2afd8f1bc.json",
+    "stage/stage_list.json": "xx-97/b32816a11f83865b09bcf95e67ca83ae.json",
+    "tower/tower_list.json": "mx-85/3aa6da781d62528da15bd138504c3955.json",
+    "roledata/511-v2-en.json": "oz-20/72fa6824d2d0e69adc7aace692678372.json",
+}
+
+
+@pytest.mark.parametrize("path,hashed", KNOWN.items())
+def test_cdn_url_matches_site(path, hashed):
+    assert cdn_url(path) == "https://sg-tools-cdn.blablalink.com/" + hashed
+    assert cdn_url("/" + path) == cdn_url(path)
+
+
+def test_cdn_url_keeps_multi_dot_extension():
+    assert cdn_url("x/a.atlas.txt").endswith(".atlas.txt")
+
+
+def test_roledata_template():
+    assert cdn_url(ROLEDATA_PATH.format(resource_id=511)).endswith(
+        "oz-20/72fa6824d2d0e69adc7aace692678372.json")
 
 
 def ok(sid_list):

@@ -1,6 +1,7 @@
 """HTTP: cookie handling, the lineup fetcher for campaign and tower, CDN sync."""
 
 import asyncio
+import hashlib
 import json
 import random
 from typing import Callable
@@ -34,6 +35,13 @@ HEADERS = {
     }),
 }
 CDN_HEADERS = {"Referer": "https://www.blablalink.com/", "User-Agent": USER_AGENT}
+CDN_HOST = "https://sg-tools-cdn.blablalink.com/"
+# From the site's obfuscatedPath: one seed per folder depth.
+PRIMES = (224737, 1000639, 2654435761, 2654435769, 1000621, 4294967291)
+# Per-item paths for the investment feature (not synced yet).
+ROLEDATA_PATH = "roledata/{resource_id}-v2-en.json"
+CUBE_PATH = "equip/en/cube_{cube_id}.json"
+FAVORITE_PATH = "equip/en/favorite_{favorite_id}.json"
 REQUIRED_COOKIES = ("game_token", "game_openid")
 
 
@@ -143,6 +151,25 @@ async def fetch_clears(store: Store, source: str, client: httpx.AsyncClient,
                 break
             await asyncio.sleep(random.uniform(*delay))
     return new
+
+
+def _djb2(s: str, seed: int) -> int:
+    h = seed
+    for c in s:
+        h = (h * 33 + ord(c)) & 0xFFFFFFFF
+    return h - (1 << 32) if h >= 1 << 31 else h  # JS & yields a signed int32
+
+
+def cdn_url(path: str) -> str:
+    """The hashed CDN URL the site builds for a plain path like `stage/stage_list.json`."""
+    path = path.lstrip("/")
+    *folders, name = path.split("/")
+    segs = []
+    for p in PRIMES[:len(folders)]:
+        r = (_djb2(path, p) % p + p) % p
+        segs.append(f"{chr(97 + r // 26 % 26)}{chr(97 + r % 26)}-{r % 99:02d}")
+    ext = name.split(".", 1)[1]
+    return CDN_HOST + "/".join(segs + [f"{hashlib.md5(path.encode()).hexdigest()}.{ext}"])
 
 
 async def sync_reference(store: Store, client: httpx.AsyncClient) -> dict[str, str]:
