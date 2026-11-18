@@ -1,0 +1,89 @@
+import asyncio
+import json
+
+import httpx
+import pytest
+
+from blablalink.fetch import (AuthError, campaign_targets, fetch_clears, load_cookie, parse_cookie,
+                              save_cookie, sync_reference)
+
+
+def ok(sid_list):
+    return httpx.Response(200, json={"code": 0, "data": {"cleared_at": "1", "list": [
+        {"slot": 1, "tid": 433004, "lv": 1, "combat": 1}]}})
+
+
+def test_parse_cookie():
+    c = parse_cookie("Cookie: a=1; game_token=t; game_openid=o; x=y=z")
+    assert c["game_token"] == "t" and c["x"] == "y=z"
+    with pytest.raises(ValueError, match="game_token"):
+        parse_cookie("game_openid=o")
+
+
+def test_cookie_file_roundtrip(store):
+    with pytest.raises(FileNotFoundError):
+        load_cookie(store)
+    save_cookie(store, "game_token=t; game_openid=o")
+    assert load_cookie(store) == {"game_token": "t", "game_openid": "o"}
+
+
+def test_campaign_targets_skips_gaps_and_tutorial(store):
+    levels = store.load_raw("campaign_level")
+    assert [s["id"] for s in campaign_targets(levels, {6002003})] == [7002001]
+
+
+def test_tower_stops_at_uncleared_and_saves_each(store):
+    seen = []
+
+    def handler(req):
+        sid = json.loads(req.content)["stage_id"]
+        seen.append(sid)
+        if sid == 50002:
+            return ok(sid)
+        return httpx.Response(200, json={"code": 1300017, "data": None})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    assert asyncio.run(fetch_clears(store, "tower", client, delay=(0, 0))) == 1
+    assert seen == [50002, 50003, 51001] and "50002" in store.load_clears("tower")
+    assert "50001" in store.load_clears("tower")
+
+
+def test_campaign_does_not_stop_at_uncleared(store):
+    store.save_clears("campaign", {})
+    seen = []
+
+    def handler(req):
+        seen.append(json.loads(req.content)["stage_id"])
+        return httpx.Response(200, json={"code": 1, "data": None})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    assert asyncio.run(fetch_clears(store, "campaign", client, delay=(0, 0))) == 0
+    assert seen == [6002001, 6002002, 6002003, 7002001]
+
+
+def test_auth_error_keeps_earlier_clears(store):
+    def handler(req):
+        sid = json.loads(req.content)["stage_id"]
+        if sid == 50002:
+            return ok(sid)
+        return httpx.Response(200, json={"code": 300001, "msg": "game not login", "data": None})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    with pytest.raises(AuthError):
+        asyncio.run(fetch_clears(store, "tower", client, delay=(0, 0)))
+    assert "50002" in store.load_clears("tower")
+
+
+def test_sync_reference(store):
+    store.config_dir.mkdir(parents=True, exist_ok=True)
+    (store.config_dir / "sources.json").write_text(json.dumps({"nikke": "https://x/n.json", "tower_level": "https://x/t.json"}))
+    old_tower = store.load_raw("tower_level")
+
+    def handler(req):
+        return httpx.Response(200, json=[{"id": 1}]) if req.url.path == "/n.json" else httpx.Response(200, text="<html>")
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    res = asyncio.run(sync_reference(store, client))
+    assert res["nikke"] == "changed" and res["tower_level"].startswith("failed")
+    assert store.load_raw("tower_level") == old_tower
+    assert asyncio.run(sync_reference(store, httpx.AsyncClient(transport=httpx.MockTransport(handler))))["nikke"] == "unchanged"
