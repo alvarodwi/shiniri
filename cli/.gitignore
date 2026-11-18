@@ -1,0 +1,9 @@
+data/
+config/cookie.txt
+blabla.yml
+test_*_clear_history.json
+__pycache__/
+.pytest_cache/
+*.tmp
+.superpowers/
+.venv/
