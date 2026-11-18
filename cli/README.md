@@ -9,14 +9,16 @@ An interactive shell that fetches your NIKKE clear history from blablalink
 (`.python-version`) and its dependencies (`uv.lock`) are managed by uv only.
 There is no `requirements.txt`, so don't use `pip` or a hand-made venv.
 
-```powershell
+```sh
 uv sync                 # installs Python 3.14 and the locked dependencies into .venv
 uv run blablalink       # starts the shell
 uv run pytest           # runs the tests
 ```
 
-Use PowerShell, cmd or Windows Terminal. Git Bash's default terminal (mintty)
-isn't a Windows console, so the prompt won't start there unless you go through `winpty`.
+Works the same on Windows, macOS and Linux, in any normal terminal.
+
+Windows only: Git Bash's default terminal (mintty) isn't a Windows console, so the prompt
+won't start there. Use PowerShell, cmd or Windows Terminal, or run it through `winpty`.
 
 ## First run
 
