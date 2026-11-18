@@ -516,11 +516,15 @@ def main(root: Path) -> None:
     app.do_help(Command("help", [], False))
     while True:
         try:
-            line = session.prompt(app.prompt)
+            p = app.prompt()
+            line = session.prompt(p)
         except KeyboardInterrupt:
             continue
         except EOFError:
             break
+        if line.strip():
+            console.clear()  # visible screen only; scrollback keeps long results reachable
+            console.print(f"[dim]{escape(p + line)}[/]")
         if not app.execute(line):
             break
 
