@@ -1,12 +1,14 @@
 import pytest
 
 from blablalink.queries import QueryError
-from blablalink.union_queries import fmt_dmg, hits, missed, normal, pick_season, recap, resolve_member
+from blablalink.union_queries import fmt_dmg, short_dmg, hits, missed, normal, pick_season, recap, resolve_member
 
 
 def test_fmt_dmg():
-    assert [fmt_dmg(x) for x in (1027483050281, 160433126788, 9051890653, 100e9, 812_300_000)] == [
-        "1.03T", "160.4B", "9.05B", "100.0B", "812.3M"]
+    assert [fmt_dmg(x) for x in (1027483050281, 9051890653, 100e9, 812_300_000, 812_300, 40e9 + 0.5)] == [
+        "1.027.483.050.281 (1.03T)", "9.051.890.653 (9.05B)", "100.000.000.000 (100.0B)",
+        "812.300.000 (812.3M)", "812.300", "40.000.000.000 (40.0B)"]
+    assert short_dmg(160433126788) == "160.4B"
 
 
 def test_pick_season(union):
@@ -28,14 +30,14 @@ def test_pick_season_empty(union):
 
 def test_recap(union):
     text = str(recap(union, 46).rows)
-    assert "cleared · 1.03T on Black Smith H.S.T.A." in text and "D1" in text
+    assert "cleared · 1.027.483.050.281 (1.03T) on Black Smith H.S.T.A." in text and "D1" in text
     s45 = str(recap(union, 45).rows)
     assert "stopped at hard lv2" in s45 and "ZEUS 39.0B/226.3B" in s45 and "PSID" not in s45
 
 
 def test_hits_filters(union):
     r = hits(union, 46, ["hard", "hsta"])
-    assert [row[5] for row in r.rows] == ["100.0B", "50.0B"]
+    assert [row[5] for row in r.rows] == ["100.000.000.000 (100.0B)", "50.000.000.000 (50.0B)"]
     assert r.rows[0][7] == "Crown, Anis: Star"
     assert len(hits(union, 46, ["d1"]).rows) == 3 and len(hits(union, 46, ["delta"]).rows) == 3
     assert len(hits(union, 46, ["normal", "lv10"]).rows) == 2
@@ -56,7 +58,7 @@ def test_missed_before_hard(union):
 def test_normal(union):
     r = normal(union, 46)
     assert [row[0] for row in r.rows] == ["ALPHA", "BRAVO"]
-    assert r.summary == "2 members · 3 hits · 6.00B"
+    assert r.summary == "2 members · 3 hits · 6.000.000.000 (6.00B)"
 
 
 def test_resolve_member(union):
@@ -78,7 +80,7 @@ def test_top(union):
 def test_member_tendencies(union):
     r = member(union, "a")
     assert [row[0] for row in r.rows] == ["s45", "s46"]
-    assert r.rows[1] == ["s46", 5, 2, 3, "184.0B"]
+    assert r.rows[1] == ["s46", 5, 2, 3, "184.000.000.000 (184.0B)"]
     assert "bosses: HSTA 5, ZEUS 1" in r.summary
     assert "same boss twice in a day: 2" in r.summary
     assert "weakness Nikkes per squad: 0.2" in r.summary
@@ -92,16 +94,17 @@ def test_members_arrivals(union):
 
 
 def test_growth(union):
-    assert growth(union, []).rows[1][2] == "250.0B"
+    assert growth(union, []).rows[1][2] == "250.000.000.000 (250.0B)"
     r = growth(union, ["a", "b"])
     assert r.columns == ["season", "union median", "ALPHA", "BRAVO"]
-    assert r.rows[1] == ["s46", "40.0B", "180.0B", "40.0B"]
+    assert r.rows[1] == ["s46", "40.000.000.000 (40.0B)", "180.000.000.000 (180.0B)", "40.000.000.000 (40.0B)"]
 
 
 def test_boss(union):
     r = boss(union, "hsta")
     assert [row[0] for row in r.rows] == ["s45", "s46"]
-    assert r.rows[0][2:] == ["360.0B", "120.0B"] and r.rows[1][2:] == ["150.0B", "150.0B"]
+    assert r.rows[0][2:] == ["360.000.000.000 (360.0B)", "120.000.000.000 (120.0B)"]
+    assert r.rows[1][2:] == ["150.000.000.000 (150.0B)", "150.000.000.000 (150.0B)"]
     with pytest.raises(QueryError, match="HSTA, PSID"):
         boss(union, "xyz")
 
