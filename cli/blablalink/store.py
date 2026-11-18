@@ -58,3 +58,29 @@ class Store:
 
     def save_clears(self, source: str, clears: dict) -> None:
         self.save_raw(f"{source}_clears", clears)
+
+    def migrate(self) -> list[str]:
+        """One-time move of the old root-level files into data/raw/json."""
+        done = []
+        for name in REFERENCE:
+            old, new = self.root / f"{name}.json", self.raw_dir / f"{name}.json"
+            if old.exists() and not new.exists():
+                new.parent.mkdir(parents=True, exist_ok=True)
+                os.replace(old, new)
+                done.append(f"moved {old.name} → data/raw/json/")
+        for source in SOURCES:
+            legacy = self.root / f"test_{source}_clear_history.json"
+            if not legacy.exists() or (self.raw_dir / f"{source}_clears.json").exists():
+                continue
+            records = json.loads(legacy.read_text(encoding="utf-8"))
+            clears = {
+                str(r["stage_id"]): {
+                    "cleared_at": r.get("cleared_at_timestamp"),
+                    "list": [{"slot": u.get("slot"), "tid": u.get("tid"), "lv": u.get("level"),
+                              "combat": u.get("combat_power")} for u in r["team_lineup"]],
+                }
+                for r in records if r.get("team_lineup")
+            }
+            self.save_clears(source, clears)
+            done.append(f"converted {legacy.name} → {source}_clears.json ({len(clears)} clears)")
+        return done
