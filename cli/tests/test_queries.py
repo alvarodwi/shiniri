@@ -56,3 +56,33 @@ def test_synchro_uses_single_levels_over_200(tables):
 def test_progress(tables):
     rows = progress(tables).rows
     assert ["Normal", "2 · 2-3 STAGE"] in rows and ["Tribe", "1F"] in rows
+
+
+def test_stage_single_entry(tables):
+    r = stage(tables, "normal", 2, "2-3")
+    assert len(r.rows) == 1 and r.rows[0][0] == "2 · 2-3 STAGE"
+    with pytest.raises(QueryError, match="try: stage normal 2"):
+        stage(tables, "normal", 2, "2-9")
+
+
+def test_spread_buckets_with_gaps(tables):
+    from blablalink.queries import spread
+    r = spread(tables, 5)
+    assert r.scope == "all" and r.columns == ["level", "from", "to", "clears"]
+    assert r.rows[0] == ["740–744", "2026-10-31", "2026-10-31", 1]
+    assert r.rows[1] == ["745–749", "N/A", "", 0]
+    assert r.rows[-1][0] == "800–804" and r.rows[-1][3] == 1 and len(r.rows) == 13
+    assert spread(tables, 100).rows[0][0] == "700–799"
+
+
+def test_synchro_ignores_fixed_level_ex_stages(store):
+    from blablalink.queries import spread
+    levels = store.load_raw("campaign_level") + [
+        {"id": 6002099, "chapter_id": 3, "chapter_mod": "Normal", "standard_battle_power": 0, "name_localkey": {"name": "EX STAGE"}}]
+    store.save_raw("campaign_level", levels)
+    clears = store.load_clears("campaign")
+    clears["6002099"] = {"cleared_at": "1794364999", "list": [{"slot": 1, "tid": 433004, "lv": 300, "combat": 1}]}
+    store.save_clears("campaign", clears)
+    t = store.build_tables()
+    assert [row[1] for row in synchro(t).rows] == [740, 801]
+    assert spread(t, 5).rows[0][0] == "740–744"

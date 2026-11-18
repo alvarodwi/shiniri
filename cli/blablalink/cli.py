@@ -21,17 +21,17 @@ COMMANDS: dict[str, tuple[str, str, list[str]]] = {
     "sync": ("sync", "re-download CDN reference files", ["sync"]),
     "cookie": ("cookie", "paste your Cookie header", ["cookie"]),
     "nikke": ("nikke <name> [+ <name>]", "clears that used a Nikke (both, if two)", ["nikke crown", "n crown + anis: star"]),
-    "stage": ("stage <normal|hard> <ch>", "campaign chapter clears", ["stage hard 50", "st normal 12"]),
+    "stage": ("stage <normal|hard> <ch>[-<stage>]", "campaign chapter, or one stage", ["stage hard 50", "st hard 50-36"]),
     "floor": ("floor <tower> <n>", "tower floor clear", ["floor tribe 1030", "fl pilgrim 500"]),
     "date": ("date <from>[..<to>]", "clears in a date range", ["date 2026-11-11", "d 2026-11-01..2026-11-11"]),
     "top": ("top [tower|mode]", "most-used Nikkes", ["top", "top pilgrim", "t hard"]),
     "synchro": ("synchro", "synchro level timeline", ["synchro"]),
+    "spread": ("spread [step]", "synchro levels in bands (default 5): first/last day at each", ["spread", "sp 10"]),
     "progress": ("progress", "highest chapter / floor per mode", ["progress"]),
     "help": ("help [cmd]", "list commands, or show one in detail", ["help", "help nikke"]),
     "quit": ("quit", "leave", ["quit"]),
 }
-SEARCHES = ("nikke", "stage", "floor", "date", "top", "synchro", "progress")
-FIXED_SCOPE = {"nikke": "all", "stage": "campaign", "floor": "tower", "date": "all", "synchro": "all", "progress": "all"}
+FIXED_SCOPE = {"nikke": "all", "stage": "campaign", "floor": "tower", "date": "all", "synchro": "all", "spread": "all", "progress": "all"}
 
 
 @dataclass
@@ -156,8 +156,9 @@ class App:
             case "stage":
                 if len(a) != 2:
                     raise QueryError("usage: " + COMMANDS["stage"][0])
-                chapter = _int(a[1], "chapter")
-                return lambda: queries.stage(self.tables, a[0], chapter)
+                chapter = _int(a[1].split("-")[0], "chapter")
+                label = a[1] if "-" in a[1] else None
+                return lambda: queries.stage(self.tables, a[0], chapter, label)
             case "floor":
                 if len(a) != 2:
                     raise QueryError("usage: " + COMMANDS["floor"][0])
@@ -173,6 +174,13 @@ class App:
                 return lambda: queries.top(self.tables, a[0] if a else None)
             case "synchro":
                 return lambda: queries.synchro(self.tables)
+            case "spread":
+                if len(a) > 1:
+                    raise QueryError("usage: " + COMMANDS["spread"][0])
+                step = _int(a[0], "step") if a else 5
+                if step < 1:
+                    raise QueryError("step must be at least 1")
+                return lambda: queries.spread(self.tables, step)
             case "progress":
                 return lambda: queries.progress(self.tables)
 
@@ -208,7 +216,7 @@ class App:
         if result.summary:
             self.out.print(f"[bold]{result.summary}[/]")
 
-    do_nikke = do_stage = do_floor = do_date = do_top = do_synchro = do_progress = search
+    do_nikke = do_stage = do_floor = do_date = do_top = do_synchro = do_spread = do_progress = search
 
     # --- actions --------------------------------------------------------
     def do_help(self, cmd: Command) -> None:
