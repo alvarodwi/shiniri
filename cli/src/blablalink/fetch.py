@@ -1,6 +1,7 @@
 """HTTP: cookie handling, the lineup fetcher for campaign and tower, CDN sync."""
 
 import asyncio
+import hashlib
 import json
 import random
 from typing import Callable
@@ -34,6 +35,13 @@ HEADERS = {
     }),
 }
 CDN_HEADERS = {"Referer": "https://www.blablalink.com/", "User-Agent": USER_AGENT}
+CDN_HOST = "https://sg-tools-cdn.blablalink.com/"
+# From the site's obfuscatedPath: one seed per folder depth.
+PRIMES = (224737, 1000639, 2654435761, 2654435769, 1000621, 4294967291)
+# Per-item paths for the investment feature (not synced yet).
+ROLEDATA_PATH = "roledata/{resource_id}-v2-en.json"
+CUBE_PATH = "equip/en/cube_{cube_id}.json"
+FAVORITE_PATH = "equip/en/favorite_{favorite_id}.json"
 REQUIRED_COOKIES = ("game_token", "game_openid")
 
 
@@ -121,10 +129,10 @@ async def fetch_clears(store: Store, source: str, client: httpx.AsyncClient,
     clears = store.load_clears(source)
     stored = {int(k) for k in clears}
     if source == "campaign":
-        groups = {"campaign": campaign_targets(store.load_raw("campaign_level", []), stored)}
+        groups = {"campaign": campaign_targets(store.load_raw("stage_list", []), stored)}
         stop_early = False
     else:
-        groups = tower_targets(store.load_raw("tower_level", []), stored)
+        groups = tower_targets(store.load_raw("tower_list", []), stored)
         stop_early = True
     id_key = "id" if source == "campaign" else "stage_id"
     total, done, new = sum(map(len, groups.values())), 0, 0
@@ -145,16 +153,36 @@ async def fetch_clears(store: Store, source: str, client: httpx.AsyncClient,
     return new
 
 
+def _djb2(s: str, seed: int) -> int:
+    h = seed
+    for c in s:
+        h = (h * 33 + ord(c)) & 0xFFFFFFFF
+    return h - (1 << 32) if h >= 1 << 31 else h  # JS & yields a signed int32
+
+
+def cdn_url(path: str) -> str:
+    """The hashed CDN URL the site builds for a plain path like `stage/stage_list.json`."""
+    path = path.lstrip("/")
+    *folders, name = path.split("/")
+    segs = []
+    for p in PRIMES[:len(folders)]:
+        r = (_djb2(path, p) % p + p) % p
+        segs.append(f"{chr(97 + r // 26 % 26)}{chr(97 + r % 26)}-{r % 99:02d}")
+    ext = name.partition(".")[2]
+    return CDN_HOST + "/".join(segs + [f"{hashlib.md5(path.encode()).hexdigest()}.{ext}"])
+
+
 async def sync_reference(store: Store, client: httpx.AsyncClient) -> dict[str, str]:
     sources = json.loads((store.config_dir / "sources.json").read_text(encoding="utf-8"))
     out = {}
-    for name, url in sources.items():
+    for name, path in sources.items():
         try:
-            resp = await client.get(url, headers=CDN_HEADERS, timeout=30.0)
+            resp = await client.get(cdn_url(path), headers=CDN_HEADERS, timeout=30.0)
             resp.raise_for_status()
             fresh = resp.json()
         except (httpx.HTTPError, ValueError) as e:
-            out[name] = f"failed: {type(e).__name__}"
+            hint = " (site may have changed its URL scheme)" if isinstance(e, httpx.HTTPStatusError) else ""
+            out[name] = f"failed: {type(e).__name__}{hint}"
             continue
         if fresh == store.load_raw(name):
             out[name] = "unchanged"

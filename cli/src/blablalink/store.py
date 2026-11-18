@@ -11,7 +11,10 @@ from pathlib import Path
 from typing import Any
 
 SOURCES = ("campaign", "tower")
-REFERENCE = ("nikke", "historical_roster", "campaign_level", "tower_level")
+# raw file names follow the CDN file names, minus the version suffix
+LEVELS = {"campaign": "stage_list", "tower": "tower_list"}
+OLD_NAMES = {"nikke": "nikke_list_en", "historical_roster": "character_id_map",
+             "campaign_level": "stage_list", "tower_level": "tower_list"}
 SCOPES = ("campaign", "tower", "all")
 
 
@@ -59,13 +62,10 @@ def export_name(command: str, args: list[str]) -> str:
 
 
 def scopes_to_wipe(fetched: set[str] = frozenset(), synced: set[str] = frozenset()) -> set[str]:
-    if synced & {"nikke", "historical_roster"}:
+    if synced & {"nikke_list_en", "character_id_map"}:
         return set(SCOPES)
     out = set(fetched)
-    if "campaign_level" in synced:
-        out.add("campaign")
-    if "tower_level" in synced:
-        out.add("tower")
+    out |= {source for source, name in LEVELS.items() if name in synced}
     return out | {"all"} if out else set()
 
 
@@ -114,19 +114,19 @@ class Store:
 
     def build_tables(self) -> "Tables":
         """Join raw clears with the reference files into flat rows."""
-        roster = {r["id"]: r for r in self.load_raw("historical_roster", []) if "id" in r}
+        roster = {r["id"]: r for r in self.load_raw("character_id_map", []) if "id" in r}
         by_rid, by_id = {}, {}
-        for n in self.load_raw("nikke", []):
+        for n in self.load_raw("nikke_list_en", []):
             if isinstance(n, dict):
                 by_rid.setdefault(n.get("resource_id"), n)
                 by_id.setdefault(n.get("id"), n)
         stages = {}
-        for s in self.load_raw("campaign_level", []):
+        for s in self.load_raw("stage_list", []):
             stages[("campaign", s["id"])] = {
                 "mode": s.get("chapter_mod", ""), "chapter": s.get("chapter_id", 1) - 1, "floor": None,
                 "stage_name": (s.get("name_localkey") or {}).get("name", ""),
                 "recommended_cp": s.get("standard_battle_power", 0)}
-        for s in self.load_raw("tower_level", []):
+        for s in self.load_raw("tower_list", []):
             stages[("tower", s["stage_id"])] = {
                 "mode": str(s.get("tower_type", "")).capitalize(), "chapter": None, "floor": s.get("floor"),
                 "stage_name": f"{s.get('floor')}F", "recommended_cp": s.get("standard_battle_power", 0)}
@@ -217,14 +217,15 @@ class Store:
                 f.unlink()
 
     def migrate(self) -> list[str]:
-        """One-time move of the old root-level files into data/raw/json."""
+        """One-time moves: old root-level files into data/raw/json, old raw names to CDN names."""
         done = []
-        for name in REFERENCE:
-            old, new = self.root / f"{name}.json", self.raw_dir / f"{name}.json"
-            if old.exists() and not new.exists():
-                new.parent.mkdir(parents=True, exist_ok=True)
-                os.replace(old, new)
-                done.append(f"moved {old.name} → data/raw/json/")
+        for old_name, name in OLD_NAMES.items():
+            new = self.raw_dir / f"{name}.json"
+            for old in (self.root / f"{old_name}.json", self.raw_dir / f"{old_name}.json"):
+                if old.exists() and not new.exists():
+                    new.parent.mkdir(parents=True, exist_ok=True)
+                    os.replace(old, new)
+                    done.append(f"moved {old.name} → data/raw/json/{new.name}")
         for source in SOURCES:
             legacy = self.root / f"test_{source}_clear_history.json"
             if not legacy.exists() or (self.raw_dir / f"{source}_clears.json").exists():

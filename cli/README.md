@@ -57,7 +57,7 @@ A `fetch` or `sync` that changes the data clears the affected exports automatica
 ## Where things live
 
 ```
-config/sources.json      CDN URLs of the reference files (committed)
+config/sources.json      CDN paths of the reference files (committed)
 config/cookie.txt        your cookie (git-ignored)
 data/raw/json/           what the server sent: the source of truth
 data/parsed/csv/         campaign_clears.csv, tower_clears.csv, lineups.csv (rebuilt from raw)

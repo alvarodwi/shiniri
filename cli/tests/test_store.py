@@ -18,6 +18,17 @@ def test_raw_roundtrip_and_default(tmp_path):
     assert not list(s.raw_dir.glob("*.tmp"))
 
 
+def test_migrate_renames_raw_to_cdn_names(tmp_path):
+    s = Store(tmp_path)
+    s.save_raw("campaign_level", [{"id": 1}])
+    s.save_raw("tower_level", ["old"])
+    s.save_raw("tower_list", ["new"])
+    assert s.migrate()
+    assert s.load_raw("stage_list") == [{"id": 1}] and s.load_raw("campaign_level") is None
+    # never overwrite a file already at the new name
+    assert s.load_raw("tower_list") == ["new"] and s.load_raw("tower_level") == ["old"]
+
+
 def test_migrate_converts_legacy(tmp_path):
     (tmp_path / "test_tower_clear_history.json").write_text(json.dumps([{
         "stage_id": 51030, "cleared_at_timestamp": "1794364831", "team_lineup": [
@@ -27,7 +38,7 @@ def test_migrate_converts_legacy(tmp_path):
     assert s.migrate()
     assert s.load_clears("tower") == {"51030": {"cleared_at": "1794364831",
         "list": [{"slot": 1, "tid": 301706, "lv": 801, "combat": 776595}]}}
-    assert s.load_raw("nikke") == [] and not (tmp_path / "nikke.json").exists()
+    assert s.load_raw("nikke_list_en") == [] and not (tmp_path / "nikke.json").exists()
     assert (tmp_path / "test_tower_clear_history.json").exists()
     assert s.migrate() == []
 
@@ -78,8 +89,8 @@ def test_export_roundtrip(store):
 
 def test_scopes_to_wipe():
     assert scopes_to_wipe(fetched={"tower"}) == {"tower", "all"}
-    assert scopes_to_wipe(synced={"nikke"}) == {"campaign", "tower", "all"}
-    assert scopes_to_wipe(synced={"campaign_level"}) == {"campaign", "all"}
+    assert scopes_to_wipe(synced={"nikke_list_en"}) == {"campaign", "tower", "all"}
+    assert scopes_to_wipe(synced={"stage_list"}) == {"campaign", "all"}
     assert scopes_to_wipe() == set()
 
 

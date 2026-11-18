@@ -25,23 +25,23 @@ def _stage(id_, chap, mod, name):
 
 
 FIXTURE = {
-    "nikke": [
+    "nikke_list_en": [
         _nikke(433004, 330, "Crown", "PILGRIM", "Iron", "MG", "Step2"),
         _nikke(301706, 17, "Anis: Star", "TETRA", "Electronic", "RL", "Step1"),
         _nikke(5001, 50, "Anis"),
     ],
-    "historical_roster": [
+    "character_id_map": [
         {"id": 433004, "resource_id": 330, "grade": 3, "core": 0},
         {"id": 301706, "resource_id": 17, "grade": 3, "core": 2},
     ],
-    "campaign_level": [
+    "stage_list": [
         _stage(6000001, 1, "Normal", "0-1 STAGE"),
         _stage(6002001, 3, "Normal", "2-1 STAGE"),
         _stage(6002002, 3, "Normal", "2-2 STAGE"),
         _stage(6002003, 3, "Normal", "2-3 STAGE"),
         _stage(7002001, 3, "Hard", "2-1 HARD STAGE"),
     ],
-    "tower_level": [
+    "tower_list": [
         {"tower_type": "tribe", "floor": f, "stage_id": 50000 + f, "standard_battle_power": 5000}
         for f in (1, 2, 3)
     ] + [{"tower_type": "pilgrim", "floor": 1, "stage_id": 51001, "standard_battle_power": 5000}],
