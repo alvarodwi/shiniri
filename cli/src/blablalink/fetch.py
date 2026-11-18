@@ -129,10 +129,10 @@ async def fetch_clears(store: Store, source: str, client: httpx.AsyncClient,
     clears = store.load_clears(source)
     stored = {int(k) for k in clears}
     if source == "campaign":
-        groups = {"campaign": campaign_targets(store.load_raw("campaign_level", []), stored)}
+        groups = {"campaign": campaign_targets(store.load_raw("stage_list", []), stored)}
         stop_early = False
     else:
-        groups = tower_targets(store.load_raw("tower_level", []), stored)
+        groups = tower_targets(store.load_raw("tower_list", []), stored)
         stop_early = True
     id_key = "id" if source == "campaign" else "stage_id"
     total, done, new = sum(map(len, groups.values())), 0, 0

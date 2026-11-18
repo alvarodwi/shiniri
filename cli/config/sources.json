@@ -1,6 +1,6 @@
 {
-  "nikke": "character/en/nikke_list_en_v2.json",
-  "historical_roster": "character/character_id_map.json",
-  "campaign_level": "stage/stage_list.json",
-  "tower_level": "tower/tower_list.json"
+  "nikke_list_en": "character/en/nikke_list_en_v2.json",
+  "character_id_map": "character/character_id_map.json",
+  "stage_list": "stage/stage_list.json",
+  "tower_list": "tower/tower_list.json"
 }

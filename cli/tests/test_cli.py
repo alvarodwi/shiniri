@@ -132,9 +132,9 @@ def test_completer_follows_new_data(store):
     def words(text):
         return {c.text for c in app.completer().get_completions(Document(text), None)}
     assert "Crown" in words("nikke cro")
-    nikke = store.load_raw("nikke") + [{"id": 1, "resource_id": 1, "name_localkey": {"name": "Crow Bar"}}]
-    store.save_raw("nikke", nikke)
-    app.refresh(synced={"nikke"})
+    nikke = store.load_raw("nikke_list_en") + [{"id": 1, "resource_id": 1, "name_localkey": {"name": "Crow Bar"}}]
+    store.save_raw("nikke_list_en", nikke)
+    app.refresh(synced={"nikke_list_en"})
     assert "Crow Bar" in words("nikke cro")
 
 

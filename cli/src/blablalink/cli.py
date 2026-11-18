@@ -14,7 +14,7 @@ from . import queries
 from .fetch import (AuthError, campaign_targets, fetch_clears, load_cookie, make_client, save_cookie,
                     sync_reference, tower_targets)
 from .queries import QueryError, Result
-from .store import SCOPES, SOURCES, Store, export_name, scopes_to_wipe
+from .store import LEVELS, SCOPES, SOURCES, Store, export_name, scopes_to_wipe
 
 COMMANDS: dict[str, tuple[str, str, list[str]]] = {
     "fetch": ("fetch campaign|tower|all", "get new clears (needs cookie)", ["fetch tower", "fe all"]),
@@ -244,7 +244,7 @@ class App:
         if which not in ("campaign", "tower", "all"):
             raise QueryError("usage: " + COMMANDS["fetch"][0])
         sources = SOURCES if which == "all" else (which,)
-        if any(self.store.load_raw(f"{s}_level") is None for s in sources):
+        if any(self.store.load_raw(LEVELS[s]) is None for s in sources):
             raise QueryError("no level list yet — run sync first")
         try:
             cookies = load_cookie(self.store)
@@ -288,9 +288,9 @@ class App:
         changed = {n for n, s in results.items() if s == "changed"}
         self.refresh(synced=changed)
         for source in SOURCES:
-            if f"{source}_level" in changed:
+            if LEVELS[source] in changed:
                 stored = {int(k) for k in self.store.load_clears(source)}
-                levels = self.store.load_raw(f"{source}_level", [])
+                levels = self.store.load_raw(LEVELS[source], [])
                 n = (len(campaign_targets(levels, stored)) if source == "campaign"
                      else sum(map(len, tower_targets(levels, stored).values())))
                 self.out.print(f"{source}: {n} stages to check on next fetch {source}")

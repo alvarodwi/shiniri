@@ -77,9 +77,9 @@ def test_spread_buckets_with_gaps(tables):
 
 def test_synchro_ignores_fixed_level_ex_stages(store):
     from blablalink.queries import spread
-    levels = store.load_raw("campaign_level") + [
+    levels = store.load_raw("stage_list") + [
         {"id": 6002099, "chapter_id": 3, "chapter_mod": "Normal", "standard_battle_power": 0, "name_localkey": {"name": "EX STAGE"}}]
-    store.save_raw("campaign_level", levels)
+    store.save_raw("stage_list", levels)
     clears = store.load_clears("campaign")
     clears["6002099"] = {"cleared_at": "1794364999", "list": [{"slot": 1, "tid": 433004, "lv": 300, "combat": 1}]}
     store.save_clears("campaign", clears)

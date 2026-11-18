@@ -56,7 +56,7 @@ def test_cookie_file_roundtrip(store):
 
 
 def test_campaign_targets_skips_gaps_and_tutorial(store):
-    levels = store.load_raw("campaign_level")
+    levels = store.load_raw("stage_list")
     assert [s["id"] for s in campaign_targets(levels, {6002003})] == [7002001]
 
 
@@ -105,8 +105,8 @@ def test_auth_error_keeps_earlier_clears(store):
 def test_sync_reference(store):
     store.config_dir.mkdir(parents=True, exist_ok=True)
     (store.config_dir / "sources.json").write_text(json.dumps(
-        {"nikke": "n/n.json", "tower_level": "t/t.json", "slow": "s/s.json", "html": "h/h.json"}))
-    old_tower = store.load_raw("tower_level")
+        {"nikke": "n/n.json", "tower_list": "t/t.json", "slow": "s/s.json", "html": "h/h.json"}))
+    old_tower = store.load_raw("tower_list")
 
     def handler(req):
         if str(req.url) == cdn_url("n/n.json"):
@@ -120,8 +120,8 @@ def test_sync_reference(store):
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     res = asyncio.run(sync_reference(store, client))
     assert res["nikke"] == "changed"
-    assert res["tower_level"] == "failed: HTTPStatusError (site may have changed its URL scheme)"
+    assert res["tower_list"] == "failed: HTTPStatusError (site may have changed its URL scheme)"
     assert res["slow"] == "failed: ConnectTimeout"
     assert res["html"] == "failed: JSONDecodeError"
-    assert store.load_raw("tower_level") == old_tower
+    assert store.load_raw("tower_list") == old_tower
     assert asyncio.run(sync_reference(store, httpx.AsyncClient(transport=httpx.MockTransport(handler))))["nikke"] == "unchanged"
