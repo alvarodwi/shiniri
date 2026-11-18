@@ -38,6 +38,10 @@
 
 **Interfaces:**
 - Produces: `cdn_url(path: str) -> str` returns the full `https://` URL. Module constants are `CDN_HOST` and `PRIMES`.
+- Produces, for the later investment feature (nothing calls these yet):
+  `ROLEDATA_PATH = "roledata/{resource_id}-v2-en.json"`,
+  `CUBE_PATH = "equip/en/cube_{cube_id}.json"`,
+  `FAVORITE_PATH = "equip/en/favorite_{favorite_id}.json"`.
 
 - [ ] **Step 1: Write the failing test** (add `cdn_url` to the import in `tests/test_fetch.py`)
 
@@ -59,7 +63,14 @@ def test_cdn_url_matches_site(path, hashed):
 
 def test_cdn_url_keeps_multi_dot_extension():
     assert cdn_url("x/a.atlas.txt").endswith(".atlas.txt")
+
+
+def test_roledata_template():
+    assert cdn_url(ROLEDATA_PATH.format(resource_id=511)).endswith(
+        "oz-20/72fa6824d2d0e69adc7aace692678372.json")
 ```
+
+(Also add `ROLEDATA_PATH` to the import.)
 
 - [ ] **Step 2: Run it and check that it fails**
 
@@ -71,7 +82,7 @@ Expected: ImportError on `cdn_url`.
 - [ ] **Step 4: Run it and check that it passes**
 
 Run: `uv run pytest tests/test_fetch.py -k cdn_url -v`
-Expected: 6 passed.
+Expected: 7 passed.
 
 - [ ] **Step 5: Commit**
 

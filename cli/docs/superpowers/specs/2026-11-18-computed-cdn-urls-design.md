@@ -27,6 +27,10 @@ From `obfuscatedPath` in the site bundle (non-`spine/` branch):
   scheme. The stored copy stays untouched, as it already does.
 - A test pins today's four known path to URL pairs. The existing sync test uses paths.
 - README line for `sources.json` says "CDN paths", not "CDN URLs".
+- Path templates for the later investment feature live in `fetch.py` as constants:
+  `roledata/{resource_id}-v2-en.json`, `equip/en/cube_{cube_id}.json`,
+  `equip/en/favorite_{favorite_id}.json`. Nothing downloads them yet. When and how to download
+  roledata and equipment files is decided with that feature.
 
 ## Non-goals
 
