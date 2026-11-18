@@ -80,7 +80,9 @@ def test_top(union):
 def test_member_tendencies(union):
     r = member(union, "a")
     assert [row[0] for row in r.rows] == ["s45", "s46"]
-    assert r.rows[1] == ["s46", 5, 2, 3, "184.000.000.000 (184.0B)"]
+    assert r.columns[4:] == ["normal dmg", "hard dmg"]
+    assert r.rows[1] == ["s46", 5, 2, 3, "4.000.000.000 (4.00B)", "180.000.000.000 (180.0B)"]
+    assert r.rows[0][4] == "-"  # no normal hits in s45
     assert "bosses: HSTA 5, ZEUS 1" in r.summary
     assert "same boss twice in a day: 2" in r.summary
     assert "weakness Nikkes per squad: 0.2" in r.summary
@@ -103,8 +105,13 @@ def test_growth(union):
 def test_boss(union):
     r = boss(union, "hsta")
     assert [row[0] for row in r.rows] == ["s45", "s46"]
-    assert r.rows[0][2:] == ["360.000.000.000 (360.0B)", "120.000.000.000 (120.0B)"]
-    assert r.rows[1][2:] == ["150.000.000.000 (150.0B)", "150.000.000.000 (150.0B)"]
+    assert r.columns[2:] == ["union hard", "union normal", "me hard", "me normal"]
+    assert r.rows[0][2:] == ["360.000.000.000 (360.0B)", "-", "120.000.000.000 (120.0B)", "-"]
+    assert r.rows[1][2:] == ["150.000.000.000 (150.0B)", "-", "150.000.000.000 (150.0B)", "-"]
+    zeus = boss(union, "zeus").rows[-1]
+    assert zeus[0] == "s46" and zeus[3] == "6.000.000.000 (6.00B)" and zeus[5] == "4.000.000.000 (4.00B)"
+    union.me = None
+    assert boss(union, "zeus").rows[-1][4:] == ["-", "-"]
     with pytest.raises(QueryError, match="HSTA, PSID"):
         boss(union, "xyz")
 
