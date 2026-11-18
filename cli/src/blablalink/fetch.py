@@ -175,13 +175,14 @@ def cdn_url(path: str) -> str:
 async def sync_reference(store: Store, client: httpx.AsyncClient) -> dict[str, str]:
     sources = json.loads((store.config_dir / "sources.json").read_text(encoding="utf-8"))
     out = {}
-    for name, url in sources.items():
+    for name, path in sources.items():
         try:
-            resp = await client.get(url, headers=CDN_HEADERS, timeout=30.0)
+            resp = await client.get(cdn_url(path), headers=CDN_HEADERS, timeout=30.0)
             resp.raise_for_status()
             fresh = resp.json()
         except (httpx.HTTPError, ValueError) as e:
-            out[name] = f"failed: {type(e).__name__}"
+            hint = " (site may have changed its URL scheme)" if isinstance(e, httpx.HTTPStatusError) else ""
+            out[name] = f"failed: {type(e).__name__}{hint}"
             continue
         if fresh == store.load_raw(name):
             out[name] = "unchanged"

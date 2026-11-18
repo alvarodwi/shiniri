@@ -1,6 +1,6 @@
 {
-  "nikke": "https://sg-tools-cdn.blablalink.com/yl-57/hd-03/1bf030193826e243c2e195f951a4be00.json",
-  "historical_roster": "https://sg-tools-cdn.blablalink.com/kx-19/bc64a706accd3c7ec1f9a9f2afd8f1bc.json",
-  "campaign_level": "https://sg-tools-cdn.blablalink.com/xx-97/b32816a11f83865b09bcf95e67ca83ae.json",
-  "tower_level": "https://sg-tools-cdn.blablalink.com/mx-85/3aa6da781d62528da15bd138504c3955.json"
+  "nikke": "character/en/nikke_list_en_v2.json",
+  "historical_roster": "character/character_id_map.json",
+  "campaign_level": "stage/stage_list.json",
+  "tower_level": "tower/tower_list.json"
 }

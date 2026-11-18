@@ -99,14 +99,21 @@ def test_auth_error_keeps_earlier_clears(store):
 
 def test_sync_reference(store):
     store.config_dir.mkdir(parents=True, exist_ok=True)
-    (store.config_dir / "sources.json").write_text(json.dumps({"nikke": "https://x/n.json", "tower_level": "https://x/t.json"}))
+    (store.config_dir / "sources.json").write_text(json.dumps(
+        {"nikke": "n/n.json", "tower_level": "t/t.json", "slow": "s/s.json"}))
     old_tower = store.load_raw("tower_level")
 
     def handler(req):
-        return httpx.Response(200, json=[{"id": 1}]) if req.url.path == "/n.json" else httpx.Response(200, text="<html>")
+        if str(req.url) == cdn_url("n/n.json"):
+            return httpx.Response(200, json=[{"id": 1}])
+        if str(req.url) == cdn_url("t/t.json"):
+            return httpx.Response(404)
+        raise httpx.ConnectTimeout("x")
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     res = asyncio.run(sync_reference(store, client))
-    assert res["nikke"] == "changed" and res["tower_level"].startswith("failed")
+    assert res["nikke"] == "changed"
+    assert res["tower_level"] == "failed: HTTPStatusError (site may have changed its URL scheme)"
+    assert res["slow"] == "failed: ConnectTimeout"
     assert store.load_raw("tower_level") == old_tower
     assert asyncio.run(sync_reference(store, httpx.AsyncClient(transport=httpx.MockTransport(handler))))["nikke"] == "unchanged"
