@@ -165,3 +165,23 @@ def test_damaged_export_is_rebuilt(store):
     path.write_text("", encoding="utf-8")
     app.execute("progress")
     assert "Tribe" in out.export_text() and store.read_export(path).rows
+
+
+def test_stage_entry_and_missing_entry(store):
+    app, out = make_app(store)
+    app.execute("stage normal 2-3")
+    assert store.export_path("campaign", "stage__normal__2_3").exists()
+    app.execute("stage normal 2-9")
+    assert "try: stage normal 2" in out.export_text()
+    app.execute("stage normal x-3")
+    assert "chapter must be a number" in out.export_text()
+
+
+def test_spread_command(store):
+    app, out = make_app(store)
+    app.execute("sp")
+    assert store.export_path("all", "spread").exists() and "N/A" in out.export_text()
+    app.execute("spread 10")
+    assert store.export_path("all", "spread__10").exists()
+    app.execute("spread 0")
+    assert "step must be at least 1" in out.export_text()

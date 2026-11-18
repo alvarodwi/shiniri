@@ -74,11 +74,17 @@ def _stage_rows(clears) -> list[list]:
 STAGE_COLUMNS = ["stage", "date", "team_cp", "recommended_cp", "team"]
 
 
-def stage(tables: Tables, mode: str, chapter: int) -> Result:
+def stage(tables: Tables, mode: str, chapter: int, label: str | None = None) -> Result:
+    """A whole chapter, or one stage when label is given (e.g. "50-36")."""
     m = next((x for x in CAMPAIGN_MODES if x.lower() == mode.lower()), None)
     if not m:
         raise QueryError(f"mode must be normal or hard, not '{mode}'")
     hits = [c for c in tables.clears if c["source"] == "campaign" and c["mode"] == m and c["chapter"] == chapter]
+    if label:
+        # stage names look like "50-36 HARD BOSS"; the first word is the stage label
+        hits = [c for c in hits if c["stage_name"].split(" ")[0].lower() == label.lower()]
+        if not hits:
+            raise QueryError(f"no clear for {label} in {m} — try: stage {m.lower()} {chapter}")
     return Result("campaign", STAGE_COLUMNS, _stage_rows(hits))
 
 
@@ -129,16 +135,40 @@ def compress_synchro(daily: dict[date, int]) -> list[tuple[date, int]]:
     return out
 
 
-def synchro(tables: Tables) -> Result:
-    daily: dict[date, int] = {}
+def _synchro_points(tables: Tables):
+    """(date, level) per clear on the synchro device: a single shared level of 200 or more."""
     for c in tables.clears:
         lvl = c["synchro_level"]
-        # comma-separated levels predate the synchro device; below 200 is not synchro
-        if not c["cleared_at"] or not lvl.isdigit() or int(lvl) < 200:
+        # comma-separated levels predate the synchro device; below 200 is not synchro;
+        # EX stages play at a fixed level, so they say nothing about the account's synchro level
+        if c["stage_name"].startswith("EX"):
             continue
-        d = c["cleared_at"].date()
-        daily[d] = max(daily.get(d, 0), int(lvl))
+        if c["cleared_at"] and lvl.isdigit() and int(lvl) >= 200:
+            yield c["cleared_at"].date(), int(lvl)
+
+
+def synchro(tables: Tables) -> Result:
+    daily: dict[date, int] = {}
+    for d, lvl in _synchro_points(tables):
+        daily[d] = max(daily.get(d, 0), lvl)
     return Result("all", ["date", "synchro_level"], [[d.isoformat(), lvl] for d, lvl in compress_synchro(daily)])
+
+
+def spread(tables: Tables, step: int = 5) -> Result:
+    """Synchro levels in bands of `step`: first and last day cleared at each; N/A for skipped bands."""
+    if step < 1:
+        raise QueryError("step must be at least 1")
+    bands: dict[int, list[date]] = {}
+    for d, lvl in _synchro_points(tables):
+        bands.setdefault(lvl // step * step, []).append(d)
+    rows = []
+    if bands:
+        for lo in range(min(bands), max(bands) + 1, step):
+            days = bands.get(lo)
+            label = f"{lo}–{lo + step - 1}" if step > 1 else str(lo)
+            rows.append([label, min(days).isoformat(), max(days).isoformat(), len(days)] if days
+                        else [label, "N/A", "", 0])
+    return Result("all", ["level", "from", "to", "clears"], rows)
 
 
 def progress(tables: Tables) -> Result:
