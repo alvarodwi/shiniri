@@ -35,8 +35,8 @@ This is the proof of concept for a larger personal app. Later forms (gacha track
 
 - File: **NIKKE Progression Journal**, ID `1DMd9oaZ08m2BmfatAlpetwEchtuxUbYh0PDRUhFyaHQ`
 - Tab: `Anomaly`, one row per attempt, columns A–H:
-  `date | bossName | stage | dropped | modules | gear c… | gear manu | dropType`
-  (column F's header is truncated in our recon, probably "gear class". Read the real header.)
+  `date | bossName | stage | dropped | modules | gearClass | gearManu | dropType`
+  (Columns F and G were renamed from `gear class` and `gear manu` on 2026-11-19.)
 - Column I holds an optional per-row note for unusual events (rule changes, events, big updates). Its header in I1 is empty. Columns J–N hold unrelated notes, and the app must never touch them.
 - Gear columns stay empty for Kraken and for failed drops.
 - Dates are ISO `YYYY-MM-DD` and must land as real date values, not text. Booleans must land as real booleans.
@@ -73,7 +73,7 @@ This is the proof of concept for a larger personal app. Later forms (gacha track
 - **Hosting:** Netlify from a private GitHub repo, deploying from `main` (same as ntrsv). Authorized JS origins: the Netlify domain and `http://localhost:5173`.
 - **Writes (Claude's call, after review):** no `values.append`. Append guesses where the table ends, and `INSERT_ROWS` would push down the I–N notes and break fixed row references. Instead the app computes the target rows itself:
   1. Read `Anomaly!A:A`. The target start row is n = last non-empty row + 1.
-  2. Read `Anomaly!A{n}:I{n+k-1}`, where k is the number of runs. Abort if any cell holds anything. The last row changes daily because this is live data, so never hardcode a row number. (Verified 2026-11-17: column D has no checkboxes below the data. Real headers: `date,bossName,stage,dropped,modules,gear class,gear manu,dropType`. Class spelling is `Supporter`. Column I holds occasional per-row notes; the app writes it only from a run's note field.)
+  2. Read `Anomaly!A{n}:I{n+k-1}`, where k is the number of runs. Abort if any cell holds anything. The last row changes daily because this is live data, so never hardcode a row number. (Verified 2026-11-17: column D has no checkboxes below the data. Real headers: `date,bossName,stage,dropped,modules,gearClass,gearManu,dropType`. Class spelling is `Supporter`. Column I holds occasional per-row notes; the app writes it only from a run's note field.)
   3. Write with one `values.update` to exactly that range, `valueInputOption=USER_ENTERED`. One call means the save is all-or-nothing.
      This never shifts, overwrites or inserts rows. Rows are never inserted, so I–N stay put.
 - **Date = game day (owner's decision).** The game resets at 03:00 local time (WIB, UTC+7), which is 20:00 UTC. The default date is the UTC date of `now + 4h`, which doesn't depend on the device's timezone. The duplicate-day warning uses that same date. The date stays editable in the header.
