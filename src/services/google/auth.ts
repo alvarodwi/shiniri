@@ -64,7 +64,10 @@ function getClient(): google.accounts.oauth2.TokenClient {
   return client
 }
 
-const isFresh = (c: Cached | null): c is Cached => !!c && c.expiresAt - 60_000 > Date.now()
+// Refresh 5 min early: Save fetches a token first thing in the tap, and the token must then outlive
+// the duplicate-confirm dialog, since a refresh after the tap can have its popup blocked.
+const isFresh = (c: Cached | null): c is Cached => !!c && c.expiresAt - 5 * 60_000 > Date.now()
+const SIGN_IN_TIMEOUT_MS = 2 * 60_000
 
 export const hasFreshToken = (): boolean => isFresh(cached)
 
@@ -72,10 +75,16 @@ export const getToken: TokenGetter = async (opts) => {
   if (!opts?.forceRefresh && isFresh(cached)) return cached.token
   pending ??= (async () => {
     await loadGis()
+    let timer: ReturnType<typeof setTimeout> | undefined
     return new Promise<string>((resolve, reject) => {
       settle = { resolve, reject }
+      // A popup left open fires neither callback; give up so Save doesn't hang.
+      timer = setTimeout(
+        () => reject(new Error('Sign-in timed out. Try again.')),
+        SIGN_IN_TIMEOUT_MS,
+      )
       getClient().requestAccessToken({ prompt: '' })
-    })
+    }).finally(() => clearTimeout(timer))
   })().finally(() => {
     pending = null
     settle = null

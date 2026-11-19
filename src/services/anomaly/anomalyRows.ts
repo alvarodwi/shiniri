@@ -22,9 +22,12 @@ export function toRow(date: string, run: AnomalyRun): Cell[] {
     gear?.classType ?? '',
     gear?.manufacturer ?? '',
     DROP_TYPE[run.boss],
-    run.note.trim(),
+    asText(run.note.trim()),
   ]
 }
+
+// USER_ENTERED parses "=1+1", "-5" or "2026-11-19"; a leading apostrophe keeps it as typed text.
+const asText = (s: string): string => (s ? `'${s}` : '')
 
 export function lastRunDefaults(row: string[] | undefined): RunDefaults {
   const boss = row?.[1]

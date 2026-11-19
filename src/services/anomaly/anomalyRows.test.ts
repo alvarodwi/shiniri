@@ -51,8 +51,10 @@ describe('toRow', () => {
     ])
   })
 
-  it('trims the note into column I', () => {
-    expect(toRow('d', { ...kraken, note: '  double drop day  ' })[8]).toBe('double drop day')
+  it('trims the note into column I as plain text', () => {
+    expect(toRow('d', { ...kraken, note: '  double drop day  ' })[8]).toBe("'double drop day")
+    expect(toRow('d', { ...kraken, note: '=SUM(A:A)' })[8]).toBe("'=SUM(A:A)")
+    expect(toRow('d', { ...kraken, note: '   ' })[8]).toBe('')
   })
 
   it('drops stale gear on a failed run', () => {

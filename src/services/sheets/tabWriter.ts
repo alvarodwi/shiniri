@@ -74,5 +74,7 @@ export async function writeRowsAtEnd(
   const existing = await api.getValues(tab.spreadsheetId, target)
   if (existing.some((r) => r.some((c) => String(c).trim()))) throw new TargetNotEmptyError(target)
 
+  // shortcut: under a second passes between the empty check and this PUT, so a save from another
+  // device in that gap would be overwritten. Fine for one person; use values.append if that changes.
   return api.updateValues(tab.spreadsheetId, target, rows)
 }
