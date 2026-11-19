@@ -65,5 +65,6 @@ function cellToIsoDate(value: string): string {
   return new Date(SHEETS_EPOCH + Math.floor(Number(v)) * 86_400_000).toISOString().slice(0, 10)
 }
 
-export const countRowsForDate = (colA: string[], date: string): number =>
-  colA.filter((v) => cellToIsoDate(v) === date).length
+// 1-based sheet row numbers whose column A is the given date, in any order in the sheet.
+export const rowNumbersForDate = (colA: string[], date: string): number[] =>
+  colA.flatMap((v, i) => (cellToIsoDate(v) === date ? [i + 1] : []))

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   applyToRun,
-  countRowsForDate,
+  rowNumbersForDate,
   isRunComplete,
   lastRunDefaults,
   newRun,
@@ -128,15 +128,17 @@ describe('applyToRun', () => {
   })
 })
 
-describe('countRowsForDate', () => {
-  it('counts matching dates anywhere in column A', () => {
+describe('rowNumbersForDate', () => {
+  it('finds matching dates anywhere in column A', () => {
     expect(
-      countRowsForDate(['date', '2026-11-17', '', '2026-11-17', '2026-11-16'], '2026-11-17'),
-    ).toBe(2)
+      rowNumbersForDate(['date', '2026-11-17', '', '2026-11-17', '2026-11-16'], '2026-11-17'),
+    ).toEqual([2, 4])
   })
 
   it('matches date serials from unformatted reads', () => {
-    expect(countRowsForDate(['date', '46343', '46342', '2026-11-17'], '2026-11-17')).toBe(2)
+    expect(rowNumbersForDate(['date', '46343', '46342', '2026-11-17'], '2026-11-17')).toEqual([
+      2, 4,
+    ])
   })
 })
 

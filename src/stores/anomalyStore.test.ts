@@ -43,56 +43,67 @@ function fillModules(store: ReturnType<typeof useAnomalyStore>) {
 beforeEach(() => setActivePinia(createPinia()))
 
 describe('anomalyStore', () => {
-  it('defaults every run to the last row and counts the date', async () => {
+  it('defaults every run to the last row', async () => {
     const { store } = await loaded()
     expect(store.runs).toHaveLength(10)
     expect(store.runs.every((r) => r.boss === 'Ultra' && r.stage === 7)).toBe(true)
-    expect(store.existingForDate).toBe(2)
     expect(store.runCount).toBe(5)
   })
 
+  it('locks a day that already has rows and reads them', async () => {
+    const colA = ['date', DATE, '2026-11-16', DATE]
+    const api = fakeApi(colA, ultraRow)
+    const kraken = [DATE, 'Kraken', '9', 'TRUE', '2']
+    api.values["'Anomaly'!A2:I4"] = [kraken, ['2026-11-16', 'Harvester'], ultraRow]
+    const store = useAnomalyStore()
+    store.date = DATE
+    await store.load(api)
+    expect(store.locked).toBe(true)
+    expect(store.loggedRows).toEqual([kraken, ultraRow])
+    fillModules(store)
+    expect(store.canSave).toBe(false)
+  })
+
+  it('unlocks when the date changes to an empty day', async () => {
+    const { api, store } = await loaded()
+    store.date = '2026-11-18'
+    await store.readDay(api)
+    expect(store.locked).toBe(false)
+  })
+
   it('cannot save until every active run is complete', async () => {
-    const { store } = await loaded()
+    const { store } = await loaded(['date', '2026-11-16'])
     expect(store.canSave).toBe(false)
     fillModules(store)
     expect(store.canSave).toBe(true)
   })
 
-  it('saves without confirming when the date is empty', async () => {
+  it('saves when the date is empty', async () => {
     const { api, store } = await loaded(['date', '2026-11-16'])
     fillModules(store)
-    const confirm = vi.fn(() => true)
-    await store.save(api, confirm)
-    expect(confirm).not.toHaveBeenCalled()
+    await store.save(api)
     expect(api.updateValues).toHaveBeenCalledOnce()
     expect(api.updateValues.mock.calls[0][2]).toHaveLength(5)
     expect(store.status).toBe('saved')
     expect(store.lastSaved).toEqual({ updatedRange: "'Anomaly'!A3:I7", count: 5 })
   })
 
-  it('re-reads column A at save time for the duplicate check', async () => {
+  it('refuses to save when the day was logged elsewhere after loading', async () => {
     const { api, store } = await loaded(['date', '2026-11-16'])
     fillModules(store)
     api.values[COL_A] = [['date'], ...Array.from({ length: 5 }, () => [DATE])]
-    const confirm = vi.fn(() => true)
-    await store.save(api, confirm)
-    expect(confirm).toHaveBeenCalledWith(5, 10)
-  })
-
-  it('does not write when the duplicate confirm is declined', async () => {
-    const { api, store } = await loaded()
-    fillModules(store)
-    await store.save(api, () => false)
+    await store.save(api)
     expect(api.updateValues).not.toHaveBeenCalled()
-    expect(store.runs[0].modules).toBe(1)
-    expect(store.status).toBe('idle')
+    expect(store.locked).toBe(true)
+    expect(store.status).toBe('error')
+    expect(store.error).toBe(`Already logged for ${DATE}.`)
   })
 
   it('keeps the form when the write fails', async () => {
     const { api, store } = await loaded(['date'])
     fillModules(store)
     api.updateValues.mockRejectedValueOnce(new Error('Sheets API 500: boom'))
-    await store.save(api, () => true)
+    await store.save(api)
     expect(store.status).toBe('error')
     expect(store.error).toContain('boom')
     expect(store.runs.slice(0, 5).every((r) => r.modules === 1)).toBe(true)
@@ -102,7 +113,7 @@ describe('anomalyStore', () => {
     const { api, store } = await loaded(['date'])
     store.runCount = 3
     fillModules(store)
-    await store.save(api, () => true)
+    await store.save(api)
     expect(api.updateValues.mock.calls[0][2]).toHaveLength(3)
   })
 
@@ -112,7 +123,7 @@ describe('anomalyStore', () => {
     expect(store.dailyLimit).toBe(10)
     expect(store.runCount).toBe(10)
     fillModules(store)
-    await store.save(api, () => true)
+    await store.save(api)
     expect(api.updateValues.mock.calls[0][2]).toHaveLength(10)
     store.setDoubleDay(false)
     expect(store.runCount).toBe(5)
@@ -159,7 +170,7 @@ describe('anomalyStore', () => {
       })
       return { updatedRange: range }
     })
-    await store.save(api, () => true)
+    await store.save(api)
     expect(store.lastSaved?.count).toBe(5)
     expect(store.runs.every((r) => r.modules === 0)).toBe(true)
     expect(store.runs[0]).toMatchObject({ boss: 'Ultra', stage: 7 })

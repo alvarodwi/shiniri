@@ -3,10 +3,10 @@ import { defineStore } from 'pinia'
 import { ANOMALY_TAB } from '@/config/sheets'
 import {
   applyToRun,
-  countRowsForDate,
   isRunComplete,
   lastRunDefaults,
   newRun,
+  rowNumbersForDate,
   toRow,
 } from '@/services/anomaly/anomalyRows'
 import type { SheetsApi } from '@/services/google/sheetsApi'
@@ -18,8 +18,6 @@ import { gameDay } from '@/utils/gameDay'
 const MAX_RUNS = 10
 const NORMAL_LIMIT = 5
 
-export type ConfirmDuplicate = (existing: number, after: number) => boolean | Promise<boolean>
-
 export const useAnomalyStore = defineStore('anomaly', {
   state: () => ({
     date: gameDay(),
@@ -29,15 +27,18 @@ export const useAnomalyStore = defineStore('anomaly', {
     touched: [] as boolean[],
     status: 'idle' as 'idle' | 'loading' | 'saving' | 'saved' | 'error',
     error: null as string | null,
-    existingForDate: 0,
+    // Rows (A-I) already in the sheet for `date`. Any row locks the day: one save per game day.
+    loggedRows: [] as string[][],
     lastSaved: null as { updatedRange: string; count: number } | null,
   }),
 
   getters: {
     dailyLimit: (state) => (state.doubleDay ? MAX_RUNS : NORMAL_LIMIT),
     activeRuns: (state) => state.runs.slice(0, state.runCount),
+    locked: (state) => state.loggedRows.length > 0,
     canSave(): boolean {
       return (
+        !this.locked &&
         this.status !== 'saving' &&
         this.status !== 'loading' &&
         this.activeRuns.length > 0 &&
@@ -55,7 +56,7 @@ export const useAnomalyStore = defineStore('anomaly', {
         const lastDataRow = nextEmptyRow(colA) - 1
         const [lastRow] =
           lastDataRow > 1 ? await readRows(api, ANOMALY_TAB, lastDataRow, lastDataRow) : []
-        this.existingForDate = countRowsForDate(colA, this.date)
+        await this.readDay(api, colA)
         this.reset(lastRunDefaults(lastRow))
         this.status = 'idle'
         return true
@@ -72,8 +73,14 @@ export const useAnomalyStore = defineStore('anomaly', {
       this.runCount = this.dailyLimit
     },
 
-    async refreshCount(api: SheetsApi = sheetsApi) {
-      this.existingForDate = countRowsForDate(await readColumnA(api, ANOMALY_TAB), this.date)
+    async readDay(api: SheetsApi = sheetsApi, colA?: string[]) {
+      const date = this.date
+      const nums = rowNumbersForDate(colA ?? (await readColumnA(api, ANOMALY_TAB)), date)
+      const rows = nums.length
+        ? await readRows(api, ANOMALY_TAB, nums[0], nums[nums.length - 1])
+        : []
+      // The date may have changed while reading; a stale answer must not lock the new date.
+      if (date === this.date) this.loggedRows = nums.map((n) => rows[n - nums[0]] ?? [])
     },
 
     setBossOrStage(index: number, patch: Partial<RunDefaults>) {
@@ -96,25 +103,20 @@ export const useAnomalyStore = defineStore('anomaly', {
       this.runCount = this.dailyLimit
     },
 
-    async save(api: SheetsApi = sheetsApi, confirm: ConfirmDuplicate) {
+    async save(api: SheetsApi = sheetsApi) {
       if (!this.canSave) return
       this.status = 'saving'
       this.error = null
       try {
         // Re-read at save time: another device may have logged since this page loaded.
-        await this.refreshCount(api)
-        const existing = this.existingForDate
-        if (existing > 0 && !(await confirm(existing, existing + this.runCount))) {
-          this.status = 'idle'
-          return
-        }
+        await this.readDay(api)
+        if (this.locked) throw new Error(`Already logged for ${this.date}.`)
         const rows = this.activeRuns.map((run) => toRow(this.date, run))
         const { updatedRange } = await writeRowsAtEnd(api, ANOMALY_TAB, rows)
         // Clear the form before reloading, so a failed reload can't leave saved runs to resave.
         const last = this.activeRuns[this.activeRuns.length - 1]
         this.lastSaved = { updatedRange, count: rows.length }
         this.reset({ boss: last.boss, stage: last.stage })
-        this.existingForDate += rows.length
         if (await this.load(api)) this.status = 'saved'
       } catch (e) {
         this.status = 'error'

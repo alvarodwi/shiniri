@@ -65,7 +65,7 @@ function getClient(): google.accounts.oauth2.TokenClient {
 }
 
 // Refresh 5 min early: Save fetches a token first thing in the tap, and the token must then outlive
-// the duplicate-confirm dialog, since a refresh after the tap can have its popup blocked.
+// the save-time reads, since a refresh after the tap can have its popup blocked.
 const isFresh = (c: Cached | null): c is Cached => !!c && c.expiresAt - 5 * 60_000 > Date.now()
 const SIGN_IN_TIMEOUT_MS = 2 * 60_000
 

@@ -76,13 +76,13 @@ This is the proof of concept for a larger personal app. Later forms (gacha track
   2. Read `Anomaly!A{n}:I{n+k-1}`, where k is the number of runs. Abort if any cell holds anything. The last row changes daily because this is live data, so never hardcode a row number. (Verified 2026-11-17: column D has no checkboxes below the data. Real headers: `date,bossName,stage,dropped,modules,gearClass,gearManu,dropType`. Class spelling is `Supporter`. Column I holds occasional per-row notes; the app writes it only from a run's note field.)
   3. Write with one `values.update` to exactly that range, `valueInputOption=USER_ENTERED`. One call means the save is all-or-nothing.
      This never shifts, overwrites or inserts rows. Rows are never inserted, so I–N stay put.
-- **Date = game day (owner's decision).** The game resets at 03:00 local time (WIB, UTC+7), which is 20:00 UTC. The default date is the UTC date of `now + 4h`, which doesn't depend on the device's timezone. The duplicate-day warning uses that same date. The date stays editable in the header.
-- **Reads:** the header row, `Anomaly!A:A` (about 1k date cells, cheap), and the last few full rows for defaults. The duplicate-day count matches dates across all of column A, so it doesn't rely on rows being in date order.
+- **Date = game day (owner's decision).** The game resets at 03:00 local time (WIB, UTC+7), which is 20:00 UTC. The default date is the UTC date of `now + 4h`, which doesn't depend on the device's timezone. The once-a-day lock uses that same date. The date stays editable in the header.
+- **Reads:** the header row, `Anomaly!A:A` (about 1k date cells, cheap), and the last few full rows for defaults. The once-a-day lock matches dates across all of column A, so it doesn't rely on rows being in date order.
 
 ## Safety guards (required)
 
 1. **Header check before every write.** Read `Anomaly!A1:I1` and compare it to the expected headers. On mismatch, refuse to write and show both versions.
-2. **Duplicate-day warning.** If rows already exist for the chosen date, show how many and require an explicit confirmation. 5 is the normal maximum, so warn louder if the save would exceed the daily limit (5, or 10 on a double day) for that date.
+2. **Once-a-day lock** (replaces the duplicate-day warning, see `2026-11-19-anomaly-once-a-day-design.md`). If rows already exist for the chosen date, the form is hidden and those rows are shown read-only. Save re-checks and refuses if the day was logged meanwhile. Mistakes are fixed by hand in the sheet.
 3. **Double-submit protection.** Disable Save while a request is in flight. After success, clear the form and show the appended range returned by the API.
 4. **Failure is visible.** On any API error, keep the form contents and show the error. Never retry automatically.
 
