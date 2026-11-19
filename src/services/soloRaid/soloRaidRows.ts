@@ -1,8 +1,7 @@
+import { SOLO_RAID_MAX_PLACE } from '@/config/limits'
 import { asText } from '@/services/anomaly/anomalyRows'
 import type { Cell } from '@/types/sheet'
 import type { RankMode, RaidEntry } from '@/types/soloRaid'
-
-const MAX_PLACE = 500 // only the top 500 get a placement instead of a top-%
 
 // Last filled season in column A (row 1 is the header) + 1. Null when it isn't a number,
 // so the owner types the season instead of the app guessing.
@@ -45,7 +44,7 @@ export function rankText(mode: RankMode, s: string): string | null {
   }
   if (!/^\d+$/.test(v)) return null
   const n = Number(v)
-  return n >= 1 && n <= MAX_PLACE ? `'#${n}` : null
+  return n >= 1 && n <= SOLO_RAID_MAX_PLACE ? `'#${n}` : null
 }
 
 // Columns A-G of SoloRaid, or null while any required part is missing or invalid.

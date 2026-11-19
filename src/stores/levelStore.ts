@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 
+import { LEVEL_STEP } from '@/config/limits'
 import { LEVEL_TAB } from '@/config/sheets'
 import { cellToIsoDate } from '@/services/anomaly/anomalyRows'
 import type { SheetsApi } from '@/services/google/sheetsApi'
@@ -61,7 +62,7 @@ export const useLevelStore = defineStore('level', {
         const { level, date } = await readLast(api)
         this.last = level
         this.lastDate = date
-        this.target = level === null ? null : level + 5
+        this.target = level === null ? null : level + LEVEL_STEP
         this.status = 'idle'
         return true
       } catch (e) {

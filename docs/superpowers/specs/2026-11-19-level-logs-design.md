@@ -72,14 +72,14 @@ uniform.
   logging), level reached (number, step 5, default last + 5), and note. A line above Save shows what
   it will write, for example "Last logged: 210. Writes 3 rows: 215, 220, 225". Save is disabled
   while the target is invalid, the date is empty, or the date is before the last row's
-  `achievedAt` (that would make its `daysElapsed` negative). Jumps over 4 steps preview as
-  "215 … 400". Phone-first; no sheet link on this page (Gear has none either).
+  `achievedAt` (that would make its `daysElapsed` negative). Phone-first; no sheet link on this page (Gear has none either).
 
 ## Claude's calls (check these)
 
 - The note goes on the last written row only. Intermediate step rows get an empty note.
-- A jump is capped at 100 steps (500 levels), so a typo like 2250000 can't freeze the page. The
-  "Writes N rows" preview guards against smaller typos.
+- A jump is capped at 20 levels (4 steps), set in `src/config/limits.ts` (changed from 100 steps on
+  2026-11-19: the game's milestones are 20 levels apart). The cap also stops a typo like 2250000
+  from freezing the page.
 - If the last filled cell in column A isn't a number, the page refuses to load: the next rows
   would land below it and the formula above them would subtract against it.
 - The date defaults to the game day (reset at 03:00 WIB), matching Anomaly.

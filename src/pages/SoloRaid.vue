@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 
+import { SOLO_RAID_MAX_PLACE } from '@/config/limits'
 import { parseDamage } from '@/services/soloRaid/soloRaidRows'
 import { useSoloRaidStore } from '@/stores/soloRaidStore'
 import { WEAKNESSES } from '@/types/soloRaid'
@@ -12,7 +13,7 @@ onMounted(() => store.load())
 
 const MODES: { mode: RankMode; label: string; hint: string }[] = [
   { mode: 'percent', label: '%', hint: 'Top %, two decimals' },
-  { mode: 'place', label: '#', hint: 'Placement 1-500' },
+  { mode: 'place', label: '#', hint: `Placement 1-${SOLO_RAID_MAX_PLACE}` },
 ]
 
 const rankHint = computed(() => MODES.find((m) => m.mode === store.entry.rankMode)!.hint)

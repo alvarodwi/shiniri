@@ -53,7 +53,7 @@ describe('anomalyStore', () => {
     const { store } = await loaded()
     expect(store.runs).toHaveLength(10)
     expect(store.runs.every((r) => r.boss === 'Ultra' && r.stage === 7)).toBe(true)
-    expect(store.runCount).toBe(5)
+    expect(store.activeRuns).toHaveLength(5)
   })
 
   it('locks a day that already has rows and reads them', async () => {
@@ -156,24 +156,29 @@ describe('anomalyStore', () => {
     expect(store.runs.slice(0, 5).every((r) => r.modules === 1)).toBe(true)
   })
 
-  it('writes only the active run count', async () => {
+  it('writes exactly 5 runs after a double day is turned back off', async () => {
     const { api, store } = await loaded(['date'])
-    store.runCount = 3
+    store.setDoubleDay(true)
+    store.setRun(6, { modules: 2 })
+    store.setDoubleDay(false)
+    expect(store.activeRuns).toHaveLength(5)
     fillModules(store)
     await store.save(api)
-    expect(api.batchUpdateValues.mock.calls[0][1][0].rows).toHaveLength(3)
+    const rows = api.batchUpdateValues.mock.calls[0][1][0].rows
+    expect(rows).toHaveLength(5)
+    expect(rows.map((r) => r[4])).not.toContain(2) // run 7's edit stays hidden
   })
 
   it('switches the daily limit on double days', async () => {
     const { api, store } = await loaded(['date'])
     store.setDoubleDay(true)
     expect(store.dailyLimit).toBe(10)
-    expect(store.runCount).toBe(10)
+    expect(store.activeRuns).toHaveLength(10)
     fillModules(store)
     await store.save(api)
     expect(api.batchUpdateValues.mock.calls[0][1][0].rows).toHaveLength(10)
     store.setDoubleDay(false)
-    expect(store.runCount).toBe(5)
+    expect(store.activeRuns).toHaveLength(5)
   })
 
   it('carries boss changes forward to untouched runs', async () => {
@@ -181,16 +186,6 @@ describe('anomalyStore', () => {
     store.setBossOrStage(1, { boss: 'Kraken' })
     store.setBossOrStage(0, { boss: 'Harvester' })
     expect(store.runs.slice(0, 3).map((r) => r.boss)).toEqual(['Harvester', 'Kraken', 'Harvester'])
-  })
-
-  it('clamps the run count to 1..dailyLimit', async () => {
-    const { store } = await loaded()
-    store.setRunCount(8)
-    expect(store.runCount).toBe(5)
-    store.setRunCount(0)
-    expect(store.runCount).toBe(1)
-    store.setRunCount(Number.NaN)
-    expect(store.runCount).toBe(1)
   })
 
   it('does not carry boss changes into runs already filled in', async () => {

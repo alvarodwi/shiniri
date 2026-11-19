@@ -59,9 +59,9 @@ describe('rankText', () => {
     for (const s of ['0', '100.01', '', 'abc']) expect(rankText('percent', s)).toBeNull()
   })
 
-  it('writes a placement as #N text, 1 to 500', () => {
-    expect(rankText('place', '123')).toBe("'#123")
-    for (const s of ['8.5', '0', '501', '']) expect(rankText('place', s)).toBeNull()
+  it('writes a placement as #N text, 1 to 100', () => {
+    expect(rankText('place', '100')).toBe("'#100")
+    for (const s of ['8.5', '0', '101', '']) expect(rankText('place', s)).toBeNull()
   })
 })
 

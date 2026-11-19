@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import GearCard from '@/components/gear/GearCard.vue'
+import { GEAR_MAX_ITEMS } from '@/config/limits'
 import { useGearStore } from '@/stores/gearStore'
 import { GEAR_SOURCES } from '@/types/gear'
 import type { GearSource } from '@/types/gear'
@@ -44,7 +45,7 @@ function setCountFrom(input: HTMLInputElement) {
           :value="store.count"
           type="number"
           min="1"
-          max="100"
+          :max="GEAR_MAX_ITEMS"
           class="focus rule-ink paper min-h-11 w-16 border px-2 text-center"
           @change="setCountFrom($event.target as HTMLInputElement)"
         />

@@ -13,12 +13,6 @@ watch(
   () => store.date,
   () => store.readDay().catch((e) => (store.error = (e as Error).message)),
 )
-
-// Writing the clamped value back keeps the box in sync even when the store value didn't change.
-function setCountFrom(input: HTMLInputElement) {
-  store.setRunCount(Number(input.value))
-  input.value = String(store.runCount)
-}
 </script>
 
 <template>
@@ -39,17 +33,6 @@ function setCountFrom(input: HTMLInputElement) {
           @change="store.setDoubleDay(($event.target as HTMLInputElement).checked)"
         />
         Double day
-      </label>
-      <label v-if="!store.locked" class="flex min-h-11 items-center gap-2 text-sm">
-        Runs
-        <input
-          :value="store.runCount"
-          type="number"
-          min="1"
-          :max="store.dailyLimit"
-          class="focus rule-ink paper min-h-11 w-14 border px-2 text-center"
-          @change="setCountFrom($event.target as HTMLInputElement)"
-        />
       </label>
     </div>
 
@@ -104,11 +87,7 @@ function setCountFrom(input: HTMLInputElement) {
         :disabled="!store.canSave"
         @click="store.save()"
       >
-        {{
-          store.status === 'saving'
-            ? 'Saving…'
-            : `Save ${store.runCount} ${store.runCount === 1 ? 'run' : 'runs'}`
-        }}
+        {{ store.status === 'saving' ? 'Saving…' : `Save ${store.dailyLimit} runs` }}
       </button>
     </div>
   </main>

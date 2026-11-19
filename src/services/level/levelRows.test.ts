@@ -45,9 +45,10 @@ describe('levelSteps', () => {
     expect(levelSteps(210, 217.5)).toEqual([])
   })
 
-  it('refuses jumps over 100 steps without building them', () => {
-    expect(levelSteps(210, 710)).toHaveLength(100)
-    expect(levelSteps(210, 715)).toEqual([])
+  it('refuses jumps over 20 levels without building them', () => {
+    expect(levelSteps(780, 800)).toEqual([785, 790, 795, 800])
+    expect(levelSteps(780, 805)).toEqual([])
+    expect(levelSteps(210, 710)).toEqual([])
     expect(levelSteps(210, 225_000_000)).toEqual([])
   })
 })

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 
+import { LEVEL_MAX_JUMP, LEVEL_STEP } from '@/config/limits'
 import { useLevelStore } from '@/stores/levelStore'
 
 const store = useLevelStore()
@@ -14,11 +15,9 @@ const preview = computed(() => {
   const steps = store.steps
   if (!steps.length)
     return store.last === null
-      ? `${last} Enter a multiple of 5.`
-      : `${last} Enter a multiple of 5 above ${store.last}, at most 100 steps.`
-  // A long jump would wrap over several lines on a phone, so it shows only its ends.
-  const list = steps.length > 4 ? `${steps[0]} … ${steps[steps.length - 1]}` : steps.join(', ')
-  return `${last} Writes ${rows(steps.length)}: ${list}`
+      ? `${last} Enter a multiple of ${LEVEL_STEP}.`
+      : `${last} Enter a multiple of ${LEVEL_STEP} above ${store.last}, at most ${LEVEL_MAX_JUMP} levels.`
+  return `${last} Writes ${rows(steps.length)}: ${steps.join(', ')}`
 })
 
 // An emptied box reads as NaN; null keeps Save disabled without a misleading number.
@@ -47,8 +46,8 @@ function setTarget(input: HTMLInputElement) {
           :value="store.target ?? ''"
           type="number"
           inputmode="numeric"
-          step="5"
-          min="5"
+          :step="LEVEL_STEP"
+          :min="LEVEL_STEP"
           class="focus rule-ink paper min-h-11 w-32 border px-2"
           @input="setTarget($event.target as HTMLInputElement)"
         />

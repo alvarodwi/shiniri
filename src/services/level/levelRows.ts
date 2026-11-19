@@ -1,9 +1,6 @@
+import { LEVEL_MAX_JUMP, LEVEL_STEP } from '@/config/limits'
 import { asText } from '@/services/anomaly/anomalyRows'
 import type { RowCell } from '@/services/sheets/tabWriter'
-
-const STEP = 5
-// A typo like 2250000 would otherwise build millions of steps on every keystroke.
-const MAX_STEPS = 100
 
 // The last filled cell of column A (row 1 is the header) and its sheet row. It must be a level:
 // the writer appends below it, so the formula above the new rows would subtract against it.
@@ -16,14 +13,15 @@ export function lastLevel(colA: string[]): { level: number; row: number } | null
   return { level: Number(v), row: i + 1 }
 }
 
-// Every multiple of 5 above `last` up to `target`, or [] when `target` can't be logged.
+// Every multiple of LEVEL_STEP above `last` up to `target`, or [] when `target` can't be logged.
+// The jump cap also keeps a typo like 2250000 from building millions of steps on every keystroke.
 export function levelSteps(last: number | null, target: number): number[] {
-  if (!Number.isInteger(target) || target <= 0 || target % STEP) return []
+  if (!Number.isInteger(target) || target <= 0 || target % LEVEL_STEP) return []
   if (last === null) return [target]
-  const first = (Math.floor(last / STEP) + 1) * STEP
-  const count = (target - first) / STEP + 1
-  if (count < 1 || count > MAX_STEPS) return []
-  return Array.from({ length: count }, (_, i) => first + i * STEP)
+  const first = (Math.floor(last / LEVEL_STEP) + 1) * LEVEL_STEP
+  const count = (target - first) / LEVEL_STEP + 1
+  if (count < 1 || count * LEVEL_STEP > LEVEL_MAX_JUMP) return []
+  return Array.from({ length: count }, (_, i) => first + i * LEVEL_STEP)
 }
 
 // Days spent at row n's level before the next one; blank until the next row exists.

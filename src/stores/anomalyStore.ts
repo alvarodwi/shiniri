@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 
+import { ANOMALY_RUNS } from '@/config/limits'
 import { ANOMALY_TAB, T9MANU_TAB } from '@/config/sheets'
 import {
   anomalyGearRow,
@@ -17,14 +18,10 @@ import { sheetsApi } from '@/stores/authStore'
 import type { AnomalyRun, RunDefaults } from '@/types/anomaly'
 import { gameDay } from '@/utils/gameDay'
 
-const MAX_RUNS = 10
-const NORMAL_LIMIT = 5
-
 export const useAnomalyStore = defineStore('anomaly', {
   state: () => ({
     date: gameDay(),
     doubleDay: false,
-    runCount: NORMAL_LIMIT,
     runs: [] as AnomalyRun[],
     touched: [] as boolean[],
     status: 'idle' as 'idle' | 'loading' | 'saving' | 'saved' | 'error',
@@ -35,8 +32,11 @@ export const useAnomalyStore = defineStore('anomaly', {
   }),
 
   getters: {
-    dailyLimit: (state) => (state.doubleDay ? MAX_RUNS : NORMAL_LIMIT),
-    activeRuns: (state) => state.runs.slice(0, state.runCount),
+    dailyLimit: (state) => (state.doubleDay ? ANOMALY_RUNS.double : ANOMALY_RUNS.normal),
+    // Every save logs the full daily limit.
+    activeRuns(): AnomalyRun[] {
+      return this.runs.slice(0, this.dailyLimit)
+    },
     locked: (state) => state.loggedRows.length > 0,
     canSave(): boolean {
       return (
@@ -70,9 +70,8 @@ export const useAnomalyStore = defineStore('anomaly', {
     },
 
     reset(defaults: RunDefaults) {
-      this.runs = Array.from({ length: MAX_RUNS }, () => newRun(defaults))
-      this.touched = Array(MAX_RUNS).fill(false)
-      this.runCount = this.dailyLimit
+      this.runs = Array.from({ length: ANOMALY_RUNS.double }, () => newRun(defaults))
+      this.touched = Array(ANOMALY_RUNS.double).fill(false)
     },
 
     async readDay(api: SheetsApi = sheetsApi, colA?: string[]) {
@@ -96,13 +95,8 @@ export const useAnomalyStore = defineStore('anomaly', {
       this.touched[index] = true
     },
 
-    setRunCount(n: number) {
-      this.runCount = Math.min(this.dailyLimit, Math.max(1, Math.trunc(n) || 1))
-    },
-
     setDoubleDay(on: boolean) {
       this.doubleDay = on
-      this.runCount = this.dailyLimit
     },
 
     async save(api: SheetsApi = sheetsApi) {

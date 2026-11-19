@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 
+import { GEAR_MAX_ITEMS } from '@/config/limits'
 import { FURNACE_TAB, T9MANU_TAB } from '@/config/sheets'
 import { isCardComplete, newCard, rowsFor } from '@/services/gear/gearRows'
 import type { SheetsApi } from '@/services/google/sheetsApi'
@@ -8,8 +9,6 @@ import type { WriteTarget } from '@/services/sheets/tabWriter'
 import { sheetsApi } from '@/stores/authStore'
 import type { GearCard, GearSource } from '@/types/gear'
 import { gameDay } from '@/utils/gameDay'
-
-const MAX_COUNT = 100
 
 export const useGearStore = defineStore('gear', {
   state: () => ({
@@ -34,7 +33,7 @@ export const useGearStore = defineStore('gear', {
   actions: {
     // Dropped cards are discarded, so raising the count again never brings back hidden picks.
     setCount(n: number) {
-      this.count = Math.min(MAX_COUNT, Math.max(1, Math.trunc(n) || 1))
+      this.count = Math.min(GEAR_MAX_ITEMS, Math.max(1, Math.trunc(n) || 1))
       this.cards = this.cards.slice(0, this.count)
       while (this.cards.length < this.count) this.cards.push(newCard())
     },

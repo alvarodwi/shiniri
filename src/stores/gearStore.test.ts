@@ -97,10 +97,10 @@ describe('gearStore', () => {
     expect(api.batchUpdateValues.mock.calls[0][1][0].rows).toHaveLength(1)
   })
 
-  it('clamps the count to 1..100', () => {
+  it('clamps the count to 1..10', () => {
     const { store } = setup()
-    store.setCount(500)
-    expect(store.count).toBe(100)
+    store.setCount(11)
+    expect(store.count).toBe(10)
     store.setCount(0)
     expect(store.count).toBe(1)
     store.setCount(Number.NaN)
