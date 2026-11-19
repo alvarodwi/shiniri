@@ -59,7 +59,7 @@ export const useGearStore = defineStore('gear', {
         const { t9Manu, furnace } = rowsFor(this.date, this.source, this.activeCards)
         const targets: WriteTarget[] = [{ tab: T9MANU_TAB, rows: t9Manu }]
         if (furnace.length) targets.push({ tab: FURNACE_TAB, rows: furnace })
-        const { updatedRanges } = await writeTabsAtEnd(api, targets)
+        const { updatedRanges } = await writeTabsAtEnd(api, targets, 'Gear')
         this.lastSaved = targets.map((t, i) => ({
           updatedRange: updatedRanges[i],
           count: t.rows.length,

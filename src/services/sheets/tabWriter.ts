@@ -1,6 +1,8 @@
-import type { TabSpec } from '@/config/sheets'
+import { SPREADSHEETS } from '@/config/sheets'
+import type { Spreadsheet, TabSpec } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import type { Cell } from '@/types/sheet'
+import { wibTimestamp } from '@/utils/wibTimestamp'
 
 // The only write path to the sheet. It never inserts, shifts or overwrites:
 // it writes once, into rows it has just confirmed are empty, below the last row of data.
@@ -57,16 +59,36 @@ export function nextEmptyRow(colA: string[]): number {
 
 export type WriteTarget = { tab: TabSpec; rows: Cell[][] }
 
+// Header check, next empty row from column A, and an empty-target check. Returns the range to write.
+async function checkedRange(api: SheetsApi, tab: TabSpec, rowCount: number): Promise<string> {
+  const [headerRow = []] = await readRows(api, tab, 1, 1)
+  const actual = tab.headers.map((_, i) => (headerRow[i] ?? '').trim())
+  if (actual.some((h, i) => h !== tab.headers[i]))
+    throw new HeaderMismatchError(tab.headers, actual)
+
+  const start = nextEmptyRow(await readColumnA(api, tab))
+  const target = range(tab, start, start + rowCount - 1)
+  const existing = await api.getValues(tab.spreadsheetId, target)
+  if (existing.some((r) => r.some((c) => String(c).trim()))) throw new TargetNotEmptyError(target)
+  return target
+}
+
 // Every guard runs on every tab before anything is written; then one batch request writes them all.
+// The spreadsheet's AuditLog row rides in the same batch, so it exists only if the save landed.
 export async function writeTabsAtEnd(
   api: SheetsApi,
   targets: WriteTarget[],
+  form: string,
+  spreadsheets: Spreadsheet[] = SPREADSHEETS,
+  now: Date = new Date(),
 ): Promise<{ updatedRanges: string[] }> {
   if (!targets.length) throw new Error('Nothing to write.')
   const { spreadsheetId } = targets[0].tab
+  const audit = spreadsheets.find((s) => s.audit.spreadsheetId === spreadsheetId)?.audit
+  if (!audit) throw new Error('No audit tab configured for this spreadsheet.')
   for (const { tab, rows } of targets) {
     if (tab.spreadsheetId !== spreadsheetId) throw new Error('All tabs must be in one spreadsheet.')
-    if (targets.filter((t) => t.tab.tab === tab.tab).length > 1)
+    if ([...targets.map((t) => t.tab), audit].filter((t) => t.tab === tab.tab).length > 1)
       throw new Error(`Tab ${tab.tab} appears twice.`)
     if (!rows.length) throw new Error(`Nothing to write to ${tab.tab}.`)
     if (rows.some((r) => r.length !== tab.headers.length))
@@ -76,30 +98,21 @@ export async function writeTabsAtEnd(
       throw new Error(`Every ${tab.tab} row needs a value in column A.`)
   }
 
-  const data = []
-  for (const { tab, rows } of targets) {
-    const [headerRow = []] = await readRows(api, tab, 1, 1)
-    const actual = tab.headers.map((_, i) => (headerRow[i] ?? '').trim())
-    if (actual.some((h, i) => h !== tab.headers[i]))
-      throw new HeaderMismatchError(tab.headers, actual)
+  // Tabs are independent, so their checks run in parallel to keep the check-then-write gap short.
+  const [auditRange, ...dataRanges] = await Promise.all([
+    checkedRange(api, audit, 1),
+    ...targets.map((t) => checkedRange(api, t.tab, t.rows.length)),
+  ])
+  const data = targets.map((t, i) => ({ range: dataRanges[i], rows: t.rows }))
 
-    const start = nextEmptyRow(await readColumnA(api, tab))
-    const target = range(tab, start, start + rows.length - 1)
-    const existing = await api.getValues(spreadsheetId, target)
-    if (existing.some((r) => r.some((c) => String(c).trim()))) throw new TargetNotEmptyError(target)
-    data.push({ range: target, rows })
-  }
+  // Leading ' stores both as text: USER_ENTERED would eat the quote in 'Tab'!A1, and would turn the
+  // timestamp into a datetime whose display depends on the sheet's locale.
+  const ranges = `'${data.map((d) => d.range).join(', ')}`
+  const total = targets.reduce((n, t) => n + t.rows.length, 0)
+  data.push({ range: auditRange, rows: [[`'${wibTimestamp(now)}`, form, ranges, total]] })
 
-  // shortcut: under a second passes between the empty checks and this write, so a save from another
+  // shortcut: a few round trips pass between the empty checks and this write, so a save from another
   // device in that gap would be overwritten. Fine for one person; use values.append if that changes.
-  return api.batchUpdateValues(spreadsheetId, data)
-}
-
-export async function writeRowsAtEnd(
-  api: SheetsApi,
-  tab: TabSpec,
-  rows: Cell[][],
-): Promise<{ updatedRange: string }> {
-  const { updatedRanges } = await writeTabsAtEnd(api, [{ tab, rows }])
-  return { updatedRange: updatedRanges[0] }
+  const { updatedRanges } = await api.batchUpdateValues(spreadsheetId, data)
+  return { updatedRanges: updatedRanges.slice(0, targets.length) }
 }

@@ -39,6 +39,17 @@ Point `VITE_JOURNAL_SHEET_ID` in `.env.local` at a **copy** of the journal (File
 real sheet is live data, so test writes should never land there. A stale copy is fine; it only
 needs the same tab layout.
 
+## Audit log tab (once per spreadsheet)
+
+Every save also appends a row to an `AuditLog` tab in the same spreadsheet, and the Log page reads
+it. Create the tab by hand with this header row in A1:D1, in both the real sheet and the copy:
+
+```
+savedAt | form | ranges | rows
+```
+
+Without it, every save is refused: a missing tab shows `Sheets API 400: Unable to parse range: 'AuditLog'!A1:D1`, and a wrong header shows a header error. Timestamps are stored as text, `YYYY-MM-DD HH:mm:ss` in WIB.
+
 ## Deploy (Netlify)
 
 1. Connect the private GitHub repo in Netlify.

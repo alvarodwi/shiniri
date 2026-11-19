@@ -11,6 +11,8 @@ const DATE = '2026-11-19'
 
 function fakeApi() {
   const values: Record<string, string[][]> = {
+    "'AuditLog'!A1:D1": [['savedAt', 'form', 'ranges', 'rows']],
+    "'AuditLog'!A:A": [['savedAt']],
     "'T9Manu'!A1:E1": [[...T9MANU_TAB.headers]],
     "'T9Manu'!A:A": [['date'], ['x']],
     "'Furnace'!A1:E1": [[...FURNACE_TAB.headers]],
@@ -44,7 +46,7 @@ describe('gearStore', () => {
     await store.save(api)
     expect(api.batchUpdateValues).toHaveBeenCalledOnce()
     const data = api.batchUpdateValues.mock.calls[0][1]
-    expect(data.map((d) => d.range)).toEqual(["'T9Manu'!A3:E5"])
+    expect(data.map((d) => d.range)).toEqual(["'T9Manu'!A3:E5", "'AuditLog'!A2:D2"])
     expect(data[0].rows[0]).toEqual([DATE, 'Manufacturer Arms', 'Attacker', 'Tetra', 'Gloves'])
   })
 
@@ -55,7 +57,11 @@ describe('gearStore', () => {
     store.setCard(0, { classType: 'Defender', slot: 'Torso' })
     await store.save(api)
     const data = api.batchUpdateValues.mock.calls[0][1]
-    expect(data.map((d) => d.range)).toEqual(["'T9Manu'!A3:E3", "'Furnace'!A4:E4"])
+    expect(data.map((d) => d.range)).toEqual([
+      "'T9Manu'!A3:E3",
+      "'Furnace'!A4:E4",
+      "'AuditLog'!A2:D2",
+    ])
     expect(data[1].rows[0]).toEqual([
       DATE,
       'Pilgrim',

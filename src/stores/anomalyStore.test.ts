@@ -15,6 +15,8 @@ function fakeApi(colA: string[], lastRow: string[]) {
     [`'Anomaly'!A${colA.length}:I${colA.length}`]: [lastRow],
     [HEADER]: [[...ANOMALY_TAB.headers]],
     [COL_A]: colA.map((v) => [v]),
+    "'AuditLog'!A1:D1": [['savedAt', 'form', 'ranges', 'rows']],
+    "'AuditLog'!A:A": [['savedAt']],
     "'T9Manu'!A1:E1": [[...T9MANU_TAB.headers]],
     "'T9Manu'!A:A": [['date'], ['x']],
   }
@@ -118,7 +120,10 @@ describe('anomalyStore', () => {
     const { api, store } = await loaded(['date'])
     store.setBossOrStage(0, { boss: 'Kraken', stage: 9 })
     await store.save(api)
-    expect(api.batchUpdateValues.mock.calls[0][1].map((d) => d.range)).toEqual(["'Anomaly'!A2:I6"])
+    expect(api.batchUpdateValues.mock.calls[0][1].map((d) => d.range)).toEqual([
+      "'Anomaly'!A2:I6",
+      "'AuditLog'!A2:D2",
+    ])
   })
 
   it('refuses to save when the day was logged elsewhere after loading', async () => {

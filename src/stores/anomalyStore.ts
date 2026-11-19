@@ -121,7 +121,7 @@ export const useAnomalyStore = defineStore('anomaly', {
         // Gear drops go to T9Manu in the same write, so the two tabs never disagree.
         const targets: WriteTarget[] = [{ tab: ANOMALY_TAB, rows }]
         if (gearRows.length) targets.push({ tab: T9MANU_TAB, rows: gearRows })
-        const { updatedRanges } = await writeTabsAtEnd(api, targets)
+        const { updatedRanges } = await writeTabsAtEnd(api, targets, 'Anomaly')
         // Clear the form before reloading, so a failed reload can't leave saved runs to resave.
         const last = this.activeRuns[this.activeRuns.length - 1]
         this.lastSaved = targets.map((t, i) => ({

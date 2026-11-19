@@ -8,10 +8,10 @@ Identity Services). Netlify deploys from `main`.
 
 - The Google Sheet is the only source of truth. Never add a local or server-side copy of log data.
 - Append-only: the app never updates, clears, inserts or deletes existing cells. Every write goes
-  through `writeTabsAtEnd` (or its one-tab form `writeRowsAtEnd`) in
-  `src/services/sheets/tabWriter.ts`. For each tab it checks headers, finds the next empty row at
-  call time and checks that the target is empty, then does one `values:batchUpdate` for all tabs,
-  so a save lands everywhere or nowhere.
+  through `writeTabsAtEnd` in `src/services/sheets/tabWriter.ts`. For each tab it checks headers,
+  finds the next empty row at call time and checks that the target is empty, then does one
+  `values:batchUpdate` for all tabs, so a save lands everywhere or nowhere. That batch also appends
+  one row to the spreadsheet's `AuditLog` tab (configured in `SPREADSHEETS`).
 - Never hardcode row numbers. The sheet is live data and grows daily.
 - In development, `.env.local` points at a copy of the journal, never the real sheet.
 

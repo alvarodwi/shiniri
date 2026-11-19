@@ -29,3 +29,19 @@ export const FURNACE_TAB: TabSpec = {
   tab: 'Furnace',
   headers: ['Date', 'Target', 'Sacrifice 1', 'Sacrifice 2', 'Result'],
 }
+
+// Every save appends one row here, in the same write as its data.
+export const AUDIT_HEADERS = ['savedAt', 'form', 'ranges', 'rows'] as const
+
+export type Spreadsheet = { name: string; audit: TabSpec }
+
+export const SPREADSHEETS: Spreadsheet[] = [
+  {
+    name: 'Progression',
+    audit: {
+      spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
+      tab: 'AuditLog',
+      headers: AUDIT_HEADERS,
+    },
+  },
+]

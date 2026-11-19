@@ -9,12 +9,13 @@ const version = __APP_VERSION__
 const links = [
   { to: '/anomaly', label: 'Anomaly' },
   { to: '/gear', label: 'Gear' },
+  { to: '/log', label: 'Log' },
 ]
 </script>
 
 <template>
   <div class="paper ink min-h-screen">
-    <header class="rule flex items-center gap-3 border-b px-4 py-3">
+    <header class="rule flex flex-wrap items-center gap-x-3 border-b px-4 py-3">
       <h1 class="text-lg font-bold">Shiniri</h1>
       <span class="ink-soft text-xs">v{{ version }}</span>
       <nav v-if="auth.signedIn" class="flex gap-3 text-sm">
