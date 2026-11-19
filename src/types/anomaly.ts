@@ -24,7 +24,7 @@ export type AnomalyRun = {
   boss: Boss
   stage: number // 1-9; 9 always drops the reward
   dropped: boolean
-  modules: ModuleCount | null
+  modules: ModuleCount
   gear: Gear | null
   note: string
 }

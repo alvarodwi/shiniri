@@ -161,7 +161,7 @@ describe('anomalyStore', () => {
     })
     await store.save(api, () => true)
     expect(store.lastSaved?.count).toBe(5)
-    expect(store.runs.every((r) => r.modules === null)).toBe(true)
+    expect(store.runs.every((r) => r.modules === 0)).toBe(true)
     expect(store.runs[0]).toMatchObject({ boss: 'Ultra', stage: 7 })
   })
 

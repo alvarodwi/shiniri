@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ModuleCount } from '@/types/anomaly'
 
-defineProps<{ modelValue: ModuleCount | null }>()
+defineProps<{ modelValue: ModuleCount }>()
 const emit = defineEmits<{ 'update:modelValue': [value: ModuleCount] }>()
 const counts: ModuleCount[] = [0, 1, 2, 3]
 </script>

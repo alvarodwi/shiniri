@@ -8,8 +8,7 @@ export const isDropped = (run: AnomalyRun): boolean => run.stage === 9 || run.dr
 
 export const needsGear = (run: AnomalyRun): boolean => run.boss !== 'Kraken' && isDropped(run)
 
-export const isRunComplete = (run: AnomalyRun): boolean =>
-  run.modules !== null && (!needsGear(run) || run.gear !== null)
+export const isRunComplete = (run: AnomalyRun): boolean => !needsGear(run) || run.gear !== null
 
 // Columns A-I of the Anomaly tab. Gear is written only when it can exist, so stale picks never leak.
 export function toRow(date: string, run: AnomalyRun): Cell[] {
@@ -19,7 +18,7 @@ export function toRow(date: string, run: AnomalyRun): Cell[] {
     run.boss,
     run.stage,
     isDropped(run),
-    run.modules ?? 0,
+    run.modules,
     gear?.classType ?? '',
     gear?.manufacturer ?? '',
     DROP_TYPE[run.boss],
@@ -38,7 +37,7 @@ export function lastRunDefaults(row: string[] | undefined): RunDefaults {
 export const newRun = (d: RunDefaults): AnomalyRun => ({
   ...d,
   dropped: true,
-  modules: null,
+  modules: 0, // most failed runs drop nothing, so 0 saves a tap
   gear: null,
   note: '',
 })

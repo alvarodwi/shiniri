@@ -91,11 +91,6 @@ describe('toRow', () => {
 })
 
 describe('isRunComplete', () => {
-  it('needs a module count', () => {
-    expect(isRunComplete({ ...kraken, modules: null })).toBe(false)
-    expect(isRunComplete(kraken)).toBe(true)
-  })
-
   it('needs gear when the box dropped', () => {
     expect(isRunComplete({ ...indi, gear: null })).toBe(false)
     expect(isRunComplete({ ...ultraFail, gear: null })).toBe(true)
@@ -144,12 +139,12 @@ describe('countRowsForDate', () => {
 })
 
 describe('newRun', () => {
-  it('starts empty except boss and stage', () => {
+  it('starts with 0 modules and nothing else but boss and stage', () => {
     expect(newRun({ boss: 'Harvester', stage: 4 })).toEqual({
       boss: 'Harvester',
       stage: 4,
       dropped: true,
-      modules: null,
+      modules: 0,
       gear: null,
       note: '',
     })
