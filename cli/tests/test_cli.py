@@ -1,7 +1,7 @@
 import pytest
 from rich.console import Console
 
-from shiniri_cli.cli import COMMANDS, UNION_COMMANDS, App, parse_command
+from shiniri_cli.cli import CLEAR_COMMANDS, COMMANDS, UNION_COMMANDS, App, parse_command
 from shiniri_cli.fetch import save_cookie
 from shiniri_cli.queries import QueryError
 from shiniri_cli.store import Store
@@ -13,27 +13,28 @@ def make_app(store):
 
 
 def test_parse_command():
-    c = parse_command("!n crown + anis: star")
+    c = parse_command("!n crown + anis: star", CLEAR_COMMANDS)
     assert (c.name, c.args, c.force) == ("nikke", ["crown", "anis: star"], True)
-    assert parse_command("fl tribe 1").name == "floor" and parse_command("sync").name == "sync"
+    assert parse_command("fl tribe 1", CLEAR_COMMANDS).name == "floor" and parse_command("sync").name == "sync"
     with pytest.raises(QueryError, match="stage"):
-        parse_command("s hard 2")
+        parse_command("s hard 2", CLEAR_COMMANDS)
+    assert parse_command("cl").name == "clear" and parse_command("u").name == "union"
 
 
 def test_bad_args_keep_running(store):
     app, out = make_app(store)
-    for line in ["stage hard x", "floor moon 3", "date 2026-13-01", "bogus", "stage", "n"]:
+    for line in ["clear stage hard x", "clear floor moon 3", "clear date 2026-13-01", "bogus", "clear stage", "clear n"]:
         assert app.execute(line) is True
     assert "Traceback" not in out.export_text()
 
 
 def test_search_writes_then_reuses_export(store):
     app, out = make_app(store)
-    app.execute("n crown")
+    app.execute("clear n crown")
     assert store.export_path("all", "nikke__crown").exists()
-    app.execute("n crown")
+    app.execute("clear n crown")
     assert "cached" in out.export_text(clear=False)
-    app.execute("!n crown")
+    app.execute("!clear n crown")
     assert out.export_text().count("cached") == 1
 
 
@@ -44,7 +45,7 @@ def test_parsed_csv_written_on_start(store):
 
 def test_empty_first_run(tmp_path):
     app, out = make_app(Store(tmp_path))
-    assert app.execute("progress") is True and "run sync" in out.export_text()
+    assert app.execute("clear progress") is True and "run sync" in out.export_text()
 
 
 def test_help_lists_every_command(store):
@@ -79,8 +80,8 @@ def test_unexpected_errors_keep_shell(store):
     def interrupt(cmd): raise KeyboardInterrupt
     def other(cmd): raise AttributeError("nope")
     for fn in (boom, interrupt, other):
-        app.do_progress = fn
-        assert app.execute("progress") is True
+        app.c_progress = fn
+        assert app.execute("clear progress") is True
     text = out.export_text()
     assert "open in Excel" in text and "cancelled" in text and "nope" in text
 
@@ -90,7 +91,7 @@ def test_fetch_failure_still_refreshes(store, monkeypatch):
     from shiniri_cli.fetch import save_cookie
     save_cookie(store, "game_token=t; game_openid=o")
     app, out = make_app(store)
-    app.execute("top tribe")
+    app.execute("clear top tribe")
     assert store.export_path("tower", "top__tribe").exists()
 
     async def half(store_, source, client, tick=None):
@@ -99,7 +100,7 @@ def test_fetch_failure_still_refreshes(store, monkeypatch):
         store_.save_clears(source, clears)
         raise ValueError("Expecting value")
     monkeypatch.setattr(cli, "fetch_clears", half)
-    assert app.execute("fetch tower") is True
+    assert app.execute("clear fetch tower") is True
     assert "tower: +1" in out.export_text()
     assert not store.export_path("tower", "top__tribe").exists()
 
@@ -107,7 +108,7 @@ def test_fetch_failure_still_refreshes(store, monkeypatch):
 def test_start_rebuilds_when_raw_newer_than_parsed(store):
     import os
     app, _ = make_app(store)
-    app.execute("top tribe")
+    app.execute("clear top tribe")
     lineups = store.parsed_dir / "lineups.csv"
     os.utime(lineups, (1, 1))
     make_app(store)
@@ -116,13 +117,13 @@ def test_start_rebuilds_when_raw_newer_than_parsed(store):
 
 def test_fetch_arg_any_case(store):
     app, out = make_app(store)
-    app.execute("fetch Tower")
+    app.execute("clear fetch Tower")
     assert "no cookie saved" in out.export_text()
 
 
 def test_reversed_date_range_is_swapped(store):
     app, _ = make_app(store)
-    app.execute("date 2026-12-31..2026-10-01")
+    app.execute("clear date 2026-12-31..2026-10-01")
     rows = store.read_export(store.export_path("all", "date__2026_12_31_2026_10_01")).rows
     assert [r[1] for r in rows] == ["campaign", "tower"]
 
@@ -132,11 +133,11 @@ def test_completer_follows_new_data(store):
     app, _ = make_app(store)
     def words(text):
         return {c.text for c in app.completer().get_completions(Document(text), None)}
-    assert "Crown" in words("nikke cro")
+    assert "Crown" in words("clear nikke cro")
     nikke = store.load_raw("nikke_list_en") + [{"id": 1, "resource_id": 1, "name_localkey": {"name": "Crow Bar"}}]
     store.save_raw("nikke_list_en", nikke)
     app.refresh(synced={"nikke_list_en"})
-    assert "Crow Bar" in words("nikke cro")
+    assert "Crow Bar" in words("clear nikke cro")
 
 
 def test_status_shows_last_fetch_and_sync(store, monkeypatch):
@@ -149,13 +150,13 @@ def test_status_shows_last_fetch_and_sync(store, monkeypatch):
         return 0
     monkeypatch.setattr(cli, "fetch_clears", nothing)
     save_cookie(store, "game_token=t; game_openid=o")
-    app.execute("fetch tower")
+    app.execute("clear fetch tower")
     assert "fetched never" not in app.status()
 
 
 def test_usage_error_before_empty_hint(tmp_path):
     app, out = make_app(Store(tmp_path))
-    app.execute("stage hard x")
+    app.execute("clear stage hard x")
     assert "chapter must be a number" in out.export_text()
 
 
@@ -164,27 +165,27 @@ def test_damaged_export_is_rebuilt(store):
     path = store.export_path("all", "progress")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("", encoding="utf-8")
-    app.execute("progress")
+    app.execute("clear progress")
     assert "Tribe" in out.export_text() and store.read_export(path).rows
 
 
 def test_stage_entry_and_missing_entry(store):
     app, out = make_app(store)
-    app.execute("stage normal 2-3")
+    app.execute("clear stage normal 2-3")
     assert store.export_path("campaign", "stage__normal__2_3").exists()
-    app.execute("stage normal 2-9")
+    app.execute("clear stage normal 2-9")
     assert "try: stage normal 2" in out.export_text()
-    app.execute("stage normal x-3")
+    app.execute("clear stage normal x-3")
     assert "chapter must be a number" in out.export_text()
 
 
 def test_spread_command(store):
     app, out = make_app(store)
-    app.execute("sp")
+    app.execute("clear sp")
     assert store.export_path("all", "spread").exists() and "N/A" in out.export_text()
-    app.execute("spread 10")
+    app.execute("clear spread 10")
     assert store.export_path("all", "spread__10").exists()
-    app.execute("spread 0")
+    app.execute("clear spread 0")
     assert "step must be at least 1" in out.export_text()
 
 
@@ -309,3 +310,46 @@ def test_hits_quoted_and_forced_member_names(union_store):
     app.execute('union hits "unbalanced')
     assert "unbalanced quote" in out.export_text(clear=False)
     assert "Traceback" not in out.export_text()
+
+
+def test_clear_mode_and_back(store):
+    app, out = make_app(store)
+    app.execute("clear")
+    assert app.prompt() == "clear> " and "progress" in out.export_text()
+    app.execute("progress")
+    assert store.export_path("all", "progress").exists()
+    assert app.execute("back") is True and app.mode == "main"
+    app.execute("cl")
+    assert app.execute("q") is True and app.mode == "main"
+
+
+def test_clear_one_shot_and_force(store):
+    app, out = make_app(store)
+    app.execute("clear progress")
+    app.execute("!clear progress")
+    assert app.mode == "main" and "cached" not in out.export_text()
+    assert app.execute("clear quit") is True and app.execute("clear back") is True and app.mode == "main"
+
+
+def test_main_rejects_clear_commands(store):
+    app, out = make_app(store)
+    app.execute("n crown")
+    assert "unknown command 'n'" in out.export_text()
+
+
+def test_help_groups(union_store):
+    app, out = make_app(union_store)
+    app.execute("help clear")
+    text = out.export_text()
+    assert all(n in text for n in ("nikke", "spread", "back"))
+    app.execute("help clear nikke")
+    assert "n crown" in out.export_text()
+    app.execute("help union hits")
+    assert "hits hard hsta" in out.export_text()
+
+
+def test_completer_in_clear_mode(store):
+    from prompt_toolkit.document import Document
+    app, _ = make_app(store)
+    app.execute("clear")
+    assert "Crown" in {c.text for c in app.completer().get_completions(Document("nikke cro"), None)}

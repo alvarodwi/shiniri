@@ -25,7 +25,7 @@ won't start there. Use PowerShell, cmd or Windows Terminal, or run it through `w
 ```
 > sync          download the reference files (no login needed)
 > cookie        paste the Cookie header from blablalink (input is hidden)
-> fetch all     fetch new campaign + tower clears
+> clear fetch all   fetch new campaign + tower clears
 ```
 
 To get the cookie: open blablalink while logged in, open the browser devtools,
@@ -33,14 +33,25 @@ open the Network tab, and copy the `Cookie` request header from any `api.blablal
 
 ## Commands
 
-Type `help` for the list, or `help <command>` for details. Any unique prefix
-works (`n`, `st`, `fl`, `sp`).
+The main prompt holds the groups plus a few shared commands:
+
+| Command | What it does |
+|---|---|
+| `clear [cmd]` | campaign & tower clears (below) |
+| `union [cmd]` | union raid (below) |
+| `sync` | re-download the CDN reference files |
+| `cookie` | save your Cookie header |
+
+A group name alone switches to its prompt (`clear>`, `union>`) with its own `help`;
+`back` or `q` returns. A group name plus a command runs it once and stays on main
+(`clear progress`, `union s45`). `help clear` / `help union` list a group's commands,
+`help clear nikke` shows one. Any unique prefix works (`cl`, `u`, `n`, `st`).
+
+## Clears
 
 | Command | What it shows |
 |---|---|
 | `fetch campaign\|tower\|all` | get new clears (needs cookie) |
-| `sync` | re-download the CDN reference files |
-| `cookie` | save your Cookie header |
 | `nikke <name> [+ <name>]` | clears that used a Nikke (both, if two) |
 | `stage <normal\|hard> <ch>[-<stage>]` | a campaign chapter, or one stage (`stage hard 50-36`) |
 | `floor <tower> <n>` | one tower floor |
@@ -51,14 +62,13 @@ works (`n`, `st`, `fl`, `sp`).
 | `progress` | highest chapter / floor per mode |
 
 Every search prints a table and saves a CSV under `data/exports/`. Running the same
-search again reuses that file. Prefix a search with `!` to rebuild it (`!synchro`).
+search again reuses that file. Prefix a search with `!` to rebuild it (`!synchro`, or `!clear synchro` from main).
 A `fetch` or `sync` that changes the data clears the affected exports automatically.
 
 ## Union raid
 
-`union` switches to a `union>` prompt with its own commands and `help`. `back` returns.
-From the main prompt, `union <cmd>` runs one union command directly (`union s45`,
-`union missed s44`), and `help union` lists them.
+`union` switches to a `union>` prompt; `union <cmd>` runs one command from main
+(`union s45`, `union missed s44`).
 
 ```
 union> fetch        download every season not stored yet (run sync first, needs cookie)
