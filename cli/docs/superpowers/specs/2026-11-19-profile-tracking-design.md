@@ -1,6 +1,19 @@
 # Profile tracking: snapshots, daily reminders, profile menu
 
-> **Status: WORK IN PROGRESS, not approved.** The brainstorm paused 2026-11-19 so the user can continue on their home PC, which holds the Kotlin automation. Next session, ask the questions below one at a time before planning or building anything. Everything marked "my call" is a proposal the user hasn't confirmed.
+> **Status: WORK IN PROGRESS, not approved. Shelved 2026-11-19 (second session).** `blabla.yml` (sample responses) lives only on the user's work Windows PC, so resume there or copy it over first.
+>
+> **Decided in the second session:**
+> - **Drop the `profile` shell group** (`now` / `history` / `daily`, the `"profile"` scope). Viewing history belongs in a dashboard, not the shell. Keep only `shiniri-cli snapshot`. The Telegram reminder is still in scope unless the user says otherwise.
+> - **Telegram (Q2 answered):** the `ambil` project (`../ambil`, Kotlin) keeps the bot in `config.json` as `"telegram": {"token", "chatId"}`. `TelegramNotifier.kt` sends MarkdownV2 with every special character escaped, using an emoji header plus label lines (`✅ Job Success` / `Job: …` / `Message: …`). My call: copy the values into `config/telegram.json` with the same keys, match that style, and send plain text with no `parse_mode`.
+> - **Long-run direction (separate projects, not this spec):**
+>   1. **Investment data to the gacha tracker sheet.** Fetch per-nikke investment data from blablalink and auto-update the `NikkeRoster` tab of the user's *NIKKE gacha tracker* spreadsheet (not the Progression Journal). The CLI fetches no investment data yet. The endpoints still need finding in `blabla.yml`. Blocker: the shiniri web app hasn't integrated the gacha tracker sheet either.
+>   2. **Dashboard in the shiniri web app.** The user leans toward pushing raw JSON to Google Drive (for example, `rclone sync data/raw/json` from cron). The web app (a Vue SPA on Netlify with no backend, signed in through Google with only the `spreadsheets` permission) would add `drive.readonly`, because `drive.file` can't see files rclone uploads. Sheet updates need no backend either: an Apps Script attached to the sheet can read the Drive JSON on a timer, or shiniri-cli can write through a service account.
+>
+> - **Direction: shiniri-cli becomes a headless fetcher, and the shell stays as the viewer.** My proposal, which the user leans toward: a one-shot command (working name `shiniri-cli fetch`) for cron that runs `sync_reference`, `fetch_clears` (campaign and tower), `fetch_union` and the profile snapshot. It sends a Telegram message on failure, especially `AuthError`, and `rclone` can run right after it. This replaces the snapshot-only command in the design below.
+> - **Keep the clear and union shell views; don't trim them.** They're a working prototype of the dashboard. Each command in `CLEAR_COMMANDS` and `UNION_COMMANDS` (`cli.py`) is a view the web app will need, and `queries.py` and `union_queries.py` hold the logic for each one. Use that catalog as the starting list when brainstorming the web dashboard. Delete the shell only once the dashboard covers it, as a separate cleanup.
+> - **Keep the parsing layer** (`Store.build_tables`, `write_union_parsed`). It maps nikke ids to names. Uploading the parsed CSVs to Drive alongside the raw JSON saves the browser from repeating that work.
+>
+> Next session: brainstorm the investment → `NikkeRoster` project first (it's the near-term need), then decide whether `snapshot` still earns its place. Remaining open questions for `snapshot`:
 >
 > **Open questions, most important first:**
 > 1. Where does the shell run day to day: the homeserver (SSH) or the Windows PC? Snapshots live in the homeserver's `data/`, so this decides whether we need syncing.
