@@ -3,8 +3,30 @@ import type { TokenGetter } from './sheetsApi'
 const GIS_SRC = 'https://accounts.google.com/gsi/client'
 const SCOPE = 'https://www.googleapis.com/auth/spreadsheets'
 
-// Token lives in memory only; a reload means signing in again (usually one tap).
-let cached: { token: string; expiresAt: number } | null = null
+// Token is kept in sessionStorage so a reload in the same tab stays signed in until it expires (~1h).
+const STORAGE_KEY = 'shiniri.token'
+type Cached = { token: string; expiresAt: number }
+
+function readStored(): Cached | null {
+  try {
+    const c = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? 'null') as Cached | null
+    return c && typeof c.token === 'string' && typeof c.expiresAt === 'number' ? c : null
+  } catch {
+    return null
+  }
+}
+
+function store(c: Cached | null): void {
+  cached = c
+  try {
+    if (c) sessionStorage.setItem(STORAGE_KEY, JSON.stringify(c))
+    else sessionStorage.removeItem(STORAGE_KEY)
+  } catch {
+    // Storage blocked (private mode etc.): memory-only, same as before.
+  }
+}
+
+let cached: Cached | null = readStored()
 let pending: Promise<string> | null = null
 let client: google.accounts.oauth2.TokenClient | null = null
 let settle: { resolve: (t: string) => void; reject: (e: Error) => void } | null = null
@@ -33,7 +55,7 @@ function getClient(): google.accounts.oauth2.TokenClient {
       if (res.error || !res.access_token) {
         settle?.reject(new Error(res.error_description ?? res.error ?? 'Sign-in failed.'))
       } else {
-        cached = { token: res.access_token, expiresAt: Date.now() + res.expires_in * 1000 }
+        store({ token: res.access_token, expiresAt: Date.now() + res.expires_in * 1000 })
         settle?.resolve(res.access_token)
       }
     },
@@ -42,8 +64,12 @@ function getClient(): google.accounts.oauth2.TokenClient {
   return client
 }
 
+const isFresh = (c: Cached | null): c is Cached => !!c && c.expiresAt - 60_000 > Date.now()
+
+export const hasFreshToken = (): boolean => isFresh(cached)
+
 export const getToken: TokenGetter = async (opts) => {
-  if (!opts?.forceRefresh && cached && cached.expiresAt - 60_000 > Date.now()) return cached.token
+  if (!opts?.forceRefresh && isFresh(cached)) return cached.token
   pending ??= (async () => {
     await loadGis()
     return new Promise<string>((resolve, reject) => {
@@ -58,6 +84,7 @@ export const getToken: TokenGetter = async (opts) => {
 }
 
 export function signOut(): void {
-  if (cached) google.accounts.oauth2.revoke(cached.token)
-  cached = null
+  // GIS may not be loaded yet when the token came from storage.
+  if (cached && typeof google !== 'undefined') google.accounts.oauth2.revoke(cached.token)
+  store(null)
 }

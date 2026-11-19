@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia'
 
-import { getToken, signOut } from '@/services/google/auth'
+import { getToken, hasFreshToken, signOut } from '@/services/google/auth'
 import { createSheetsApi } from '@/services/google/sheetsApi'
 
 export const sheetsApi = createSheetsApi(getToken)
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    signedIn: false,
+    signedIn: hasFreshToken(),
     busy: false,
     error: null as string | null,
   }),
