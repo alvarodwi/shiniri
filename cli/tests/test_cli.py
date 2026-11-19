@@ -353,3 +353,40 @@ def test_completer_in_clear_mode(store):
     app, _ = make_app(store)
     app.execute("clear")
     assert "Crown" in {c.text for c in app.completer().get_completions(Document("nikke cro"), None)}
+
+
+def test_completer_resolves_prefixes(store):
+    from prompt_toolkit.document import Document
+    app, _ = make_app(store)
+    def words(text):
+        return {c.text for c in app.completer().get_completions(Document(text), None)}
+    assert "Crown" in words("clear n cro") and "Crown" in words("cl nikke cro")
+    assert "hard" in words("cl st ")
+    app.execute("clear")
+    assert "Crown" in words("n cro")
+
+
+def test_help_hints_group_for_old_habit(store):
+    app, out = make_app(store)
+    app.execute("help nikke")
+    assert "try help clear nikke" in out.export_text()
+
+
+def test_hint_keeps_force_and_bare_bang_is_blank(store):
+    app, out = make_app(store)
+    app.execute("!n crown")
+    assert "try !clear n crown" in out.export_text()
+    for line in ["!", "!!", " ! "]:
+        assert app.execute(line) is True
+    app.execute("clear")
+    assert app.execute("!") is True
+    assert "unknown command" not in out.export_text()
+
+
+def test_clear_top_one_shot_force(store):
+    app, out = make_app(store)
+    app.execute("clear top")
+    app.execute("clear top")
+    assert "cached" in out.export_text()
+    app.execute("!clear top")
+    assert "cached" not in out.export_text()
