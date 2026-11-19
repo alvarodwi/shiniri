@@ -63,3 +63,18 @@ changes.
 - `yarn format && yarn lint && yarn check && yarn build && yarn test`.
 - Pure logic and stores have Vitest tests next to the source (`*.test.ts`). UI and Google sign-in
   are verified by hand against a sheet copy.
+
+## Reviewing the UI
+
+- Run `yarn dev:mock` and open `http://localhost:5173/#/anomaly` (or the port Vite prints, if 5173 is
+  taken). The app starts signed in on a fake
+  in-memory sheet (`src/services/mock/`); nothing is sent to Google, and a banner says so.
+- Saves land in the fake sheet, so follow-up screens update. Everything resets on reload.
+- Use it to check how pages look and behave. Real sheet behaviour (formats, formulas, headers) is
+  still the owner's manual check on the sheet copy. Known limits: formulas are stored as text, not
+  computed, and sheet links open a dead page (the sheet ID is a placeholder).
+- Mock mode exists only under `vite --mode mock` on the dev server (`__MOCK__` in
+  `vite.config.ts`); builds never contain it. A new form adds its tab to
+  `src/services/mock/fixtures.ts`.
+- Headless check without a browser tool:
+  `google-chrome --headless=new --virtual-time-budget=5000 --dump-dom http://localhost:5173/#/level`.

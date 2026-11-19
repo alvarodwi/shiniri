@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { useAuthStore } from '@/stores/authStore'
@@ -6,6 +7,10 @@ import { useAuthStore } from '@/stores/authStore'
 const auth = useAuthStore()
 const route = useRoute()
 const version = __APP_VERSION__
+// Loaded only in mock mode, so builds don't carry the banner either.
+const MockBanner = __MOCK__
+  ? defineAsyncComponent(() => import('@/components/MockBanner.vue'))
+  : null
 const links = [
   { to: '/anomaly', label: 'Anomaly' },
   { to: '/gear', label: 'Gear' },
@@ -40,6 +45,7 @@ const links = [
         Sign out
       </button>
     </header>
+    <component :is="MockBanner" v-if="MockBanner" />
 
     <RouterView v-if="auth.signedIn" />
 
