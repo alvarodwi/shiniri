@@ -23,9 +23,15 @@ from .store import LEVELS, SCOPES, SOURCES, Store, export_name, scopes_to_wipe
 from .union import CODES, UnionError, build_union, fetch_union, write_union_parsed
 
 COMMANDS: dict[str, tuple[str, str, list[str]]] = {
-    "fetch": ("fetch campaign|tower|all", "get new clears (needs cookie)", ["fetch tower", "fe all"]),
+    "clear": ("clear [cmd]", "campaign & tower clears — help clear lists its commands", ["clear", "clear progress", "cl n crown"]),
+    "union": ("union [cmd]", "union raid mode — help union lists its commands", ["union", "union s45", "union missed s44"]),
     "sync": ("sync", "re-download CDN reference files", ["sync"]),
     "cookie": ("cookie", "paste your Cookie header", ["cookie"]),
+    "help": ("help [group] [cmd]", "list commands, or show a group or one command in detail", ["help", "help clear", "help union hits"]),
+    "quit": ("quit", "leave", ["quit"]),
+}
+CLEAR_COMMANDS: dict[str, tuple[str, str, list[str]]] = {
+    "fetch": ("fetch campaign|tower|all", "get new clears (needs cookie)", ["fetch tower", "fe all"]),
     "nikke": ("nikke <name> [+ <name>]", "clears that used a Nikke (both, if two)", ["nikke crown", "n crown + anis: star"]),
     "stage": ("stage <normal|hard> <ch>[-<stage>]", "campaign chapter, or one stage", ["stage hard 50", "st hard 50-36"]),
     "floor": ("floor <tower> <n>", "tower floor clear", ["floor tribe 1030", "fl pilgrim 500"]),
@@ -34,9 +40,8 @@ COMMANDS: dict[str, tuple[str, str, list[str]]] = {
     "synchro": ("synchro", "synchro level timeline", ["synchro"]),
     "spread": ("spread [step]", "synchro levels in bands (default 5): first/last day at each", ["spread", "sp 10"]),
     "progress": ("progress", "highest chapter / floor per mode", ["progress"]),
-    "union": ("union [cmd]", "union raid mode — help union lists its commands", ["union", "union s45", "union missed s44"]),
-    "help": ("help [cmd]", "list commands, or show one in detail", ["help", "help nikke"]),
-    "quit": ("quit", "leave", ["quit"]),
+    "help": ("help [cmd]", "list clear commands, or show one in detail", ["help", "help nikke"]),
+    "back": ("back", "return to the main shell", ["back"]),
 }
 UNION_COMMANDS: dict[str, tuple[str, str, list[str]]] = {
     "fetch": ("fetch", "download seasons not stored yet (needs cookie)", ["fetch"]),
@@ -57,7 +62,12 @@ UNION_COMMANDS: dict[str, tuple[str, str, list[str]]] = {
     "back": ("back", "return to the main shell", ["back"]),
 }
 UNION_FOOTER = "sN alone shows that season's recap · no season = live, else latest · ! rebuilds an export"
-MAIN_FOOTER = "any unique prefix works (n, st, fl) · prefix a search with ! to rebuild its export"
+CLEAR_FOOTER = "any unique prefix works (n, st, fl) · prefix a search with ! to rebuild its export"
+MAIN_FOOTER = "a group name alone enters it · add a command for a one-off (clear progress) · any unique prefix works"
+GROUPS: dict[str, tuple[dict, str, str]] = {  # name -> (commands, help footer, handler method prefix)
+    "clear": (CLEAR_COMMANDS, CLEAR_FOOTER, "c_"),
+    "union": (UNION_COMMANDS, UNION_FOOTER, "u_"),
+}
 FIXED_SCOPE = {"nikke": "all", "stage": "campaign", "floor": "tower", "date": "all", "synchro": "all", "spread": "all", "progress": "all"}
 
 
@@ -159,23 +169,27 @@ class App:
             "top": seasons | {"all"}, "missed": seasons, "normal": seasons, "season": seasons,
             "boss": codes, "help": set(UNION_COMMANDS),
         }
-        self._union_completer = NestedCompleter.from_nested_dict(union)
-        return NestedCompleter.from_nested_dict({
-            **{name: None for name in COMMANDS},
+        clear = {
+            **{name: None for name in CLEAR_COMMANDS},
             "nikke": WordCompleter(self.tables.nikke_names, ignore_case=True, sentence=True),
             "floor": towers,
             "top": towers | {"normal", "hard"},
             "stage": {"normal", "hard"},
             "fetch": {"campaign", "tower", "all"},
-            "help": set(COMMANDS),
-            "union": union,
+            "help": set(CLEAR_COMMANDS),
+        }
+        groups = {"clear": clear, "union": union}
+        self._group_completers = {g: NestedCompleter.from_nested_dict(d) for g, d in groups.items()}
+        return NestedCompleter.from_nested_dict({
+            **{name: None for name in COMMANDS}, **groups,
+            "help": {g: set(cmds) for g, (cmds, _, _) in GROUPS.items()} | {c: None for c in COMMANDS if c not in GROUPS},
         })
 
     def completer(self):
-        return self._union_completer if self.mode == "union" else self._completer
+        return self._group_completers.get(self.mode, self._completer)
 
     def prompt(self) -> str:
-        return "union> " if self.mode == "union" else "> "
+        return f"{self.mode}> " if self.mode in GROUPS else "> "
 
     # --- plumbing -------------------------------------------------------
     def refresh(self, fetched: set[str] = frozenset(), synced: set[str] = frozenset()) -> None:
@@ -200,18 +214,25 @@ class App:
         if not line.strip():
             return True
         try:
-            if self.mode == "union":
+            if self.mode in GROUPS:
+                commands, _, prefix = GROUPS[self.mode]
                 word = line.strip().lower()
                 if word and "quit".startswith(word):
                     self.mode = "main"
                     return True
-                cmd = parse_command(line, UNION_COMMANDS)
+                cmd = parse_command(line, commands)
                 if cmd.name == "back":
                     self.mode = "main"
                 else:
-                    getattr(self, f"u_{cmd.name}")(cmd)
+                    getattr(self, prefix + cmd.name)(cmd)
                 return True
-            cmd = parse_command(line)
+            try:
+                cmd = parse_command(line)
+            except QueryError:
+                word = (line.strip().lstrip("!").split() or [""])[0].lower()
+                if word and any(c.startswith(word) for c in CLEAR_COMMANDS if c not in ("help", "back")):  # pre-groups habit
+                    raise QueryError(f"unknown command '{word}' — try clear {line.strip().lstrip('!')}") from None
+                raise
             if cmd.name == "quit":
                 return False
             getattr(self, f"do_{cmd.name}")(cmd)
@@ -232,22 +253,22 @@ class App:
         match cmd.name:
             case "nikke":
                 if not a:
-                    raise QueryError("usage: " + COMMANDS["nikke"][0])
+                    raise QueryError("usage: " + CLEAR_COMMANDS["nikke"][0])
                 return lambda: queries.nikke(self.tables, a)
             case "stage":
                 if len(a) != 2:
-                    raise QueryError("usage: " + COMMANDS["stage"][0])
+                    raise QueryError("usage: " + CLEAR_COMMANDS["stage"][0])
                 chapter = _int(a[1].split("-")[0], "chapter")
                 label = a[1] if "-" in a[1] else None
                 return lambda: queries.stage(self.tables, a[0], chapter, label)
             case "floor":
                 if len(a) != 2:
-                    raise QueryError("usage: " + COMMANDS["floor"][0])
+                    raise QueryError("usage: " + CLEAR_COMMANDS["floor"][0])
                 n = _int(a[1], "floor")
                 return lambda: queries.floor(self.tables, a[0], n)
             case "date":
                 if len(a) != 1:
-                    raise QueryError("usage: " + COMMANDS["date"][0])
+                    raise QueryError("usage: " + CLEAR_COMMANDS["date"][0])
                 start, _, end = a[0].partition("..")
                 lo, hi = sorted((_date(start), _date(end or start)))
                 return lambda: queries.date_range(self.tables, lo, hi)
@@ -257,7 +278,7 @@ class App:
                 return lambda: queries.synchro(self.tables)
             case "spread":
                 if len(a) > 1:
-                    raise QueryError("usage: " + COMMANDS["spread"][0])
+                    raise QueryError("usage: " + CLEAR_COMMANDS["spread"][0])
                 step = _int(a[0], "step") if a else 5
                 if step < 1:
                     raise QueryError("step must be at least 1")
@@ -275,7 +296,7 @@ class App:
     def search(self, cmd: Command) -> None:
         run = self._prepare(cmd)
         if not self.tables.clears:
-            self.out.print("[yellow]no data yet — run sync, then fetch[/]")
+            self.out.print("[yellow]no data yet — run sync, then clear fetch[/]")
             return
         self._show(self._scope(cmd), cmd.name, cmd.args, cmd.force, run)
 
@@ -303,12 +324,14 @@ class App:
         if result.summary:
             self.out.print(f"[bold]{escape(result.summary)}[/]")
 
-    do_nikke = do_stage = do_floor = do_date = do_top = do_synchro = do_spread = do_progress = search
+    c_nikke = c_stage = c_floor = c_date = c_top = c_synchro = c_spread = c_progress = search
 
     # --- actions --------------------------------------------------------
     def do_help(self, cmd: Command) -> None:
-        if cmd.args and parse_command(cmd.args[0]).name == "union":
-            self._help(UNION_COMMANDS, [], UNION_FOOTER)
+        group = parse_command(cmd.args[0]).name if cmd.args else None
+        if group in GROUPS:
+            commands, footer, _ = GROUPS[group]
+            self._help(commands, cmd.args[1:], footer)
         else:
             self._help(COMMANDS, cmd.args, MAIN_FOOTER)
 
@@ -325,15 +348,24 @@ class App:
         self.out.print(table)
         self.out.print(f"[dim]{footer}[/]")
 
-    # --- union mode -----------------------------------------------------
-    def do_union(self, cmd: Command) -> None:
+    # --- groups ---------------------------------------------------------
+    def _enter_group(self, cmd: Command) -> None:
+        """`clear` enters the group; `clear progress` runs one command and stays on main."""
+        commands, footer, prefix = GROUPS[cmd.name]
         if not cmd.args:
-            self.mode = "union"
-            self._help(UNION_COMMANDS, [], UNION_FOOTER)
+            self.mode = cmd.name
+            self._help(commands, [], footer)
             return
-        sub = parse_command(("!" if cmd.force else "") + " ".join(cmd.args), UNION_COMMANDS)
-        if sub.name not in ("back", "quit"):
-            getattr(self, f"u_{sub.name}")(sub)
+        if cmd.args[0].lower() == "quit":
+            return
+        sub = parse_command(("!" if cmd.force else "") + " ".join(cmd.args), commands)
+        if sub.name != "back":
+            getattr(self, prefix + sub.name)(sub)
+
+    do_clear = do_union = _enter_group
+
+    def c_help(self, cmd: Command) -> None:
+        self._help(CLEAR_COMMANDS, cmd.args, CLEAR_FOOTER)
 
     def u_help(self, cmd: Command) -> None:
         self._help(UNION_COMMANDS, cmd.args, UNION_FOOTER)
@@ -346,7 +378,7 @@ class App:
     def union_search(self, cmd: Command) -> None:
         u, a, name = self.union, cmd.args, cmd.name
         if not u.seasons:
-            raise QueryError("no union data yet — run sync, then fetch")
+            raise QueryError("no union data yet — run sync, then union fetch")
         season_arg = a[0] if a and re.fullmatch(r"s\d+", a[0].lower()) and name != "member" else None
         rest = a[1:] if season_arg else a
         if name in ("season", "missed", "normal") and rest:
@@ -434,10 +466,10 @@ class App:
         save_cookie(self.store, header)
         self.out.print("[green]cookie saved to config/cookie.txt[/]")
 
-    def do_fetch(self, cmd: Command) -> None:
+    def c_fetch(self, cmd: Command) -> None:
         which = cmd.args[0].lower() if len(cmd.args) == 1 else ""
         if which not in ("campaign", "tower", "all"):
-            raise QueryError("usage: " + COMMANDS["fetch"][0])
+            raise QueryError("usage: " + CLEAR_COMMANDS["fetch"][0])
         sources = SOURCES if which == "all" else (which,)
         if any(self.store.load_raw(LEVELS[s]) is None for s in sources):
             raise QueryError("no level list yet — run sync first")
@@ -488,7 +520,7 @@ class App:
                 levels = self.store.load_raw(LEVELS[source], [])
                 n = (len(campaign_targets(levels, stored)) if source == "campaign"
                      else sum(map(len, tower_targets(levels, stored).values())))
-                self.out.print(f"{source}: {n} stages to check on next fetch {source}")
+                self.out.print(f"{source}: {n} stages to check on next clear fetch {source}")
 
 
 def utf8(stream):
