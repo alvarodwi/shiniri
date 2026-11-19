@@ -10,6 +10,7 @@ const links = [
   { to: '/anomaly', label: 'Anomaly' },
   { to: '/gear', label: 'Gear' },
   { to: '/level', label: 'Level' },
+  { to: '/solo-raid', label: 'Solo Raid' },
   { to: '/special', label: 'Special' },
   { to: '/log', label: 'Log' },
 ]
@@ -20,12 +21,12 @@ const links = [
     <header class="rule flex flex-wrap items-center gap-x-3 border-b px-4 py-3">
       <h1 class="text-lg font-bold">Shiniri</h1>
       <span class="ink-soft text-xs">v{{ version }}</span>
-      <nav v-if="auth.signedIn" class="flex gap-3 text-sm">
+      <nav v-if="auth.signedIn" class="flex flex-wrap gap-x-3 text-sm">
         <RouterLink
           v-for="link in links"
           :key="link.to"
           :to="link.to"
-          class="focus flex min-h-11 items-center"
+          class="focus flex min-h-11 items-center whitespace-nowrap"
           :class="route.path === link.to ? 'ink font-semibold underline' : 'ink-soft'"
         >
           {{ link.label }}

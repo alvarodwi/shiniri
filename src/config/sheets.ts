@@ -31,6 +31,12 @@ export const LEVEL_TAB: TabSpec = {
   headers: ['newSynchroLevel', 'achievedAt', 'daysElapsed', 'note'],
 }
 
+export const SOLO_RAID_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
+  tab: 'SoloRaid',
+  headers: ['season', 'month', 'boss', 'weakness', 'totalDmg', 'rank', 'comments'],
+}
+
 export const FURNACE_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
   tab: 'Furnace',

@@ -43,6 +43,8 @@ changes.
   the real sheet needs it before release.
 - Sheet strings (headers, `sourceType`, slot names) must match the sheet verbatim. Ask for the exact
   text when unsure, never guess.
+- Headers of tabs the app writes to are lowerCamelCase with no spaces (`newSynchroLevel`,
+  `totalDmg`). A new form's tab follows this; the owner renames old headers by hand on both sheets.
 - UI is phone-first. Keep pages uncluttered (no long lists of logged items; that belongs to a future
   dashboard), label every input, and hide sheet links on small screens.
 
