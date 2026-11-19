@@ -18,6 +18,9 @@ below the existing data, with nothing else changed.
 
 ## Release
 
-1. Merge `develop` into `main`.
-2. Bump `version` in `package.json` and commit `chore: bump to version X.Y.Z`.
-3. Netlify deploys from `main`.
+1. Run the checks on `develop`, then push `develop`.
+2. Merge `develop` into `main`.
+3. Bump `version` in `package.json` and commit `chore: bump to version X.Y.Z`.
+4. Push `main`. Netlify deploys from it.
+5. Merge `main` back into `develop` and push it, so both carry the bump.
+6. Delete merged branches, local and remote.

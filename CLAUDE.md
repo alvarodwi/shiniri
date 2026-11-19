@@ -24,8 +24,37 @@ changes.
 
 ## Before working
 
-- Read `CONTRIBUTING.md`. Branch from `develop`.
+- Read `CONTRIBUTING.md`. Branch `feat/<name>` or `fix/<name>` from `develop`.
 - Specs and plans live in `docs/superpowers/`.
+
+## How the owner works
+
+- Feature flow: brainstorm, short design doc in `docs/superpowers/specs/`, plan in
+  `docs/superpowers/plans/`, then implement in this session ("natively"), not with a subagent per
+  task. This is the default; don't ask which execution style. One fresh reviewer checks the whole
+  branch at the end. Fix its findings on the branch, minor ones included. Anything found after the
+  merge becomes a new `feat/` or `fix/` branch.
+- Don't commit until the owner says so. On "commit and merge": one commit on the feature branch,
+  then fast-forward `develop` and delete the merged branch. Don't push unless asked.
+- Before a merge, give the owner the exact checks to run on the sheet copy. The owner runs them and
+  reports back.
+- The owner edits the sheet by hand: new tabs and header rows, and fixes to logged rows. The app
+  never creates tabs or edits rows. Say plainly when a change needs a manual sheet step, and that
+  the real sheet needs it before release.
+- Sheet strings (headers, `sourceType`, slot names) must match the sheet verbatim. Ask for the exact
+  text when unsure, never guess.
+- UI is phone-first. Keep pages uncluttered (no long lists of logged items; that belongs to a future
+  dashboard), label every input, and hide sheet links on small screens.
+
+## Release
+
+1. Run the checks on `develop`.
+2. Push `develop` first.
+3. Fast-forward `main` to `develop`, bump `version` in `package.json` (minor for features), commit
+   `chore: bump to version X.Y.Z` (semver: minor for features, patch for fixes only), push `main`.
+   Netlify deploys from `main`.
+4. Fast-forward `develop` to `main` and push it, so both carry the bump.
+5. Prune merged branches, local and remote.
 
 ## Checks
 
