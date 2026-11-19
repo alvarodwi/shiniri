@@ -1,5 +1,9 @@
 # Shiniri
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/2e6b2967-1726-4ca0-b930-69657f2deb55/deploy-status)](https://app.netlify.com/projects/shiniri/deploys)
+
+Live at <https://shiniri.netlify.app/>.
+
 Personal input app for NIKKE farming logs. It writes straight into Google Sheets, and the sheet is
 the only copy of the data. The app keeps no database of its own.
 
