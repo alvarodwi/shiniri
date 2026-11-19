@@ -9,6 +9,7 @@ const version = __APP_VERSION__
 const links = [
   { to: '/anomaly', label: 'Anomaly' },
   { to: '/gear', label: 'Gear' },
+  { to: '/special', label: 'Special' },
   { to: '/log', label: 'Log' },
 ]
 </script>
