@@ -227,7 +227,7 @@ def test_union_queries_before_any_data(tmp_path):
     for line in ["union s46", "union missed", "union member", "union members", "union boss hsta"]:
         assert app.execute(line) is True
     text = out.export_text()
-    assert "Traceback" not in text and "run sync" in text
+    assert "Traceback" not in text and "run sync, then union fetch" in text
 
 
 def test_union_bad_args_keep_running(union_store):

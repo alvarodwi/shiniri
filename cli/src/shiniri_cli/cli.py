@@ -378,7 +378,7 @@ class App:
     def union_search(self, cmd: Command) -> None:
         u, a, name = self.union, cmd.args, cmd.name
         if not u.seasons:
-            raise QueryError("no union data yet — run sync, then fetch")
+            raise QueryError("no union data yet — run sync, then union fetch")
         season_arg = a[0] if a and re.fullmatch(r"s\d+", a[0].lower()) and name != "member" else None
         rest = a[1:] if season_arg else a
         if name in ("season", "missed", "normal") and rest:
@@ -520,7 +520,7 @@ class App:
                 levels = self.store.load_raw(LEVELS[source], [])
                 n = (len(campaign_targets(levels, stored)) if source == "campaign"
                      else sum(map(len, tower_targets(levels, stored).values())))
-                self.out.print(f"{source}: {n} stages to check on next fetch {source}")
+                self.out.print(f"{source}: {n} stages to check on next clear fetch {source}")
 
 
 def utf8(stream):

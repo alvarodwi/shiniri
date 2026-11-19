@@ -24,7 +24,7 @@ def test_pick_season_prefers_live(union):
 
 def test_pick_season_empty(union):
     union.seasons.clear()
-    with pytest.raises(QueryError, match="run sync, then fetch"):
+    with pytest.raises(QueryError, match="run sync, then union fetch"):
         pick_season(union, None)
 
 

@@ -33,7 +33,7 @@ def _dmg(hs: list[dict]) -> str:
 
 def pick_season(u: UnionData, arg: str | None) -> int:
     if not u.seasons:
-        raise QueryError("no union data yet — run sync, then fetch")
+        raise QueryError("no union data yet — run sync, then union fetch")
     if arg is None:
         return u.live if u.live in u.seasons else max(u.seasons)
     m = re.fullmatch(r"s?(\d+)", arg.lower())
