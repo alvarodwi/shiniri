@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 
-import { ANOMALY_TAB } from '@/config/sheets'
+import { ANOMALY_TAB, T9MANU_TAB } from '@/config/sheets'
 import {
+  anomalyGearRow,
   applyToRun,
   isRunComplete,
   lastRunDefaults,
@@ -10,7 +11,8 @@ import {
   toRow,
 } from '@/services/anomaly/anomalyRows'
 import type { SheetsApi } from '@/services/google/sheetsApi'
-import { nextEmptyRow, readColumnA, readRows, writeRowsAtEnd } from '@/services/sheets/tabWriter'
+import { nextEmptyRow, readColumnA, readRows, writeTabsAtEnd } from '@/services/sheets/tabWriter'
+import type { WriteTarget } from '@/services/sheets/tabWriter'
 import { sheetsApi } from '@/stores/authStore'
 import type { AnomalyRun, RunDefaults } from '@/types/anomaly'
 import { gameDay } from '@/utils/gameDay'
@@ -29,7 +31,7 @@ export const useAnomalyStore = defineStore('anomaly', {
     error: null as string | null,
     // Rows (A-I) already in the sheet for `date`. Any row locks the day: one save per game day.
     loggedRows: [] as string[][],
-    lastSaved: null as { updatedRange: string; count: number } | null,
+    lastSaved: [] as { updatedRange: string; count: number }[],
   }),
 
   getters: {
@@ -107,15 +109,25 @@ export const useAnomalyStore = defineStore('anomaly', {
       if (!this.canSave) return
       this.status = 'saving'
       this.error = null
+      this.lastSaved = []
       try {
         // Re-read at save time: another device may have logged since this page loaded.
         await this.readDay(api)
         if (this.locked) throw new Error(`Already logged for ${this.date}.`)
         const rows = this.activeRuns.map((run) => toRow(this.date, run))
-        const { updatedRange } = await writeRowsAtEnd(api, ANOMALY_TAB, rows)
+        const gearRows = this.activeRuns
+          .map((run) => anomalyGearRow(this.date, run))
+          .filter((r) => r !== null)
+        // Gear drops go to T9Manu in the same write, so the two tabs never disagree.
+        const targets: WriteTarget[] = [{ tab: ANOMALY_TAB, rows }]
+        if (gearRows.length) targets.push({ tab: T9MANU_TAB, rows: gearRows })
+        const { updatedRanges } = await writeTabsAtEnd(api, targets)
         // Clear the form before reloading, so a failed reload can't leave saved runs to resave.
         const last = this.activeRuns[this.activeRuns.length - 1]
-        this.lastSaved = { updatedRange, count: rows.length }
+        this.lastSaved = targets.map((t, i) => ({
+          updatedRange: updatedRanges[i],
+          count: t.rows.length,
+        }))
         this.reset({ boss: last.boss, stage: last.stage })
         if (await this.load(api)) this.status = 'saved'
       } catch (e) {

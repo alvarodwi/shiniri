@@ -13,6 +13,12 @@ watch(
   () => store.date,
   () => store.readDay().catch((e) => (store.error = (e as Error).message)),
 )
+
+// Writing the clamped value back keeps the box in sync even when the store value didn't change.
+function setCountFrom(input: HTMLInputElement) {
+  store.setRunCount(Number(input.value))
+  input.value = String(store.runCount)
+}
 </script>
 
 <template>
@@ -42,7 +48,7 @@ watch(
           min="1"
           :max="store.dailyLimit"
           class="focus rule-ink paper min-h-11 w-14 border px-2 text-center"
-          @change="store.setRunCount(Number(($event.target as HTMLInputElement).value))"
+          @change="setCountFrom($event.target as HTMLInputElement)"
         />
       </label>
     </div>
@@ -87,8 +93,8 @@ watch(
     </template>
 
     <p v-if="store.error" role="alert" class="text-accent-ink py-3">{{ store.error }}</p>
-    <p v-if="store.lastSaved" role="status" class="py-3">
-      Saved {{ store.lastSaved.count }} rows to {{ store.lastSaved.updatedRange }}.
+    <p v-for="saved in store.lastSaved" :key="saved.updatedRange" role="status" class="py-1">
+      Saved {{ saved.count }} rows to {{ saved.updatedRange }}.
     </p>
 
     <div v-if="!store.locked" class="paper rule fixed inset-x-0 bottom-0 border-t px-4 py-3">
@@ -98,7 +104,11 @@ watch(
         :disabled="!store.canSave"
         @click="store.save()"
       >
-        {{ store.status === 'saving' ? 'Saving…' : `Save ${store.runCount} rows` }}
+        {{
+          store.status === 'saving'
+            ? 'Saving…'
+            : `Save ${store.runCount} ${store.runCount === 1 ? 'run' : 'runs'}`
+        }}
       </button>
     </div>
   </main>

@@ -51,7 +51,7 @@ This is the proof of concept for a larger personal app. Later forms (gacha track
 ## Non-goals (this POC)
 
 - Gacha tracker, T9Manu form, editing or deleting past rows, stats or charts, offline mode, multi-user.
-- Copying or syncing Anomaly gear into T9Manu. If wanted later, a formula tab will stack both tabs; the app copies nothing.
+- ~~Copying or syncing Anomaly gear into T9Manu.~~ Reversed on 2026-11-19: Anomaly gear drops are now written to T9Manu in the same save. See `2026-11-19-gear-logger-design.md`.
 
 ## Anti-goals (failure even if it "works")
 

@@ -1,5 +1,6 @@
 import { BOSSES, DROP_TYPE } from '@/types/anomaly'
 import type { AnomalyRun, Boss, RunDefaults } from '@/types/anomaly'
+import { ANOMALY_SOURCE } from '@/types/gear'
 import type { Cell } from '@/types/sheet'
 
 const FALLBACK: RunDefaults = { boss: 'Kraken', stage: 9 }
@@ -25,6 +26,12 @@ export function toRow(date: string, run: AnomalyRun): Cell[] {
     asText(run.note.trim()),
   ]
 }
+
+// The T9Manu row for a run's gear drop, or null when the run has no gear.
+export const anomalyGearRow = (date: string, run: AnomalyRun): Cell[] | null =>
+  needsGear(run) && run.gear
+    ? [date, ANOMALY_SOURCE, run.gear.classType, run.gear.manufacturer, DROP_TYPE[run.boss]]
+    : null
 
 // USER_ENTERED parses "=1+1", "-5" or "2026-11-19"; a leading apostrophe keeps it as typed text.
 const asText = (s: string): string => (s ? `'${s}` : '')

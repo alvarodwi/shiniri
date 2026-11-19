@@ -17,3 +17,15 @@ export const ANOMALY_TAB: TabSpec = {
     '',
   ],
 }
+
+export const T9MANU_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
+  tab: 'T9Manu',
+  headers: ['date', 'sourceType', 'classType', 'manufacturer', 'slotType'],
+}
+
+export const FURNACE_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
+  tab: 'Furnace',
+  headers: ['Date', 'Target', 'Sacrifice 1', 'Sacrifice 2', 'Result'],
+}

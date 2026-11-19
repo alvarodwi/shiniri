@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useAnomalyStore } from './anomalyStore'
 
-import { ANOMALY_TAB } from '@/config/sheets'
+import { ANOMALY_TAB, T9MANU_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 
 const HEADER = "'Anomaly'!A1:I1"
@@ -15,11 +15,15 @@ function fakeApi(colA: string[], lastRow: string[]) {
     [`'Anomaly'!A${colA.length}:I${colA.length}`]: [lastRow],
     [HEADER]: [[...ANOMALY_TAB.headers]],
     [COL_A]: colA.map((v) => [v]),
+    "'T9Manu'!A1:E1": [[...T9MANU_TAB.headers]],
+    "'T9Manu'!A:A": [['date'], ['x']],
   }
   const api = {
     values,
     getValues: vi.fn(async (_id: string, range: string) => values[range] ?? []),
-    updateValues: vi.fn<SheetsApi['updateValues']>(async (_id, range) => ({ updatedRange: range })),
+    batchUpdateValues: vi.fn<SheetsApi['batchUpdateValues']>(async (_id, data) => ({
+      updatedRanges: data.map((d) => d.range),
+    })),
   }
   return api satisfies SheetsApi
 }
@@ -82,10 +86,39 @@ describe('anomalyStore', () => {
     const { api, store } = await loaded(['date', '2026-11-16'])
     fillModules(store)
     await store.save(api)
-    expect(api.updateValues).toHaveBeenCalledOnce()
-    expect(api.updateValues.mock.calls[0][2]).toHaveLength(5)
+    expect(api.batchUpdateValues).toHaveBeenCalledOnce()
+    expect(api.batchUpdateValues.mock.calls[0][1][0].rows).toHaveLength(5)
     expect(store.status).toBe('saved')
-    expect(store.lastSaved).toEqual({ updatedRange: "'Anomaly'!A3:I7", count: 5 })
+    expect(store.lastSaved).toEqual([
+      { updatedRange: "'Anomaly'!A3:I7", count: 5 },
+      { updatedRange: "'T9Manu'!A3:E7", count: 5 },
+    ])
+  })
+
+  it('writes gear drops to T9Manu in the same write', async () => {
+    const { api, store } = await loaded(['date'])
+    fillModules(store)
+    // Fallback defaults make every run Kraken 9; runs 1-3 become gear bosses.
+    store.setBossOrStage(1, { boss: 'Ultra', stage: 7 })
+    store.setBossOrStage(2, { boss: 'Ultra', stage: 7 })
+    store.setRun(2, { dropped: false })
+    store.setBossOrStage(3, { boss: 'Mirror Container', stage: 5 })
+    await store.save(api)
+    expect(api.batchUpdateValues).toHaveBeenCalledOnce()
+    const [anomaly, t9] = api.batchUpdateValues.mock.calls[0][1]
+    expect(anomaly.rows).toHaveLength(5)
+    expect(t9.range).toBe("'T9Manu'!A3:E4")
+    expect(t9.rows).toEqual([
+      [DATE, 'Anomaly Interception', 'Defender', 'Elysion', 'Helmet'],
+      [DATE, 'Anomaly Interception', 'Defender', 'Elysion', 'Gloves'],
+    ])
+  })
+
+  it('writes Anomaly only when nothing dropped gear', async () => {
+    const { api, store } = await loaded(['date'])
+    store.setBossOrStage(0, { boss: 'Kraken', stage: 9 })
+    await store.save(api)
+    expect(api.batchUpdateValues.mock.calls[0][1].map((d) => d.range)).toEqual(["'Anomaly'!A2:I6"])
   })
 
   it('refuses to save when the day was logged elsewhere after loading', async () => {
@@ -93,16 +126,25 @@ describe('anomalyStore', () => {
     fillModules(store)
     api.values[COL_A] = [['date'], ...Array.from({ length: 5 }, () => [DATE])]
     await store.save(api)
-    expect(api.updateValues).not.toHaveBeenCalled()
+    expect(api.batchUpdateValues).not.toHaveBeenCalled()
     expect(store.locked).toBe(true)
     expect(store.status).toBe('error')
     expect(store.error).toBe(`Already logged for ${DATE}.`)
   })
 
+  it('clears the last success line when a later save fails', async () => {
+    const { api, store } = await loaded(['date'])
+    store.lastSaved = [{ updatedRange: "'Anomaly'!A2:I6", count: 5 }]
+    fillModules(store)
+    api.batchUpdateValues.mockRejectedValueOnce(new Error('Sheets API 500: boom'))
+    await store.save(api)
+    expect(store.lastSaved).toEqual([])
+  })
+
   it('keeps the form when the write fails', async () => {
     const { api, store } = await loaded(['date'])
     fillModules(store)
-    api.updateValues.mockRejectedValueOnce(new Error('Sheets API 500: boom'))
+    api.batchUpdateValues.mockRejectedValueOnce(new Error('Sheets API 500: boom'))
     await store.save(api)
     expect(store.status).toBe('error')
     expect(store.error).toContain('boom')
@@ -114,7 +156,7 @@ describe('anomalyStore', () => {
     store.runCount = 3
     fillModules(store)
     await store.save(api)
-    expect(api.updateValues.mock.calls[0][2]).toHaveLength(3)
+    expect(api.batchUpdateValues.mock.calls[0][1][0].rows).toHaveLength(3)
   })
 
   it('switches the daily limit on double days', async () => {
@@ -124,7 +166,7 @@ describe('anomalyStore', () => {
     expect(store.runCount).toBe(10)
     fillModules(store)
     await store.save(api)
-    expect(api.updateValues.mock.calls[0][2]).toHaveLength(10)
+    expect(api.batchUpdateValues.mock.calls[0][1][0].rows).toHaveLength(10)
     store.setDoubleDay(false)
     expect(store.runCount).toBe(5)
   })
@@ -163,15 +205,15 @@ describe('anomalyStore', () => {
     store.setBossOrStage(0, { boss: 'Ultra', stage: 7 })
     fillModules(store)
     const realGet = api.getValues.getMockImplementation()!
-    api.updateValues.mockImplementationOnce(async (_id, range) => {
+    api.batchUpdateValues.mockImplementationOnce(async (_id, data) => {
       api.getValues.mockImplementation(async (id, r) => {
         if (r === COL_A) throw new Error('network down')
         return realGet(id, r)
       })
-      return { updatedRange: range }
+      return { updatedRanges: data.map((d) => d.range) }
     })
     await store.save(api)
-    expect(store.lastSaved?.count).toBe(5)
+    expect(store.lastSaved[0].count).toBe(5)
     expect(store.runs.every((r) => r.modules === 0)).toBe(true)
     expect(store.runs[0]).toMatchObject({ boss: 'Ultra', stage: 7 })
   })

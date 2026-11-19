@@ -55,26 +55,51 @@ export function nextEmptyRow(colA: string[]): number {
   return last + 2
 }
 
+export type WriteTarget = { tab: TabSpec; rows: Cell[][] }
+
+// Every guard runs on every tab before anything is written; then one batch request writes them all.
+export async function writeTabsAtEnd(
+  api: SheetsApi,
+  targets: WriteTarget[],
+): Promise<{ updatedRanges: string[] }> {
+  if (!targets.length) throw new Error('Nothing to write.')
+  const { spreadsheetId } = targets[0].tab
+  for (const { tab, rows } of targets) {
+    if (tab.spreadsheetId !== spreadsheetId) throw new Error('All tabs must be in one spreadsheet.')
+    if (targets.filter((t) => t.tab.tab === tab.tab).length > 1)
+      throw new Error(`Tab ${tab.tab} appears twice.`)
+    if (!rows.length) throw new Error(`Nothing to write to ${tab.tab}.`)
+    if (rows.some((r) => r.length !== tab.headers.length))
+      throw new Error(`Each ${tab.tab} row must have ${tab.headers.length} cells.`)
+    // nextEmptyRow only reads column A, so a blank A would get its row written over by the next save.
+    if (rows.some((r) => !String(r[0]).trim()))
+      throw new Error(`Every ${tab.tab} row needs a value in column A.`)
+  }
+
+  const data = []
+  for (const { tab, rows } of targets) {
+    const [headerRow = []] = await readRows(api, tab, 1, 1)
+    const actual = tab.headers.map((_, i) => (headerRow[i] ?? '').trim())
+    if (actual.some((h, i) => h !== tab.headers[i]))
+      throw new HeaderMismatchError(tab.headers, actual)
+
+    const start = nextEmptyRow(await readColumnA(api, tab))
+    const target = range(tab, start, start + rows.length - 1)
+    const existing = await api.getValues(spreadsheetId, target)
+    if (existing.some((r) => r.some((c) => String(c).trim()))) throw new TargetNotEmptyError(target)
+    data.push({ range: target, rows })
+  }
+
+  // shortcut: under a second passes between the empty checks and this write, so a save from another
+  // device in that gap would be overwritten. Fine for one person; use values.append if that changes.
+  return api.batchUpdateValues(spreadsheetId, data)
+}
+
 export async function writeRowsAtEnd(
   api: SheetsApi,
   tab: TabSpec,
   rows: Cell[][],
 ): Promise<{ updatedRange: string }> {
-  if (!rows.length) throw new Error('Nothing to write.')
-  if (rows.some((r) => r.length !== tab.headers.length))
-    throw new Error(`Each row must have ${tab.headers.length} cells.`)
-
-  const [headerRow = []] = await readRows(api, tab, 1, 1)
-  const actual = tab.headers.map((_, i) => (headerRow[i] ?? '').trim())
-  if (actual.some((h, i) => h !== tab.headers[i]))
-    throw new HeaderMismatchError(tab.headers, actual)
-
-  const start = nextEmptyRow(await readColumnA(api, tab))
-  const target = range(tab, start, start + rows.length - 1)
-  const existing = await api.getValues(tab.spreadsheetId, target)
-  if (existing.some((r) => r.some((c) => String(c).trim()))) throw new TargetNotEmptyError(target)
-
-  // shortcut: under a second passes between the empty check and this PUT, so a save from another
-  // device in that gap would be overwritten. Fine for one person; use values.append if that changes.
-  return api.updateValues(tab.spreadsheetId, target, rows)
+  const { updatedRanges } = await writeTabsAtEnd(api, [{ tab, rows }])
+  return { updatedRange: updatedRanges[0] }
 }

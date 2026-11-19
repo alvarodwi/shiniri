@@ -8,11 +8,11 @@ export type TokenGetter = (opts?: { forceRefresh?: boolean }) => Promise<string>
 
 export interface SheetsApi {
   getValues(spreadsheetId: string, range: string, render?: ValueRender): Promise<string[][]>
-  updateValues(
+  // One request for every range, so a save lands in all its tabs or in none.
+  batchUpdateValues(
     spreadsheetId: string,
-    range: string,
-    rows: Cell[][],
-  ): Promise<{ updatedRange: string }>
+    data: { range: string; rows: Cell[][] }[],
+  ): Promise<{ updatedRanges: string[] }>
 }
 
 export class SheetsApiError extends Error {
@@ -54,12 +54,17 @@ export function createSheetsApi(getToken: TokenGetter, fetchFn: typeof fetch = f
       const body = await request(`${url(id, range)}?valueRenderOption=${render}`)
       return body.values ?? []
     },
-    async updateValues(id, range, rows) {
-      const body = await request(`${url(id, range)}?valueInputOption=USER_ENTERED`, {
-        method: 'PUT',
-        body: JSON.stringify({ values: rows }),
+    async batchUpdateValues(id, data) {
+      const body = await request(`${BASE}/${encodeURIComponent(id)}/values:batchUpdate`, {
+        method: 'POST',
+        body: JSON.stringify({
+          valueInputOption: 'USER_ENTERED',
+          data: data.map(({ range, rows }) => ({ range, values: rows })),
+        }),
       })
-      return { updatedRange: body.updatedRange }
+      return {
+        updatedRanges: (body.responses ?? []).map((r: { updatedRange: string }) => r.updatedRange),
+      }
     },
   }
 }

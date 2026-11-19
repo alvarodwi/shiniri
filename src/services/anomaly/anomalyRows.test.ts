@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  anomalyGearRow,
   applyToRun,
   rowNumbersForDate,
   isRunComplete,
@@ -152,5 +153,27 @@ describe('newRun', () => {
       gear: null,
       note: '',
     })
+  })
+})
+
+describe('anomalyGearRow', () => {
+  const ultra = {
+    ...newRun({ boss: 'Ultra', stage: 7 }),
+    gear: { classType: 'Attacker', manufacturer: 'Tetra' },
+  } as AnomalyRun
+
+  it('maps a gear drop to a T9Manu row with the drop type as slot', () => {
+    expect(anomalyGearRow('2026-11-19', ultra)).toEqual([
+      '2026-11-19',
+      'Anomaly Interception',
+      'Attacker',
+      'Tetra',
+      'Helmet',
+    ])
+  })
+
+  it('is null for Kraken and for runs that dropped nothing', () => {
+    expect(anomalyGearRow('2026-11-19', { ...ultra, boss: 'Kraken' })).toBe(null)
+    expect(anomalyGearRow('2026-11-19', { ...ultra, dropped: false })).toBe(null)
   })
 })

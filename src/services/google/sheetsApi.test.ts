@@ -46,17 +46,29 @@ describe('sheetsApi', () => {
     expect(await api.getValues('id', 'r')).toEqual([])
   })
 
-  it('writes with PUT and USER_ENTERED to the encoded range', async () => {
-    const fetchFn = vi.fn().mockResolvedValue(json(200, { updatedRange: "'Anomaly'!A5:I5" }))
+  it('batch-writes every range in one POST with USER_ENTERED', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(
+      json(200, {
+        responses: [{ updatedRange: "'Anomaly'!A5:I5" }, { updatedRange: "'T9Manu'!A9:E9" }],
+      }),
+    )
     const api = createSheetsApi(async () => 't', fetchFn)
 
-    const res = await api.updateValues('sid', "'Anomaly'!A5:I5", [['x', 1, true]])
+    const res = await api.batchUpdateValues('sid', [
+      { range: "'Anomaly'!A5:I5", rows: [['x', 1, true]] },
+      { range: "'T9Manu'!A9:E9", rows: [['y']] },
+    ])
     const [url, init] = fetchFn.mock.calls[0]
-    expect(res).toEqual({ updatedRange: "'Anomaly'!A5:I5" })
-    expect(init.method).toBe('PUT')
-    expect(url).toContain('/spreadsheets/sid/values/')
-    expect(url).toContain("'Anomaly'!A5%3AI5")
-    expect(url).toContain('valueInputOption=USER_ENTERED')
-    expect(JSON.parse(init.body)).toEqual({ values: [['x', 1, true]] })
+    expect(fetchFn).toHaveBeenCalledOnce()
+    expect(res).toEqual({ updatedRanges: ["'Anomaly'!A5:I5", "'T9Manu'!A9:E9"] })
+    expect(init.method).toBe('POST')
+    expect(url).toMatch(/\/spreadsheets\/sid\/values:batchUpdate$/)
+    expect(JSON.parse(init.body)).toEqual({
+      valueInputOption: 'USER_ENTERED',
+      data: [
+        { range: "'Anomaly'!A5:I5", values: [['x', 1, true]] },
+        { range: "'T9Manu'!A9:E9", values: [['y']] },
+      ],
+    })
   })
 })

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { CLASS_TYPES, MANUFACTURERS } from '@/types/anomaly'
-import type { Gear } from '@/types/anomaly'
+import { CLASS_TYPES, MANUFACTURERS } from '@/types/gear'
+import type { Gear } from '@/types/gear'
 
 const props = defineProps<{ modelValue: Gear | null }>()
 const emit = defineEmits<{ 'update:modelValue': [value: Gear] }>()
