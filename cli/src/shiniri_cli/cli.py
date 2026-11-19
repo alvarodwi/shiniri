@@ -9,6 +9,8 @@ from datetime import date
 from pathlib import Path
 
 import httpx
+from prompt_toolkit.completion import NestedCompleter, WordCompleter
+from prompt_toolkit.document import Document
 from rich.console import Console
 from rich.markup import escape
 from rich.progress import Progress
@@ -108,6 +110,25 @@ def parse_command(line: str, commands: dict = COMMANDS) -> Command:
     return Command(name, args, force)
 
 
+class PrefixCompleter(NestedCompleter):
+    """NestedCompleter that also follows a unique prefix (`cl n cro`), the way parse_command does."""
+
+    def get_completions(self, document, complete_event):
+        text = document.text_before_cursor.lstrip()
+        first = text.split()[0] if " " in text else ""
+        if first and first not in self.options:
+            hits = [k for k in self.options if k.startswith(first.lower())]
+            if len(hits) == 1:
+                text = hits[0] + text[len(first):]
+                document = Document(text, len(text))  # completions are relative to the cursor, so this is safe
+        yield from super().get_completions(document, complete_event)
+
+
+def _clear_habit(word: str) -> bool:
+    """A word typed at main that names a clear command: from before clear became a group."""
+    return any(c.startswith(word) for c in CLEAR_COMMANDS if c not in ("help", "back"))
+
+
 def _int(text: str, what: str) -> int:
     try:
         return int(text)
@@ -156,7 +177,6 @@ class App:
         self.union = build_union(self.store, me, time.time())
 
     def _build_completer(self):
-        from prompt_toolkit.completion import NestedCompleter, WordCompleter
         towers = {c["mode"].lower() for c in self.tables.clears if c["source"] == "tower"}
         seasons = {f"s{n}" for n in self.union.seasons}
         names = sorted(set(self.union.names.values()))
@@ -179,8 +199,8 @@ class App:
             "help": set(CLEAR_COMMANDS),
         }
         groups = {"clear": clear, "union": union}
-        self._group_completers = {g: NestedCompleter.from_nested_dict(d) for g, d in groups.items()}
-        return NestedCompleter.from_nested_dict({
+        self._group_completers = {g: PrefixCompleter.from_nested_dict(d) for g, d in groups.items()}
+        return PrefixCompleter.from_nested_dict({
             **{name: None for name in COMMANDS}, **groups,
             "help": {g: set(cmds) for g, (cmds, _, _) in GROUPS.items()} | {c: None for c in COMMANDS if c not in GROUPS},
         })
@@ -211,7 +231,7 @@ class App:
         return f"campaign {counts['campaign']} · tower {counts['tower']} · fetched {fetched} · synced {synced}"
 
     def execute(self, line: str) -> bool:
-        if not line.strip():
+        if not line.strip().lstrip("!").strip():  # a bare ! is as empty as a blank line
             return True
         try:
             if self.mode in GROUPS:
@@ -229,9 +249,11 @@ class App:
             try:
                 cmd = parse_command(line)
             except QueryError:
-                word = (line.strip().lstrip("!").split() or [""])[0].lower()
-                if word and any(c.startswith(word) for c in CLEAR_COMMANDS if c not in ("help", "back")):  # pre-groups habit
-                    raise QueryError(f"unknown command '{word}' — try clear {line.strip().lstrip('!')}") from None
+                text = line.strip()
+                word = text.lstrip("!").split()[0].lower()
+                if _clear_habit(word):
+                    bang = "!" if text.startswith("!") else ""
+                    raise QueryError(f"unknown command '{word}' — try {bang}clear {text.lstrip('!').strip()}") from None
                 raise
             if cmd.name == "quit":
                 return False
@@ -328,7 +350,12 @@ class App:
 
     # --- actions --------------------------------------------------------
     def do_help(self, cmd: Command) -> None:
-        group = parse_command(cmd.args[0]).name if cmd.args else None
+        try:
+            group = parse_command(cmd.args[0]).name if cmd.args else None
+        except QueryError:
+            if _clear_habit(cmd.args[0].lower()):
+                raise QueryError(f"unknown command '{cmd.args[0]}' — try help clear {' '.join(cmd.args)}") from None
+            raise
         if group in GROUPS:
             commands, footer, _ = GROUPS[group]
             self._help(commands, cmd.args[1:], footer)
