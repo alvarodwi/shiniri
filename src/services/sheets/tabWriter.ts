@@ -57,10 +57,17 @@ export function nextEmptyRow(colA: string[]): number {
   return last + 2
 }
 
-export type WriteTarget = { tab: TabSpec; rows: Cell[][] }
+// A function cell gets its own sheet row once the writer knows it, e.g. for a formula like =B7-B6.
+export type RowCell = Cell | ((sheetRow: number) => Cell)
+export type WriteTarget = { tab: TabSpec; rows: RowCell[][] }
 
-// Header check, next empty row from column A, and an empty-target check. Returns the range to write.
-async function checkedRange(api: SheetsApi, tab: TabSpec, rowCount: number): Promise<string> {
+// Header check, next empty row from column A, and an empty-target check. Returns the range to write
+// and its first row.
+async function checkedRange(
+  api: SheetsApi,
+  tab: TabSpec,
+  rowCount: number,
+): Promise<{ range: string; start: number }> {
   const [headerRow = []] = await readRows(api, tab, 1, 1)
   const actual = tab.headers.map((_, i) => (headerRow[i] ?? '').trim())
   if (actual.some((h, i) => h !== tab.headers[i]))
@@ -70,7 +77,7 @@ async function checkedRange(api: SheetsApi, tab: TabSpec, rowCount: number): Pro
   const target = range(tab, start, start + rowCount - 1)
   const existing = await api.getValues(tab.spreadsheetId, target)
   if (existing.some((r) => r.some((c) => String(c).trim()))) throw new TargetNotEmptyError(target)
-  return target
+  return { range: target, start }
 }
 
 // Every guard runs on every tab before anything is written; then one batch request writes them all.
@@ -94,22 +101,26 @@ export async function writeTabsAtEnd(
     if (rows.some((r) => r.length !== tab.headers.length))
       throw new Error(`Each ${tab.tab} row must have ${tab.headers.length} cells.`)
     // nextEmptyRow only reads column A, so a blank A would get its row written over by the next save.
-    if (rows.some((r) => !String(r[0]).trim()))
+    if (rows.some((r) => typeof r[0] === 'function' || !String(r[0]).trim()))
       throw new Error(`Every ${tab.tab} row needs a value in column A.`)
   }
 
   // Tabs are independent, so their checks run in parallel to keep the check-then-write gap short.
-  const [auditRange, ...dataRanges] = await Promise.all([
+  const [auditTarget, ...dataTargets] = await Promise.all([
     checkedRange(api, audit, 1),
     ...targets.map((t) => checkedRange(api, t.tab, t.rows.length)),
   ])
-  const data = targets.map((t, i) => ({ range: dataRanges[i], rows: t.rows }))
+  const data = targets.map((t, i) => {
+    const { range, start } = dataTargets[i]
+    const rows = t.rows.map((r, j) => r.map((c) => (typeof c === 'function' ? c(start + j) : c)))
+    return { range, rows }
+  })
 
   // Leading ' stores both as text: USER_ENTERED would eat the quote in 'Tab'!A1, and would turn the
   // timestamp into a datetime whose display depends on the sheet's locale.
   const ranges = `'${data.map((d) => d.range).join(', ')}`
   const total = targets.reduce((n, t) => n + t.rows.length, 0)
-  data.push({ range: auditRange, rows: [[`'${wibTimestamp(now)}`, form, ranges, total]] })
+  data.push({ range: auditTarget.range, rows: [[`'${wibTimestamp(now)}`, form, ranges, total]] })
 
   // shortcut: a few round trips pass between the empty checks and this write, so a save from another
   // device in that gap would be overwritten. Fine for one person; use values.append if that changes.

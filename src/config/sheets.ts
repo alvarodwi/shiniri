@@ -24,6 +24,13 @@ export const T9MANU_TAB: TabSpec = {
   headers: ['date', 'sourceType', 'classType', 'manufacturer', 'slotType'],
 }
 
+// daysElapsed holds a formula the app writes per row; see services/level/levelRows.ts.
+export const LEVEL_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
+  tab: 'LevelLogs',
+  headers: ['newSynchroLevel', 'achievedAt', 'daysElapsed', 'note'],
+}
+
 export const FURNACE_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
   tab: 'Furnace',

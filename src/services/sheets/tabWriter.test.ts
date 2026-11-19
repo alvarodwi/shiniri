@@ -134,6 +134,35 @@ describe('writeTabsAtEnd guards', () => {
     expect(api.getValues).not.toHaveBeenCalled()
   })
 
+  it('resolves function cells with their own sheet row', async () => {
+    const api = fakeApi({ [HEADER]: [['date', 'boss', 'note']], [COL_A]: colA(5) })
+    const f = (n: number) => `=B${n + 1}`
+    await write(api, [
+      {
+        tab,
+        rows: [
+          ['a', f, '', ''],
+          ['b', f, '', ''],
+        ],
+      },
+    ])
+    expect(api.batchUpdateValues.mock.calls[0][1][0]).toEqual({
+      range: "'Anomaly'!A6:D7",
+      rows: [
+        ['a', '=B7', '', ''],
+        ['b', '=B8', '', ''],
+      ],
+    })
+  })
+
+  it('refuses a function cell in column A before reading', async () => {
+    const api = fakeApi({})
+    await expect(write(api, [{ tab, rows: [[() => 'x', '', '', '']] }])).rejects.toThrow(
+      'Every Anomaly row needs a value in column A.',
+    )
+    expect(api.getValues).not.toHaveBeenCalled()
+  })
+
   it('rejects empty or wrong-width rows without calling the API', async () => {
     const api = fakeApi({})
     await expect(write(api, [{ tab, rows: [] }])).rejects.toThrow(/Nothing to write/)
