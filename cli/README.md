@@ -126,8 +126,9 @@ One-time setup:
    overclockLatest synchroLevel synchroSlots outpostLevel recyclePersonal recycleAttacker
    recycleDefender recycleSupporter recycleElysion recycleMissilis recycleTetra recyclePilgrim
    recycleAbnormal memoirs callLogs bgm data` (47 columns, A to AU)
-7. Run it in tmux (`tmux new -s shiniri`, `uv run shiniri-cli watch`, detach with `Ctrl-b d`).
-   Or run `nohup uv run shiniri-cli watch >> data/watch.log 2>&1 &`. After a reboot, start it again.
+7. Start it with `./start.sh`, which runs `watch` in the background and refuses to start a second
+   copy. Stop it with `./stop.sh`. The log is `data/watch.log`, linked to the newest of the last
+   5 session logs in `data/logs/`. After a reboot, run `./start.sh` again.
 
 Test against a copy of the sheet first. Then clear the test rows from `Profile` and `AuditLog`.
 Otherwise a test row dated today makes the real run think today is already written.
