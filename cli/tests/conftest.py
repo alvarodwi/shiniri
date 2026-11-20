@@ -58,6 +58,7 @@ class FakeSheets:
     def __init__(self, values: dict[str, list[list]]):
         self.values = values
         self.batches = []
+        self.ensured = []
 
     def get_values(self, range_: str, unformatted: bool = False) -> list[list]:
         return self.values.get(range_, [])
@@ -65,6 +66,9 @@ class FakeSheets:
     def batch_update(self, data):
         self.batches.append(data)
         return [r for r, _ in data]
+
+    def ensure_rows(self, rows):
+        self.ensured.append(dict(rows))
 
 
 @pytest.fixture

@@ -1,9 +1,11 @@
 """Google Sheets: an atomic append writer, a port of the shiniri web app's tabWriter.ts.
 
 It never inserts, shifts or overwrites: it writes once, into rows it has just confirmed are empty, below the
-last row of data, and the AuditLog row rides in the same request so it exists only if the write landed.
+last row of data, and the AuditLog row rides in the same request so it exists only if the write landed. When a
+tab's grid is too short, blank rows are appended at its bottom first.
 """
 
+import time
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Callable, Protocol, Sequence
@@ -25,6 +27,7 @@ class SheetsError(Exception):
 class SheetsApi(Protocol):
     def get_values(self, range_: str, unformatted: bool = False) -> list[list]: ...
     def batch_update(self, data: list[tuple[str, list[list]]]) -> list[str]: ...
+    def ensure_rows(self, rows: dict[str, int]) -> None: ...
 
 
 def column_letter(n: int) -> str:
@@ -104,6 +107,7 @@ def write_rows(api: SheetsApi, tab: str, headers: Sequence[str], rows: list[list
     audit_start, _ = _checked(api, AUDIT_TAB, AUDIT_HEADERS)
     target = _range(tab, len(headers), start, start + len(rows) - 1)
     audit = _range(AUDIT_TAB, len(AUDIT_HEADERS), audit_start, audit_start)
+    api.ensure_rows({tab: start + len(rows) - 1, AUDIT_TAB: audit_start})
     _ensure_empty(api, target)
     _ensure_empty(api, audit)
     # Leading ' stores both as text: USER_ENTERED would eat the quote in 'Tab'!A1 and turn the timestamp
@@ -116,14 +120,21 @@ def write_rows(api: SheetsApi, tab: str, headers: Sequence[str], rows: list[list
 
 
 class HttpSheets:
-    def __init__(self, spreadsheet_id: str, token: Callable[[], str], client: httpx.Client):
+    def __init__(self, spreadsheet_id: str, token: Callable[[], str], client: httpx.Client, *,
+                 sleep: Callable[[float], None] = time.sleep):
         self.base = f"{BASE}/{quote(spreadsheet_id, safe='')}"
         self.token = token
         self.client = client
+        self.sleep = sleep
+        self._grid: dict[str, list[int]] | None = None  # title -> [sheetId, rowCount], read once per instance
 
     def _request(self, method: str, url: str, **kw) -> dict:
-        resp = self.client.request(method, url, headers={"Authorization": f"Bearer {self.token()}"},
-                                   timeout=30.0, **kw)
+        for attempt in range(4):
+            resp = self.client.request(method, url, headers={"Authorization": f"Bearer {self.token()}"},
+                                       timeout=30.0, **kw)
+            if resp.status_code != 429 or attempt == 3:
+                break
+            self.sleep(60.0)  # the read quota is per minute: a 60 s wait always refills it
         if not resp.is_success:
             try:
                 msg = resp.json()["error"]["message"]
@@ -144,6 +155,25 @@ class HttpSheets:
             "data": [{"range": r, "values": v} for r, v in data],
         })
         return [r["updatedRange"] for r in body.get("responses", [])]
+
+    def ensure_rows(self, rows: dict[str, int]) -> None:
+        """Append blank rows at the bottom of each tab whose grid is shorter than its count."""
+        if self._grid is None:
+            body = self._request("GET", self.base,
+                                 params={"fields": "sheets.properties(sheetId,title,gridProperties.rowCount)"})
+            self._grid = {p["title"]: [p["sheetId"], p.get("gridProperties", {}).get("rowCount", 0)]
+                          for p in (sh["properties"] for sh in body.get("sheets", []))}
+        missing = [t for t in rows if t not in self._grid]
+        if missing:
+            raise SheetsError(f"{', '.join(missing)} tab not found")
+        short = {t: n for t, n in rows.items() if self._grid[t][1] < n}
+        if not short:
+            return
+        self._request("POST", f"{self.base}:batchUpdate", json={"requests": [
+            {"appendDimension": {"sheetId": self._grid[t][0], "dimension": "ROWS", "length": n - self._grid[t][1]}}
+            for t, n in short.items()]})
+        for t, n in short.items():
+            self._grid[t][1] = n
 
 
 def service_account_token(path: Path) -> Callable[[], str]:
