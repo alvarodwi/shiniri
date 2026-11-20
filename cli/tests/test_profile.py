@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import json
 from datetime import datetime, timezone
 
@@ -7,8 +8,9 @@ import pytest
 from conftest import PROFILE_FIXTURE
 
 from shiniri_cli.fetch import AuthError
-from shiniri_cli.profile import (PROFILE_HEADERS, WIB, ProfileError, build_row, fetch_daily, fetch_profile,
-                                 game_day, is_last_check, next_check, stage_names, wib_timestamp)
+from shiniri_cli.sheets import SheetsError
+from shiniri_cli.profile import (PROFILE_HEADERS, WIB, ProfileError, build_row, check_once, fetch_daily,
+                                 fetch_profile, game_day, load_guard, is_last_check, next_check, stage_names, wib_timestamp)
 
 UTC = timezone.utc
 BASIC = PROFILE_FIXTURE["basic"]["data"]["basic_info"]
@@ -107,3 +109,80 @@ def test_missing_outpost_raises_profile_error():
                     "GetUserProfileOutpostInfo": {"code": 0, "data": {}}})
     with pytest.raises(ProfileError):
         asyncio.run(fetch_profile(c, "42"))
+
+
+NOON = datetime(2026, 11, 20, 5, 0, tzinfo=UTC)      # 12:00 WIB, game day 2026-11-20
+LAST = datetime(2026, 11, 20, 19, 59, tzinfo=UTC)    # 02:59 WIB, still game day 2026-11-20
+
+
+def daily(points):
+    body = copy.deepcopy(PROFILE_FIXTURE["daily"])
+    body["data"]["daily_progress"][0]["daily_mission_received_points"] = points
+    return body
+
+
+def make_write(writes):
+    return lambda row, day: writes.append((row, day)) or "'Profile'!A5:AU5"
+
+
+def run_check(store, now, points, write):
+    c = client_for({"GetUserDailyContentsProgress": daily(points),
+                    "GetUserProfileBasicInfo": PROFILE_FIXTURE["basic"],
+                    "GetUserProfileOutpostInfo": PROFILE_FIXTURE["outpost"]})
+    return asyncio.run(check_once(store, now, c, "42", write))
+
+
+def guard(store):
+    return json.loads((store.root / "data" / "daily.json").read_text(encoding="utf-8"))
+
+
+def test_not_done_keeps_progress_and_writes_nothing(store):
+    writes = []
+    assert "not done (30/100)" in run_check(store, NOON, 30, make_write(writes))
+    assert writes == [] and guard(store)["written"] is False
+    assert guard(store)["progress"]["daily_mission_received_points"] == 30
+
+
+def test_done_writes_once(store):
+    writes = []
+    assert "wrote 'Profile'!A5:AU5" in run_check(store, NOON, 100, make_write(writes))
+    assert run_check(store, NOON, 100, make_write(writes)) == "game day 2026-11-20: already written"
+    assert len(writes) == 1 and writes[0][1] == "2026-11-20"
+    assert writes[0][0][PROFILE_HEADERS.index("dailyDone")] is True
+
+
+def test_last_check_writes_unfinished_day(store):
+    writes = []
+    run_check(store, LAST, 30, make_write(writes))
+    assert writes[0][0][PROFILE_HEADERS.index("dailyDone")] is False and guard(store)["written"] is True
+
+
+def test_new_game_day_resets_guard(store):
+    writes = []
+    run_check(store, NOON, 100, make_write(writes))
+    run_check(store, datetime(2026, 11, 20, 20, 0, tzinfo=UTC), 100, make_write(writes))  # 03:00 WIB
+    assert [d for _, d in writes] == ["2026-11-20", "2026-11-21"]
+
+
+def test_corrupt_guard_is_a_fresh_day(store):
+    (store.root / "data" / "daily.json").write_text("{nope", encoding="utf-8")
+    assert load_guard(store, "2026-11-20") == {"day": "2026-11-20", "written": False}
+
+
+def test_duplicate_marks_written(store):
+    run_check(store, NOON, 100, lambda row, day: None)
+    assert guard(store)["written"] is True
+
+
+@pytest.mark.parametrize("exc, text", [(SheetsError("Sheets API 403: nope"), "Sheets API 403"),
+                                       (httpx.ConnectError("down"), "ConnectError")])
+def test_write_failure_is_logged_and_retried_next_hour(store, exc, text):
+    def boom(row, day):
+        raise exc
+    assert text in run_check(store, NOON, 100, boom)
+    assert guard(store)["written"] is False
+
+
+def test_rejected_cookie_is_logged(store):
+    c = client_for({"GetUserDailyContentsProgress": {"code": 300001, "msg": "game not login"}})
+    assert "cookie rejected" in asyncio.run(check_once(store, NOON, c, "42", make_write([])))

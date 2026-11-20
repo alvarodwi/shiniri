@@ -1,11 +1,14 @@
 """Daily profile row: game-day timing, the profile requests, the row for the Progression sheet."""
 
+import json
 from datetime import datetime, timedelta, timezone
+from typing import Callable
 
 import httpx
 
-from .fetch import AREA_ID, api_call
-from .store import Store
+from .fetch import AREA_ID, AuthError, api_call
+from .sheets import SheetsError
+from .store import Store, atomic_write
 
 WIB = timezone(timedelta(hours=7))  # fixed offset, no DST; never the machine's zone
 RESET = timedelta(hours=3)          # the game day starts at 03:00 WIB
@@ -104,3 +107,53 @@ def build_row(basic: dict, outpost: dict, *, day: str, taken_at: str, daily_done
         relics.get("HandWriting", ""), relics.get("CallLog", ""), outpost.get("jukebox_count", ""),
         sum(n for c, n in relics.items() if c not in ("HandWriting", "CallLog")),
     ]
+
+
+def _guard_path(store: Store):
+    return store.root / "data" / "daily.json"
+
+
+def load_guard(store: Store, day: str) -> dict:
+    """Today's {"day", "written", "progress"?}; anything missing, unreadable or from another day starts fresh."""
+    try:
+        g = json.loads(_guard_path(store).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        g = None
+    return g if isinstance(g, dict) and g.get("day") == day else {"day": day, "written": False}
+
+
+def _save_guard(store: Store, guard: dict) -> None:
+    atomic_write(_guard_path(store), json.dumps(guard, ensure_ascii=False, indent=1))
+
+
+async def check_once(store: Store, now: datetime, client: httpx.AsyncClient, openid: str,
+                     write: Callable[[list, str], str | None]) -> str:
+    """One hourly check. `write(row, day)` returns the range written, or None when the sheet already has
+    the day. Returns the log line; never raises for an expected failure, so the loop keeps going."""
+    day = game_day(now)
+    guard = load_guard(store, day)
+    if guard["written"]:
+        return f"game day {day}: already written"
+    try:
+        progress = await fetch_daily(client, openid)
+        guard["progress"] = progress
+        _save_guard(store, guard)  # before the profile fetch, so a later failure keeps it
+        points = progress.get("daily_mission_received_points", 0)
+        done = points >= 100
+        if not done and not is_last_check(now):
+            return f"game day {day}: not done ({points}/100)"
+        basic, outpost = await fetch_profile(client, openid)
+        row = build_row(basic, outpost, day=day, taken_at=wib_timestamp(now), daily_done=done,
+                        stages=stage_names(store))
+        written = write(row, day)
+        guard["written"] = True
+        _save_guard(store, guard)
+        if written is None:
+            return f"game day {day}: already in the sheet"
+        return f"game day {day}: wrote {written}" + ("" if done else f" (daily not done, {points}/100)")
+    except AuthError as e:
+        return f"game day {day}: cookie rejected: {e}"
+    except (ProfileError, SheetsError) as e:
+        return f"game day {day}: {e}"
+    except httpx.HTTPError as e:
+        return f"game day {day}: {type(e).__name__}"
