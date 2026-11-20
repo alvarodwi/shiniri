@@ -52,7 +52,7 @@ import httpx
 import pytest
 
 from shiniri_cli.fetch import AuthError
-from shiniri_cli.union import UnionError, fetch_union, is_final
+from shiniri_cli.union import SIZE_TRUST, UnionError, fetch_union, is_final
 
 GUILD_OK = {"code": 0, "data": {"card": {"guild_id": "1", "guild_name": "TEST", "guild_member_cnt": 4}}}
 
@@ -62,13 +62,19 @@ def _stored_hits(body):  # the server answering with what's already stored, so t
         "raid", {}).get("participate_data", [])}}
 
 
-def _client(seen, raid=_stored_hits, guild=GUILD_OK):
+MEMBERS_OK = {"code": 0, "data": {"items": [{"member_id": "a", "nickname": "ALPHA", "level": 900,
+                                             "synchro_level": 800}]}}
+
+
+def _client(seen, raid=_stored_hits, guild=GUILD_OK, members=MEMBERS_OK):
     def handler(req):
         name = req.url.path.rsplit("/", 1)[-1]
         body = json.loads(req.content)
         seen.append((name, body.get("season_id")))
         if name == "GetMyGuildInfo":
             return httpx.Response(200, json=guild)
+        if name == "GetGuildMembers":
+            return httpx.Response(200, json=members)
         if name == "GetUnionRaidLevelDataOfGuildSeason":
             return httpx.Response(200, json={"code": 0, "data": {"level_info": []}})
         return httpx.Response(200, json=raid(body))
@@ -87,7 +93,7 @@ def _add_season(store, sid, start, end):
 def test_fetch_saves_missing_and_keeps_final(union_store):
     _add_season(union_store, 1000047, 900, 1100)
     seen = []
-    assert _run(union_store, _client(seen), 1200) == {45: "kept", 46: "kept", 47: "saved"}
+    assert _run(union_store, _client(seen), 1200) == {45: "kept (+roster)", 46: "kept (+roster)", 47: "saved"}
     assert {s for _, s in seen if s} == {"1000047"}
     saved = union_store.load_raw("union/1000047")
     assert saved["fetched_ts"] == 1200 and saved["guild"]["guild_member_cnt"] == 4
@@ -99,7 +105,8 @@ def test_fetch_body(union_store):
     def handler(req):
         bodies.append(json.loads(req.content))
         return httpx.Response(200, json=GUILD_OK if "GetMyGuild" in req.url.path else {"code": 0, "data": {}})
-    _run(union_store, httpx.AsyncClient(transport=httpx.MockTransport(handler)), 1200)
+    # past SIZE_TRUST, so the locked seasons ask for no roster and the level call comes second
+    _run(union_store, httpx.AsyncClient(transport=httpx.MockTransport(handler)), 400 + SIZE_TRUST + 1)
     assert bodies[0] == {"ignore_toast": True}
     assert bodies[1] == {"area_id": 85, "guild_id": "1", "season_id": "1000047"}
 
@@ -169,7 +176,7 @@ def test_partial_results_survive_auth_error(union_store):
         name = req.url.path.rsplit("/", 1)[-1]
         if name == "GetMyGuildInfo":
             return httpx.Response(200, json=GUILD_OK)
-        sid = json.loads(req.content)["season_id"]
+        sid = json.loads(req.content).get("season_id")
         calls.append(sid)
         if sid == "1000048":
             return httpx.Response(200, json={"code": 300001, "msg": "game not login"})
@@ -188,3 +195,52 @@ def test_network_error_is_not_a_refusal(union_store):
         _run(union_store, httpx.AsyncClient(transport=httpx.MockTransport(handler)), 1000)
     with pytest.raises(UnionError, match="union info refused: user not in guild"):
         _run(union_store, _client([], guild={"code": 1303028, "msg": "user not in guild"}), 1000)
+
+
+def test_saved_season_stores_members(union_store):
+    _add_season(union_store, 1000047, 900, 1100)
+    seen = []
+    _run(union_store, _client(seen), 1200)
+    assert union_store.load_raw("union/1000047")["members"] == MEMBERS_OK["data"]["items"]
+    assert ("GetGuildMembers", None) in seen
+
+
+def test_members_body(union_store):
+    _add_season(union_store, 1000047, 900, 1100)
+    bodies = []
+    def handler(req):
+        name = req.url.path.rsplit("/", 1)[-1]
+        bodies.append((name, json.loads(req.content)))
+        if name == "GetMyGuildInfo":
+            return httpx.Response(200, json=GUILD_OK)
+        if name == "GetGuildMembers":
+            return httpx.Response(200, json=MEMBERS_OK)
+        return httpx.Response(200, json={"code": 0, "data": {}})
+    _run(union_store, httpx.AsyncClient(transport=httpx.MockTransport(handler)), 1200)
+    assert ("GetGuildMembers", {"guild_id": "1", "nikke_area_id": "85"}) in bodies
+
+
+def test_members_failure_keeps_old_roster(union_store):
+    raw = union_store.load_raw("union/1000046")
+    union_store.save_raw("union/1000046", {**raw, "fetched_ts": 350, "members": [{"member_id": "old"}]})
+    _run(union_store, _client([], members={"code": 1, "msg": "boom", "data": None}), 1000)
+    saved = union_store.load_raw("union/1000046")
+    assert saved["members"] == [{"member_id": "old"}] and saved["fetched_ts"] == 1000
+
+
+def test_recent_locked_season_gets_current_roster(union_store):
+    # s46 ended at 400 and is locked (fetched 10000); 400 + SIZE_TRUST is still ahead
+    assert _run(union_store, _client([]), 5000)[46] == "kept (+roster)"
+    saved = union_store.load_raw("union/1000046")
+    assert saved["members"] == MEMBERS_OK["data"]["items"] and saved["fetched_ts"] == 10000
+
+
+def test_old_locked_season_gets_no_roster(union_store):
+    assert _run(union_store, _client([]), 400 + SIZE_TRUST + 1)[46] == "kept"
+    assert "members" not in union_store.load_raw("union/1000046")
+
+
+def test_build_union_carries_members_and_hit_nickname(union_store):
+    u = build_union(union_store, None, 0)
+    assert u.seasons[46]["members"] is None
+    assert {h["nickname"] for h in u.hits if h["season"] == 45 and h["openid"] == "b"} == {"BRAVO_OLD"}

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from statistics import median
 
-from .union import CODES, WEAK_TO, UnionData, boss_code
+from .union import CODES, SIZE_TRUST, WEAK_TO, UnionData, boss_code
 
 
 @dataclass
@@ -20,7 +20,6 @@ class Result:
 class QueryError(ValueError):
     pass
 
-SIZE_TRUST = 7 * 86400  # the guild card is today's; past this it says nothing about that season
 
 
 def short_dmg(n) -> str:

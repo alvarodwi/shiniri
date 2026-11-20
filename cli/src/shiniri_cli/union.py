@@ -14,6 +14,7 @@ WEAK_TO = {"Fire": "Water", "Water": "Electronic", "Electronic": "Iron", "Iron":
 CODES = ("HSTA", "PSID", "ZEUS", "DMTR", "ANMI")
 MODES = {1: "normal", 2: "hard"}
 FINAL_GRACE = 3600
+SIZE_TRUST = 7 * 86400  # the guild card and roster are today's; past this they say nothing about that season
 
 
 class UnionError(Exception):
@@ -55,7 +56,8 @@ def build_union(store: Store, me: str | None, now: float) -> UnionData:
         meta = raid_list.get(n, {})
         seasons[n] = {"id": n + 1000000, "start_ts": meta.get("start_ts"), "end_ts": meta.get("end_ts"),
                       "fetched_ts": raw.get("fetched_ts"),
-                      "guild": raw.get("guild") or {}, "level": raw.get("level") or {}}
+                      "guild": raw.get("guild") or {}, "level": raw.get("level") or {},
+                      "members": raw.get("members")}
         for h in (raw.get("raid") or {}).get("participate_data") or []:
             mode = MODES.get(h.get("difficulty"))
             if not mode:
@@ -69,7 +71,7 @@ def build_union(store: Store, me: str | None, now: float) -> UnionData:
             hits.append({"season": n, "day": h.get("day", 0) + 1, "mode": mode, "level": h.get("level"),
                          "step": h.get("step"), "boss": boss, "code": boss_code(boss),
                          "boss_element": ELEMENTS.get(str((h.get("element_id") or [""])[0])),
-                         "openid": h["openid"], "damage": int(h.get("total_damage") or 0),
+                         "openid": h["openid"], "nickname": h.get("nickname") or h["openid"], "damage": int(h.get("total_damage") or 0),
                          "final": bool(h.get("is_final_hit")), "squad": squad})
     return UnionData(seasons, hits, names, me, live if live in seasons else None)
 
@@ -81,6 +83,13 @@ def is_final(stored: dict | None, season: dict) -> bool:
 
 def _ok(resp: dict) -> bool:
     return resp.get("code") == 0 and isinstance(resp.get("data"), dict)
+
+
+async def _members(client: httpx.AsyncClient, guild_id: str) -> list[dict] | None:
+    """The union's current members, or None when the answer isn't a usable one."""
+    resp = await api_call(client, "GetGuildMembers", {"guild_id": guild_id, "nikke_area_id": str(AREA_ID)})
+    items = resp["data"].get("items") if _ok(resp) else None
+    return items if isinstance(items, list) and items else None
 
 
 async def fetch_union(store: Store, client: httpx.AsyncClient, now: float, live_only: bool = False,
@@ -100,10 +109,17 @@ async def fetch_union(store: Store, client: httpx.AsyncClient, now: float, live_
             continue
         n, sid = season_number(season["id"]), str(season["id"])
         stored = store.load_raw(f"union/{sid}")
+        other = stored and str((stored.get("guild") or {}).get("guild_id")) != str(card["guild_id"])
         if is_final(stored, season):
             out[n] = "kept"
+            # locked before rosters were stored: today's roster still describes a season that just ended
+            if not other and "members" not in stored and now <= season.get("end_ts", 0) + SIZE_TRUST:
+                members = await _members(client, str(card["guild_id"]))
+                if members:
+                    store.save_raw(f"union/{sid}", {**stored, "members": members})
+                    out[n] = "kept (+roster)"
             continue
-        if stored and str((stored.get("guild") or {}).get("guild_id")) != str(card["guild_id"]):
+        if other:
             out[n] = "kept (other union)"  # a past union's season can't be fetched again
             continue
         body = {"area_id": AREA_ID, "guild_id": str(card["guild_id"]), "season_id": sid}
@@ -114,8 +130,9 @@ async def fetch_union(store: Store, client: httpx.AsyncClient, now: float, live_
         if _ok(level) and _ok(raid) and new_hits < old_hits:
             out[n] = f"failed: fewer hits than stored ({old_hits} → {new_hits})"
         elif _ok(level) and _ok(raid):
-            store.save_raw(f"union/{sid}", {"guild": card, "level": level["data"], "raid": raid["data"],
-                                           "fetched_ts": int(now)})
+            fresh = {"guild": card, "level": level["data"], "raid": raid["data"], "fetched_ts": int(now)}
+            members = await _members(client, str(card["guild_id"])) or (stored or {}).get("members")
+            store.save_raw(f"union/{sid}", {**fresh, "members": members} if members else fresh)
             out[n] = "saved"
         else:
             out[n] = f"failed: {raid.get('msg') or level.get('msg') or 'no data'}"
