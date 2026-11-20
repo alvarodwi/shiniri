@@ -6,10 +6,9 @@ from dataclasses import dataclass
 
 import httpx
 
-from .fetch import AREA_ID, AUTH_CODE, AuthError
+from .fetch import AREA_ID, api_call
 from .store import Store, write_csv
 
-API = "https://api.blablalink.com/api/game/proxy/Game/"
 ELEMENTS = {"100001": "Fire", "200001": "Water", "300001": "Wind", "400001": "Electronic", "500001": "Iron"}
 WEAK_TO = {"Fire": "Water", "Water": "Electronic", "Electronic": "Iron", "Iron": "Wind", "Wind": "Fire"}
 CODES = ("HSTA", "PSID", "ZEUS", "DMTR", "ANMI")
@@ -80,28 +79,6 @@ def is_final(stored: dict | None, season: dict) -> bool:
     return bool(stored) and stored.get("fetched_ts", 0) > season.get("end_ts", 0) + FINAL_GRACE
 
 
-async def _call(client: httpx.AsyncClient, name: str, body: dict) -> dict:
-    """The response body; AuthError on a rejected cookie, a {"msg"} dict on transport errors."""
-    for attempt in range(2):
-        try:
-            resp = await client.post(API + name, json=body, timeout=20.0)
-        except httpx.HTTPError as e:
-            err = {"code": -1, "msg": type(e).__name__}
-        else:
-            if resp.status_code == 200:
-                try:
-                    data = resp.json()
-                except ValueError:
-                    data = {"code": -1, "msg": "not json"}
-                if data.get("code") == AUTH_CODE:
-                    raise AuthError(data.get("msg", "game not login"))
-                return data
-            err = {"code": -1, "msg": f"HTTP {resp.status_code}"}
-        if attempt == 0:
-            await asyncio.sleep(1.5)
-    return err
-
-
 def _ok(resp: dict) -> bool:
     return resp.get("code") == 0 and isinstance(resp.get("data"), dict)
 
@@ -109,9 +86,9 @@ def _ok(resp: dict) -> bool:
 async def fetch_union(store: Store, client: httpx.AsyncClient, now: float, live_only: bool = False,
                       delay: tuple[float, float] = (0.5, 1.0), results: dict | None = None) -> dict[int, str]:
     """Season number -> status. Pass `results` to keep the statuses of seasons done before an error."""
-    guild = await _call(client, "GetMyGuildInfo", {"ignore_toast": True})
+    guild = await api_call(client, "GetMyGuildInfo", {"ignore_toast": True})
     card = (guild.get("data") or {}).get("card") if isinstance(guild.get("data"), dict) else None
-    if guild.get("code") == -1:  # _call's transport failure, not a server answer
+    if guild.get("code") == -1:  # api_call's transport failure, not a server answer
         raise UnionError(f"can't reach blablalink ({guild.get('msg')})")
     if guild.get("code") != 0 or not card:
         raise UnionError(f"union info refused: {guild.get('msg') or 'no union info'}")
@@ -130,8 +107,8 @@ async def fetch_union(store: Store, client: httpx.AsyncClient, now: float, live_
             out[n] = "kept (other union)"  # a past union's season can't be fetched again
             continue
         body = {"area_id": AREA_ID, "guild_id": str(card["guild_id"]), "season_id": sid}
-        level = await _call(client, "GetUnionRaidLevelDataOfGuildSeason", body)
-        raid = await _call(client, "GetUnionRaidDataOfGuildSeason", body) if _ok(level) else level
+        level = await api_call(client, "GetUnionRaidLevelDataOfGuildSeason", body)
+        raid = await api_call(client, "GetUnionRaidDataOfGuildSeason", body) if _ok(level) else level
         old_hits = len(((stored or {}).get("raid") or {}).get("participate_data") or [])
         new_hits = len(raid["data"].get("participate_data") or []) if _ok(raid) else 0
         if _ok(level) and _ok(raid) and new_hits < old_hits:

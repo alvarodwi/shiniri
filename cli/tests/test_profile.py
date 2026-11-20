@@ -1,9 +1,14 @@
+import asyncio
+import json
 from datetime import datetime, timezone
 
+import httpx
+import pytest
 from conftest import PROFILE_FIXTURE
 
-from shiniri_cli.profile import (PROFILE_HEADERS, WIB, build_row, game_day, is_last_check, next_check,
-                                 stage_names, wib_timestamp)
+from shiniri_cli.fetch import AuthError
+from shiniri_cli.profile import (PROFILE_HEADERS, WIB, ProfileError, build_row, fetch_daily, fetch_profile,
+                                 game_day, is_last_check, next_check, stage_names, wib_timestamp)
 
 UTC = timezone.utc
 BASIC = PROFILE_FIXTURE["basic"]["data"]["basic_info"]
@@ -63,3 +68,42 @@ def test_stage_names_strip_suffix(store):
                                   {"id": 7050044, "name_localkey": {"name": "50-36 HARD BOSS"}},
                                   {"id": 6000001, "name_localkey": {"name": "0-1 STAGE"}}])
     assert stage_names(store) == {6050044: "50-36", 7050044: "50-36", 6000001: "0-1"}
+
+
+def client_for(responses: dict[str, dict], seen: list | None = None):
+    def handler(req):
+        if seen is not None:
+            seen.append(json.loads(req.content))
+        return httpx.Response(200, json=responses[req.url.path.rsplit("/", 1)[1]])
+    return httpx.AsyncClient(transport=httpx.MockTransport(handler))
+
+
+def test_fetch_daily_and_profile_send_openid():
+    seen = []
+    c = client_for({"GetUserDailyContentsProgress": PROFILE_FIXTURE["daily"],
+                    "GetUserProfileBasicInfo": PROFILE_FIXTURE["basic"],
+                    "GetUserProfileOutpostInfo": PROFILE_FIXTURE["outpost"]}, seen)
+    assert asyncio.run(fetch_daily(c, "42"))["daily_mission_received_points"] == 30
+    basic, outpost = asyncio.run(fetch_profile(c, "42"))
+    assert basic["lv"] == 934 and outpost["synchro_level"] == 801
+    assert seen[0] == {"intl_open_id": "42", "nikke_area_id": 85}
+
+
+def test_auth_code_raises_auth_error():
+    c = client_for({"GetUserDailyContentsProgress": {"code": 300001, "msg": "game not login"}})
+    with pytest.raises(AuthError):
+        asyncio.run(fetch_daily(c, "42"))
+
+
+@pytest.mark.parametrize("body", [{"code": 0, "data": {"daily_progress": []}},
+                                  {"code": 5, "msg": "busy"}])
+def test_bad_daily_raises_profile_error(body):
+    with pytest.raises(ProfileError):
+        asyncio.run(fetch_daily(client_for({"GetUserDailyContentsProgress": body}), "42"))
+
+
+def test_missing_outpost_raises_profile_error():
+    c = client_for({"GetUserProfileBasicInfo": PROFILE_FIXTURE["basic"],
+                    "GetUserProfileOutpostInfo": {"code": 0, "data": {}}})
+    with pytest.raises(ProfileError):
+        asyncio.run(fetch_profile(c, "42"))

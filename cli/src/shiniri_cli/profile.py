@@ -2,6 +2,9 @@
 
 from datetime import datetime, timedelta, timezone
 
+import httpx
+
+from .fetch import AREA_ID, api_call
 from .store import Store
 
 WIB = timezone(timedelta(hours=7))  # fixed offset, no DST; never the machine's zone
@@ -28,6 +31,29 @@ OUTPOST_FIELDS = {"synchroLevel": "synchro_level", "synchroSlots": "synchro_none
 PROFILE_HEADERS = ("date", "takenAt", "dailyDone", *BASIC_FIELDS, *(f"{c}Nikkes" for c in CORPS.values()),
                    *CURRENCIES.values(), *CAMPAIGNS, *TOWERS, *OVERCLOCK, *OUTPOST_FIELDS, *RECYCLE.values(),
                    "memoirs", "callLogs", "bgm", "data")
+
+
+class ProfileError(Exception):
+    pass
+
+
+async def _get(client: httpx.AsyncClient, openid: str, name: str, key: str):
+    """data[key] of one profile request; ProfileError when the answer isn't a usable one."""
+    resp = await api_call(client, name, {"intl_open_id": openid, "nikke_area_id": AREA_ID})
+    value = (resp.get("data") or {}).get(key) if resp.get("code") == 0 else None
+    if not value:
+        raise ProfileError(f"{name}: {resp.get('msg') or 'no ' + key}")
+    return value
+
+
+async def fetch_daily(client: httpx.AsyncClient, openid: str) -> dict:
+    return (await _get(client, openid, "GetUserDailyContentsProgress", "daily_progress"))[0]
+
+
+async def fetch_profile(client: httpx.AsyncClient, openid: str) -> tuple[dict, dict]:
+    basic = await _get(client, openid, "GetUserProfileBasicInfo", "basic_info")
+    outpost = await _get(client, openid, "GetUserProfileOutpostInfo", "outpost_info")
+    return basic, outpost
 
 
 def game_day(now: datetime) -> str:
