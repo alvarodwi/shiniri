@@ -262,8 +262,9 @@ def test_watch_logs_missing_config_and_keeps_going(store, capsys):
 
     from shiniri_cli.profile import WIB, watch
     watch(store, once=True, clock=lambda: datetime(2026, 11, 20, 12, tzinfo=WIB))
-    out = capsys.readouterr().out
-    assert out.startswith("2026-11-20 12:00:00 ") and "cookie.txt" in out
+    first, *rest = capsys.readouterr().out.splitlines()
+    assert first.startswith("2026-11-20 12:00:00 sync: FileNotFoundError")  # no config/sources.json
+    assert rest[-1].startswith("2026-11-20 12:00:00 ") and "cookie.txt" in rest[-1]
 
 
 def test_watch_stops_cleanly_on_interrupt(store, capsys, monkeypatch):
@@ -275,7 +276,7 @@ def test_watch_stops_cleanly_on_interrupt(store, capsys, monkeypatch):
     def stop(_):
         raise KeyboardInterrupt
     profile.watch(store, sleep=stop, clock=clock)  # interrupted while sleeping
-    monkeypatch.setattr(profile, "_check", lambda s, now: stop(0))
+    monkeypatch.setattr(profile, "_check", lambda s, now, log: stop(0))
     profile.watch(store, clock=clock)  # interrupted mid-check
     lines = capsys.readouterr().out.splitlines()
     assert lines[-1] == "2026-11-20 12:00:00 stopped"
@@ -287,3 +288,18 @@ def test_fetch_status_colours():
     assert fetch_colour("saved") == "green"
     assert fetch_colour("kept") == fetch_colour("kept (+roster)") == fetch_colour("kept (other union)") == "dim"
     assert fetch_colour("failed: boom") == "red"
+
+
+def test_startup_rebuilds_union_after_background_name_sync(union_store):
+    import os
+    make_app(union_store)  # writes union_hits.csv
+    csv = union_store.parsed_dir / "union_hits.csv"
+    export = union_store.export_path("union", "x")
+    export.parent.mkdir(parents=True, exist_ok=True)
+    export.write_text("a\n", encoding="utf-8")
+    old = csv.stat().st_mtime - 10
+    for f in [csv, *(union_store.raw_dir / "union").glob("*.json")]:
+        os.utime(f, (old, old))  # seasons unchanged since the csv was built
+    union_store.save_raw("nikke_list_en", union_store.load_raw("nikke_list_en"))  # watch refreshed names
+    make_app(union_store)
+    assert csv.stat().st_mtime > old and not export.exists()

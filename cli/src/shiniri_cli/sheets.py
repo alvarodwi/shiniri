@@ -158,7 +158,7 @@ class HttpSheets:
         return [r["updatedRange"] for r in body.get("responses", [])]
 
     def ensure_rows(self, rows: dict[str, int]) -> None:
-        """Append blank rows at the bottom of each tab whose grid is shorter than its count."""
+        """Add blank rows, formatted like the last row, below each tab whose grid is shorter than its count."""
         if self._grid is None:
             body = self._request("GET", self.base,
                                  params={"fields": "sheets.properties(sheetId,title,gridProperties.rowCount)"})
@@ -172,9 +172,21 @@ class HttpSheets:
         short = {t: max(n - self._grid[t][1], GROW_MIN) for t, n in rows.items() if self._grid[t][1] < n}
         if not short:
             return
-        self._request("POST", f"{self.base}:batchUpdate", json={"requests": [
-            {"appendDimension": {"sheetId": self._grid[t][0], "dimension": "ROWS", "length": n}}
-            for t, n in short.items()]})
+        requests = []
+        for t, n in short.items():
+            sheet_id, start = self._grid[t]
+            end = start + n
+            # Inserted past the last grid row, so nothing shifts. Inheriting keeps fonts and number formats
+            # but drops borders, so the last row's format is pasted over the new rows too (web ensureRows).
+            requests.append({"insertDimension": {"range": {"sheetId": sheet_id, "dimension": "ROWS",
+                                                           "startIndex": start, "endIndex": end},
+                                                 "inheritFromBefore": start > 0}})
+            if start:
+                requests.append({"copyPaste": {
+                    "source": {"sheetId": sheet_id, "startRowIndex": start - 1, "endRowIndex": start},
+                    "destination": {"sheetId": sheet_id, "startRowIndex": start, "endRowIndex": end},
+                    "pasteType": "PASTE_FORMAT"}})
+        self._request("POST", f"{self.base}:batchUpdate", json={"requests": requests})
         for t, n in short.items():
             self._grid[t][1] += n
 

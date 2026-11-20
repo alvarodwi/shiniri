@@ -234,15 +234,43 @@ def test_check_joins_clears_and_union(store, monkeypatch):
     async def fake_check_once(store_, now, client, openid, write, clears=None):
         return await clears()
 
-    async def fake_clears(store_, client, api, *, timestamp):
+    async def fake_clears(store_, client, api, *, timestamp, log):
+        log("Campaign: wrote")
         return "Campaign +0 · Tower +0"
 
-    async def fake_union(store_, client, api, *, timestamp, now):
+    async def fake_union(store_, client, api, *, timestamp, now, log):
         seen.update(api=api, now=now)
         return "Union +1 · Roster +1"
     monkeypatch.setattr(profile, "check_once", fake_check_once)
     monkeypatch.setattr(clear_sheet, "sync_clears", fake_clears)
     monkeypatch.setattr(union_sheet, "sync_union", fake_union)
+
+    async def fake_sync(store_, client):
+        return {"raid_list": "changed"}
+    monkeypatch.setattr(profile, "sync_reference", fake_sync)
     now = datetime(2026, 11, 20, 12, 59, tzinfo=WIB)
-    assert profile._check(store, now) == "Campaign +0 · Tower +0 · Union +1 · Roster +1"
+    lines = []
+    assert profile._check(store, now, lines.append) == "Campaign +0 · Tower +0 · Union +1 · Roster +1"
+    assert lines == ["sync: raid_list changed", "Campaign: wrote"]
     assert seen == {"api": "sheets", "now": now.timestamp()}
+
+
+def test_refresh_reference_line(store, monkeypatch):
+    from shiniri_cli import profile
+
+    async def fake(store_, client):
+        return {"nikke_list_en": "changed", "stage_list": "unchanged"}
+    monkeypatch.setattr(profile, "sync_reference", fake)
+    assert asyncio.run(profile.refresh_reference(store)) == "sync: nikke_list_en changed · stage_list unchanged"
+    assert "sync" in store.state()  # the shell's "synced …" status moves too
+
+
+def test_refresh_reference_never_raises(store):  # tmp store has no config/sources.json
+    from shiniri_cli import profile
+    assert asyncio.run(profile.refresh_reference(store)).startswith("sync: FileNotFoundError: ")
+    assert "sync" not in store.state()
+
+
+def test_missing_stage_list_noted(store):
+    (store.raw_dir / "stage_list.json").unlink()
+    assert run_check(store, NOON, 100, make_write([])).endswith("wrote 'Profile'!A5:AU5 (stage_list missing)")

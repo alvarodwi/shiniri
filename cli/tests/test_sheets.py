@@ -104,6 +104,23 @@ def _grid_api(row_counts):
     return HttpSheets("sid", lambda: "tok", httpx.Client(transport=httpx.MockTransport(handler))), calls
 
 
+def _grow(sheet_id, start, end):
+    """Rows inserted past the last grid row, then the last row's format (borders too) pasted over them."""
+    return [{"insertDimension": {"range": {"sheetId": sheet_id, "dimension": "ROWS", "startIndex": start,
+                                           "endIndex": end}, "inheritFromBefore": True}},
+            {"copyPaste": {"source": {"sheetId": sheet_id, "startRowIndex": start - 1, "endRowIndex": start},
+                           "destination": {"sheetId": sheet_id, "startRowIndex": start, "endRowIndex": end},
+                           "pasteType": "PASTE_FORMAT"}}]
+
+
+def test_ensure_rows_empty_grid_inserts_without_paste():
+    api, calls = _grid_api({"Roster": 0})
+    api.ensure_rows({"Roster": 5})
+    assert json.loads(calls[-1].content)["requests"] == [{"insertDimension": {
+        "range": {"sheetId": 0, "dimension": "ROWS", "startIndex": 0, "endIndex": 100},
+        "inheritFromBefore": False}}]
+
+
 def test_ensure_rows_appends_only_the_shortfall_once():
     api, calls = _grid_api({"Union": 1023, "AuditLog": 1000})
     api.ensure_rows({"Union": 1169, "AuditLog": 40})
@@ -112,8 +129,7 @@ def test_ensure_rows_appends_only_the_shortfall_once():
     posts = [c for c in calls if c.method == "POST"]
     assert len(gets) == 1 and len(posts) == 1
     assert posts[0].url.path.endswith(":batchUpdate")
-    assert json.loads(posts[0].content) == {"requests": [
-        {"appendDimension": {"sheetId": 0, "dimension": "ROWS", "length": 146}}]}
+    assert json.loads(posts[0].content) == {"requests": _grow(0, 1023, 1169)}
 
 
 def test_ensure_rows_long_enough_sends_nothing():
@@ -164,7 +180,7 @@ def test_ensure_rows_small_shortfall_gets_headroom():
     api.ensure_rows({"AuditLog": 1001})
     api.ensure_rows({"AuditLog": 1002})
     posts = [json.loads(c.content) for c in calls if c.method == "POST"]
-    assert posts == [{"requests": [{"appendDimension": {"sheetId": 0, "dimension": "ROWS", "length": 100}}]}]
+    assert posts == [{"requests": _grow(0, 1000, 1100)}]
 
 
 def _meta_api(props):
@@ -179,7 +195,7 @@ def _meta_api(props):
 def test_ensure_rows_sheet_id_zero_may_be_omitted():
     api, calls = _meta_api([{"title": "Profile", "gridProperties": {"rowCount": 10}}])
     api.ensure_rows({"Profile": 20})
-    assert json.loads(calls[-1].content)["requests"][0]["appendDimension"]["sheetId"] == 0
+    assert json.loads(calls[-1].content)["requests"] == _grow(0, 10, 110)
 
 
 def test_ensure_rows_ignores_non_grid_sheet_with_same_title():

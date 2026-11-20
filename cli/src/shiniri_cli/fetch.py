@@ -211,9 +211,16 @@ async def sync_reference(store: Store, client: httpx.AsyncClient,
             hint = " (site may have changed its URL scheme)" if isinstance(e, httpx.HTTPStatusError) else ""
             out[name] = f"failed: {type(e).__name__}{hint}"
             continue
-        if fresh == store.load_raw(name):
+        try:
+            old = store.load_raw(name)
+        except ValueError:  # a corrupt stored copy: the fresh one replaces it
+            old = None
+        if fresh == old:
             out[name] = "unchanged"
-        else:
+            continue
+        try:
             store.save_raw(name, fresh)
             out[name] = "changed"
+        except OSError as e:  # one unwritable file never stops the others
+            out[name] = f"failed: {type(e).__name__}"
     return out

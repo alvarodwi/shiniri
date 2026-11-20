@@ -112,7 +112,10 @@ class App:
             self.out.print(f"[cyan]{line}[/]")
         self._load_union()
         union_csv = store.parsed_dir / "union_hits.csv"
-        union_times = [f.stat().st_mtime for f in (store.raw_dir / "union").glob("*.json")]
+        # watch refreshes the season files and the name / season lists in the background
+        sources = [*(store.raw_dir / "union").glob("*.json"),
+                   *(store.raw_dir / f"{n}.json" for n in ("nikke_list_en", "character_id_map", "raid_list"))]
+        union_times = [f.stat().st_mtime for f in sources if f.exists()]
         if not union_csv.exists():
             write_union_parsed(store, self.union)
         elif union_times and max(union_times) > union_csv.stat().st_mtime:

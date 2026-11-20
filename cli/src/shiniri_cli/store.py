@@ -60,6 +60,11 @@ def write_csv(path: Path, header: list[str], rows: list[list]) -> None:
     atomic_write(path, buf.getvalue(), encoding="utf-8-sig")
 
 
+def unknown_nikkes(rows: list[list], first_slot: int) -> list[str]:
+    """The `NIKKE_<tid>` fallback names in the slot cells (`row[first_slot:]`), sorted and unique."""
+    return sorted({c for r in rows for c in r[first_slot:] if isinstance(c, str) and re.fullmatch(r"NIKKE_\w+", c)})
+
+
 @dataclass
 class Store:
     root: Path

@@ -139,3 +139,12 @@ def test_sync_reference_only_named(store):
     res = asyncio.run(sync_reference(store, httpx.AsyncClient(transport=httpx.MockTransport(handler)),
                                      names=("raid_list",)))
     assert res == {"raid_list": "changed"} and urls == [cdn_url("r/r.json")]
+
+
+def test_sync_reference_repairs_corrupt_file_and_keeps_going(store):
+    store.config_dir.mkdir(parents=True, exist_ok=True)
+    (store.config_dir / "sources.json").write_text(json.dumps({"nikke_list_en": "n/n.json", "raid_list": "r/r.json"}))
+    (store.raw_dir / "nikke_list_en.json").write_text("{nope", encoding="utf-8")
+    client = httpx.AsyncClient(transport=httpx.MockTransport(lambda req: httpx.Response(200, json=[{"id": 1}])))
+    assert asyncio.run(sync_reference(store, client)) == {"nikke_list_en": "changed", "raid_list": "changed"}
+    assert store.load_raw("nikke_list_en") == [{"id": 1}]

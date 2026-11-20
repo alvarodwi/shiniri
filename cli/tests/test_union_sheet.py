@@ -66,20 +66,20 @@ def test_member_ids_and_names_are_text(union_store):
 
 def test_first_run_backfills_every_locked_season(u):
     api = FakeSheets({**AUDIT, **sheet("union", [["season"]])})
-    assert append_seasons(api, "union", {n: union_rows(u, n) for n in locked(u)}, timestamp="ts") == 2
+    assert append_seasons(api, "union", {n: union_rows(u, n) for n in locked(u)}, timestamp="ts") == (2, 0)
     assert [b[0][0] for b in api.batches] == ["'Union'!A2:P10", "'Union'!A2:P12"]  # fake sheet never fills
     assert api.batches[0][1][1][0][1:] == ["cli-union", "''Union'!A2:P10", 9]
 
 
 def test_existing_seasons_any_form(u):
     api = FakeSheets({**AUDIT, **sheet("union", [["season"], [45.0], ["46"], ["junk"]])})
-    assert append_seasons(api, "union", {n: union_rows(u, n) for n in locked(u)}, timestamp="ts") == 0
+    assert append_seasons(api, "union", {n: union_rows(u, n) for n in locked(u)}, timestamp="ts") == (0, 0)
     assert api.batches == []
 
 
 def test_season_without_rows_is_skipped(u):
     api = FakeSheets({**AUDIT, **sheet("roster", [["season"]])})
-    assert append_seasons(api, "roster", {45: [], 46: roster_rows(u, 46)}, timestamp="ts") == 1
+    assert append_seasons(api, "roster", {45: [], 46: roster_rows(u, 46)}, timestamp="ts") == (1, 0)
 
 
 def test_unlocked_season_never_written(union_store):
@@ -88,14 +88,10 @@ def test_unlocked_season_never_written(union_store):
 
 
 def _no_fetch(monkeypatch, error=None):
-    async def refresh(*a, **k):
-        return {}
-
     async def fetch(*a, **k):
         if error:
             raise error
         return {}
-    monkeypatch.setattr(union_sheet, "sync_reference", refresh)
     monkeypatch.setattr(union_sheet, "fetch_union", fetch)
 
 
@@ -118,19 +114,40 @@ def test_season_missing_from_raid_list_is_not_locked(union_store):
     assert locked(build_union(union_store, None, 0)) == []
 
 
-def test_refresh_error_still_fetches(union_store, monkeypatch):
-    fetched = []
+def test_seasons_written_are_logged(u):
+    lines = []
+    api = FakeSheets({**AUDIT, **sheet("union", [["season"]])})
+    append_seasons(api, "union", {n: union_rows(u, n) for n in locked(u)}, timestamp="ts", log=lines.append)
+    assert lines == ["Union: wrote season 45, 9 rows, 'Union'!A2:P10",
+                     "Union: wrote season 46, 11 rows, 'Union'!A2:P12"]  # fake sheet never fills
 
-    async def refresh(*a, **k):
-        raise FileNotFoundError("sources.json")
 
-    async def fetch(*a, **k):
-        fetched.append(1)
-        return {}
-    monkeypatch.setattr(union_sheet, "sync_reference", refresh)
-    monkeypatch.setattr(union_sheet, "fetch_union", fetch)
+def test_unknown_nikke_holds_only_that_season(union_store):
+    raw = union_store.load_raw("union/1000045")
+    hits = [{**h, "squad": [{"slot": 1, "tid": 999999, "lv": 1, "combat": 1}]}
+            for h in raw["raid"]["participate_data"]]
+    union_store.save_raw("union/1000045", {**raw, "raid": {**raw["raid"], "participate_data": hits}})
+    u = build_union(union_store, None, 0)
+    lines = []
+    api = FakeSheets({**AUDIT, **sheet("union", [["season"]])})
+    assert append_seasons(api, "union", {n: union_rows(u, n) for n in locked(u)}, timestamp="ts",
+                          log=lines.append) == (1, 1)
+    assert lines == ["Union: held season 45, 1 unknown NIKKE (NIKKE_999999)",
+                     "Union: wrote season 46, 11 rows, 'Union'!A2:P12"]
+
+
+def test_no_reference_files_holds_every_union_season(union_store):
+    for name in ("nikke_list_en", "character_id_map"):
+        (union_store.raw_dir / f"{name}.json").unlink()
+    u = build_union(union_store, None, 0)
+    api = FakeSheets({**AUDIT, **sheet("union", [["season"]]), **sheet("roster", [["season"]])})
+    assert append_seasons(api, "union", {n: union_rows(u, n) for n in locked(u)}, timestamp="ts") == (0, 2)
+    assert append_seasons(api, "roster", {n: roster_rows(u, n) for n in locked(u)}, timestamp="ts") == (2, 0)
+
+
+def test_held_count_in_summary(union_store, monkeypatch):
+    _no_fetch(monkeypatch)
+    (union_store.raw_dir / "nikke_list_en.json").unlink()
     api = FakeSheets({**AUDIT, **sheet("union", [["season"]]), **sheet("roster", [["season"]])})
     text = asyncio.run(sync_union(union_store, None, api, timestamp="ts", now=99999))
-    assert fetched == [1]
-    assert text == ("Union +2 (raid_list: FileNotFoundError: sources.json) · "
-                    "Roster +2 (raid_list: FileNotFoundError: sources.json)")
+    assert text == "Union +0 (held 2) · Roster +2"

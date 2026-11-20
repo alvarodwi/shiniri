@@ -50,7 +50,7 @@ FIXTURE = {
         {"slot": 2, "tid": 301706, "lv": 740, "combat": 400000}]}},
     "tower_clears": {"50001": {"cleared_at": "1794364831", "list": [
         {"slot": 2, "tid": 301706, "lv": 801, "combat": 776595},
-        {"slot": 1, "tid": 999999, "lv": 801, "combat": 1}]}},
+        {"slot": 1, "tid": 5001, "lv": 801, "combat": 1}]}},
 }
 
 

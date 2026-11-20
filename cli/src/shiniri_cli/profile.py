@@ -8,7 +8,7 @@ from typing import Awaitable, Callable
 
 import httpx
 
-from .fetch import AREA_ID, AuthError, api_call, load_cookie, make_client
+from .fetch import AREA_ID, AuthError, api_call, load_cookie, make_client, sync_reference
 from .sheets import HttpSheets, SheetsError, service_account_token, write_row
 from .store import Store, atomic_write
 
@@ -149,8 +149,8 @@ async def check_once(store: Store, now: datetime, client: httpx.AsyncClient, ope
         if not done and not is_last_check(now):
             return f"game day {day}: not done ({points}/100)"
         basic, outpost = await fetch_profile(client, openid)
-        row = build_row(basic, outpost, day=day, taken_at=wib_timestamp(now), daily_done=done,
-                        stages=stage_names(store))
+        stages = stage_names(store)
+        row = build_row(basic, outpost, day=day, taken_at=wib_timestamp(now), daily_done=done, stages=stages)
         written = write(row, day)
         guard["written"] = True
         _save_guard(store, guard)
@@ -158,6 +158,8 @@ async def check_once(store: Store, now: datetime, client: httpx.AsyncClient, ope
             msg = f"game day {day}: already in the sheet"
         else:
             msg = f"game day {day}: wrote {written}" + ("" if done else f" (daily not done, {points}/100)")
+        if not stages:
+            msg += " (stage_list missing)"
         return msg + await _run_clears(clears)
     except AuthError as e:
         return f"game day {day}: cookie rejected: {e}"
@@ -176,7 +178,20 @@ async def _run_clears(clears: Callable[[], Awaitable[str]] | None) -> str:
         return f" · clears: {type(e).__name__}: {e}"
 
 
-def _check(store: Store, now: datetime) -> str:
+async def refresh_reference(store: Store) -> str:
+    """Re-download every reference file; the `sync:` log line. Never raises: the files on disk still work."""
+    try:
+        async with httpx.AsyncClient() as cdn:  # its own client: the game cookies never go to the CDN host
+            results = await sync_reference(store, cdn)
+    except Exception as e:  # a missing or bad sources.json and the like
+        return f"sync: {type(e).__name__}: {e}"
+    if any(not s.startswith("failed") for s in results.values()):
+        store.mark("sync")  # same rule as the shell's sync command
+    return "sync: " + " · ".join(f"{name} {status}" for name, status in results.items())
+
+
+def _check(store: Store, now: datetime, log: Callable[[str], None]) -> str:
+    log(asyncio.run(refresh_reference(store)))  # first: profile, clears and union all read these files
     # Every file is re-read each check, so a cookie ambil refreshed or a fixed config is picked up.
     from .clear_sheet import sync_clears  # clear_sheet imports WIB from here
     from .union_sheet import sync_union
@@ -193,9 +208,9 @@ def _check(store: Store, now: datetime) -> str:
         async def go() -> str:
             async with make_client(cookies) as client:
                 async def sheet_sync() -> str:
-                    clears = await sync_clears(store, client, sheets, timestamp=wib_timestamp(now))
+                    clears = await sync_clears(store, client, sheets, timestamp=wib_timestamp(now), log=log)
                     union = await sync_union(store, client, sheets, timestamp=wib_timestamp(now),
-                                             now=now.timestamp())
+                                             now=now.timestamp(), log=log)
                     return f"{clears} · {union}"
                 return await check_once(store, now, client, cookies["game_openid"], write, clears=sheet_sync)
         return asyncio.run(go())
@@ -204,15 +219,17 @@ def _check(store: Store, now: datetime) -> str:
 def watch(store: Store, *, sleep=time.sleep, clock=lambda: datetime.now(WIB), once: bool = False) -> None:
     """`shiniri-cli watch`: check now, then at every :59 WIB, forever. A failed check is logged, never fatal.
     Stopped on Ctrl+C or SIGTERM: logs `stopped` and returns."""
+    def log(msg: str) -> None:
+        print(f"{wib_timestamp(clock())} {msg}", flush=True)
     try:
         while True:
             try:
-                msg = _check(store, clock())
+                msg = _check(store, clock(), log)
             except Exception as e:  # missing config, bad key file, anything: log it and try next hour
                 msg = f"check failed: {type(e).__name__}: {e}"
-            print(f"{wib_timestamp(clock())} {msg}", flush=True)
+            log(msg)
             if once:
                 return
             sleep(max(0.0, (next_check(clock()) - clock()).total_seconds()))
     except KeyboardInterrupt:
-        print(f"{wib_timestamp(clock())} stopped", flush=True)
+        log("stopped")

@@ -51,7 +51,7 @@ def test_build_clears_joins(store):
     assert [(u["name"], u["dupe"]) for u in camp["team"]] == [("Crown", "MLB"), ("Anis: Star", "C2")]
     tower = next(c for c in clears if c["source"] == "tower")
     assert (tower["mode"], tower["floor"], tower["stage_name"]) == ("Tribe", 1, "1F")
-    assert [(u["slot"], u["name"], u["dupe"]) for u in tower["team"]] == [(1, "NIKKE_999999", "N/A"), (2, "Anis: Star", "C2")]
+    assert [(u["slot"], u["name"], u["dupe"]) for u in tower["team"]] == [(1, "Anis", "N/A"), (2, "Anis: Star", "C2")]
 
 
 def test_cleared_at_zero_is_none(store):
