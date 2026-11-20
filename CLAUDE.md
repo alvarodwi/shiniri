@@ -12,6 +12,8 @@ Identity Services). Netlify deploys from `main`.
   finds the next empty row at call time and checks that the target is empty, then does one
   `values:batchUpdate` for all tabs, so a save lands everywhere or nowhere. That batch also appends
   one row to the spreadsheet's `AuditLog` tab (configured in `SPREADSHEETS`).
+- Before that batch, a save may append blank rows at the bottom of a tab whose grid is too short
+  (`SheetsApi.ensureRows`). Blank rows left by a failed save are harmless.
 - Never hardcode row numbers. The sheet is live data and grows daily.
 - In development, `.env.local` points at a copy of the journal, never the real sheet.
 

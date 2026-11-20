@@ -4,8 +4,9 @@ import type { SheetsApi } from '@/services/google/sheetsApi'
 import type { Cell } from '@/types/sheet'
 import { wibTimestamp } from '@/utils/wibTimestamp'
 
-// The only write path to the sheet. It never inserts, shifts or overwrites:
-// it writes once, into rows it has just confirmed are empty, below the last row of data.
+// The only write path to the sheet. It never inserts, shifts or overwrites: it writes once, into rows
+// it has just confirmed are empty, below the last row of data. A tab whose grid is too short first
+// gains blank rows at its bottom.
 
 export class HeaderMismatchError extends Error {
   expected: readonly string[]
@@ -61,23 +62,26 @@ export function nextEmptyRow(colA: string[]): number {
 export type RowCell = Cell | ((sheetRow: number) => Cell)
 export type WriteTarget = { tab: TabSpec; rows: RowCell[][] }
 
-// Header check, next empty row from column A, and an empty-target check. Returns the range to write
-// and its first row.
-async function checkedRange(
-  api: SheetsApi,
-  tab: TabSpec,
-  rowCount: number,
-): Promise<{ range: string; start: number }> {
+// Header check, then the next empty row from column A.
+async function startRow(api: SheetsApi, tab: TabSpec): Promise<number> {
   const [headerRow = []] = await readRows(api, tab, 1, 1)
   const actual = tab.headers.map((_, i) => (headerRow[i] ?? '').trim())
   if (actual.some((h, i) => h !== tab.headers[i]))
     throw new HeaderMismatchError(tab.headers, actual)
+  return nextEmptyRow(await readColumnA(api, tab))
+}
 
-  const start = nextEmptyRow(await readColumnA(api, tab))
+// Returns the range to write once it is confirmed empty.
+async function checkEmpty(
+  api: SheetsApi,
+  tab: TabSpec,
+  start: number,
+  rowCount: number,
+): Promise<string> {
   const target = range(tab, start, start + rowCount - 1)
   const existing = await api.getValues(tab.spreadsheetId, target)
   if (existing.some((r) => r.some((c) => String(c).trim()))) throw new TargetNotEmptyError(target)
-  return { range: target, start }
+  return target
 }
 
 // Every guard runs on every tab before anything is written; then one batch request writes them all.
@@ -106,21 +110,31 @@ export async function writeTabsAtEnd(
   }
 
   // Tabs are independent, so their checks run in parallel to keep the check-then-write gap short.
-  const [auditTarget, ...dataTargets] = await Promise.all([
-    checkedRange(api, audit, 1),
-    ...targets.map((t) => checkedRange(api, t.tab, t.rows.length)),
-  ])
+  const all = [
+    { tab: audit, count: 1 },
+    ...targets.map((t) => ({ tab: t.tab, count: t.rows.length })),
+  ]
+  const starts = await Promise.all(all.map(({ tab }) => startRow(api, tab)))
+  // Reads and writes past a tab's grid fail, so short tabs gain blank rows before the empty checks.
+  await api.ensureRows(
+    spreadsheetId,
+    Object.fromEntries(all.map(({ tab, count }, i) => [tab.tab, starts[i] + count - 1])),
+  )
+  const [auditRange, ...ranges] = await Promise.all(
+    all.map(({ tab, count }, i) => checkEmpty(api, tab, starts[i], count)),
+  )
   const data = targets.map((t, i) => {
-    const { range, start } = dataTargets[i]
+    const range = ranges[i]
+    const start = starts[i + 1]
     const rows = t.rows.map((r, j) => r.map((c) => (typeof c === 'function' ? c(start + j) : c)))
     return { range, rows }
   })
 
   // Leading ' stores both as text: USER_ENTERED would eat the quote in 'Tab'!A1, and would turn the
   // timestamp into a datetime whose display depends on the sheet's locale.
-  const ranges = `'${data.map((d) => d.range).join(', ')}`
+  const written = `'${data.map((d) => d.range).join(', ')}`
   const total = targets.reduce((n, t) => n + t.rows.length, 0)
-  data.push({ range: auditTarget.range, rows: [[`'${wibTimestamp(now)}`, form, ranges, total]] })
+  data.push({ range: auditRange, rows: [[`'${wibTimestamp(now)}`, form, written, total]] })
 
   // shortcut: a few round trips pass between the empty checks and this write, so a save from another
   // device in that gap would be overwritten. Fine for one person; use values.append if that changes.

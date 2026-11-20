@@ -71,4 +71,100 @@ describe('sheetsApi', () => {
       ],
     })
   })
+
+  it('turns a 429 into a plain rate-limit message', async () => {
+    const fetchFn = vi
+      .fn()
+      .mockImplementation(async () => json(429, { error: { message: 'Quota exceeded' } }))
+    const err = await createSheetsApi(async () => 't', fetchFn)
+      .getValues('id', 'r')
+      .catch((e) => e)
+    expect(err).toBeInstanceOf(SheetsApiError)
+    expect(err.status).toBe(429)
+    expect(err.message).toBe('Google rate limit hit. Wait a minute and try again.')
+  })
+})
+
+describe('429 after a token refresh', () => {
+  it('still gets the rate-limit message', async () => {
+    const fetchFn = vi.fn().mockResolvedValueOnce(json(401)).mockResolvedValueOnce(json(429))
+    const err = await createSheetsApi(async () => 't', fetchFn)
+      .getValues('id', 'r')
+      .catch((e) => e)
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+    expect(err.message).toBe('Google rate limit hit. Wait a minute and try again.')
+  })
+})
+
+describe('ensureRows', () => {
+  const meta = (sheets: object[]) =>
+    json(200, { sheets: sheets.map((properties) => ({ properties })) })
+
+  it('appends max(shortfall, 100) rows to each short tab in one request', async () => {
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(
+        meta([
+          { sheetId: 7, title: 'Anomaly', gridProperties: { rowCount: 1000 } },
+          { title: 'AuditLog', gridProperties: { rowCount: 50 } },
+          { sheetId: 3, title: 'Chart' },
+        ]),
+      )
+      .mockResolvedValueOnce(json(200, {}))
+    const api = createSheetsApi(async () => 't', fetchFn)
+
+    await api.ensureRows('id', { Anomaly: 1250, AuditLog: 51 })
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+    expect(decodeURIComponent(fetchFn.mock.calls[0][0])).toMatch(
+      /\/spreadsheets\/id\?fields=sheets\.properties\(sheetId,title,gridProperties\.rowCount\)$/,
+    )
+    const [url, init] = fetchFn.mock.calls[1]
+    expect(url).toMatch(/\/spreadsheets\/id:batchUpdate$/)
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(init.body)).toEqual({
+      requests: [
+        {
+          insertDimension: {
+            range: { sheetId: 7, dimension: 'ROWS', startIndex: 1000, endIndex: 1250 },
+            inheritFromBefore: true,
+          },
+        },
+        {
+          copyPaste: {
+            source: { sheetId: 7, startRowIndex: 999, endRowIndex: 1000 },
+            destination: { sheetId: 7, startRowIndex: 1000, endRowIndex: 1250 },
+            pasteType: 'PASTE_FORMAT',
+          },
+        },
+        {
+          insertDimension: {
+            range: { sheetId: 0, dimension: 'ROWS', startIndex: 50, endIndex: 150 },
+            inheritFromBefore: true,
+          },
+        },
+        {
+          copyPaste: {
+            source: { sheetId: 0, startRowIndex: 49, endRowIndex: 50 },
+            destination: { sheetId: 0, startRowIndex: 50, endRowIndex: 150 },
+            pasteType: 'PASTE_FORMAT',
+          },
+        },
+      ],
+    })
+  })
+
+  it('sends nothing when every tab is long enough', async () => {
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(meta([{ title: 'Anomaly', gridProperties: { rowCount: 1000 } }]))
+    await createSheetsApi(async () => 't', fetchFn).ensureRows('id', { Anomaly: 1000 })
+    expect(fetchFn).toHaveBeenCalledOnce()
+  })
+
+  it('throws when a tab is missing', async () => {
+    const fetchFn = vi.fn().mockResolvedValueOnce(meta([]))
+    await expect(
+      createSheetsApi(async () => 't', fetchFn).ensureRows('id', { Level: 5, Gear: 2 }),
+    ).rejects.toThrow('Level, Gear tab not found')
+  })
 })

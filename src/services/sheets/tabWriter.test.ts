@@ -40,6 +40,7 @@ function fakeApi(values: Record<string, string[][]>) {
     batchUpdateValues: vi.fn(async (_id: string, data: { range: string }[]) => ({
       updatedRanges: data.map((d) => d.range),
     })),
+    ensureRows: vi.fn<SheetsApi['ensureRows']>(async () => {}),
   }
   return api satisfies SheetsApi
 }
@@ -172,6 +173,33 @@ describe('writeTabsAtEnd guards', () => {
 })
 
 describe('writeTabsAtEnd', () => {
+  it('grows each tab to its end row, plus the AuditLog row, before the empty checks', async () => {
+    const api = fakeApi({ [HEADER]: [[...tab.headers]], [COL_A]: colA(5) })
+    await write(api, [{ tab, rows: [row, row] }])
+    expect(api.ensureRows).toHaveBeenCalledExactlyOnceWith('sid', { AuditLog: 3, Anomaly: 7 })
+    const growAt = api.ensureRows.mock.invocationCallOrder[0]
+    const emptyCheck = api.getValues.mock.calls.findIndex(([, r]) => r === "'Anomaly'!A6:D7")
+    expect(emptyCheck).toBeGreaterThan(-1)
+    expect(api.getValues.mock.invocationCallOrder[emptyCheck]).toBeGreaterThan(growAt)
+  })
+
+  it('keys ensureRows by the raw tab title', async () => {
+    const quirky: TabSpec = { ...tab, tab: "Solo Raid's" }
+    const api = fakeApi({
+      "'Solo Raid''s'!A1:D1": [[...tab.headers]],
+      "'Solo Raid''s'!A:A": colA(2),
+    })
+    await write(api, [{ tab: quirky, rows: [row] }])
+    expect(api.ensureRows.mock.calls[0][1]).toHaveProperty(["Solo Raid's"], 3)
+  })
+
+  it('does not write when growing fails', async () => {
+    const api = fakeApi({ [HEADER]: [[...tab.headers]], [COL_A]: colA(5) })
+    api.ensureRows.mockRejectedValueOnce(new Error('Anomaly tab not found'))
+    await expect(write(api, [{ tab, rows: [row] }])).rejects.toThrow('Anomaly tab not found')
+    expect(api.batchUpdateValues).not.toHaveBeenCalled()
+  })
+
   const t9: TabSpec = { spreadsheetId: 'sid', tab: 'T9Manu', headers: ['date', 'source'] }
   const t9Row = ['2026-11-19', 'Anomaly Interception']
   const base = () => ({

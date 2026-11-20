@@ -29,6 +29,7 @@ function fakeApi(entries: Record<string, number>) {
       return Array.from({ length: +m[2] - +m[1] + 1 }, (_, i) => entry(+m[1] + i))
     }),
     batchUpdateValues: vi.fn(),
+    ensureRows: vi.fn(),
   } satisfies SheetsApi
 }
 

@@ -70,5 +70,8 @@ export function createMockSheetsApi(tabs: Record<string, Cell[][]>): SheetsApi {
       }
       return { updatedRanges: data.map((d) => d.range) }
     },
+
+    // the fake sheet has no grid limit
+    async ensureRows() {},
   }
 }

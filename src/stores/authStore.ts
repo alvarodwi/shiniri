@@ -10,6 +10,7 @@ let impl: SheetsApi = createSheetsApi(getToken)
 export const sheetsApi: SheetsApi = {
   getValues: (...args) => impl.getValues(...args),
   batchUpdateValues: (...args) => impl.batchUpdateValues(...args),
+  ensureRows: (...args) => impl.ensureRows(...args),
 }
 
 export function useSheetsApi(api: SheetsApi): void {

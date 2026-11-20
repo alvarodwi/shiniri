@@ -23,6 +23,7 @@ function fakeApi(colA: string[], lastRow: string[]) {
   const api = {
     values,
     getValues: vi.fn(async (_id: string, range: string) => values[range] ?? []),
+    ensureRows: vi.fn<SheetsApi['ensureRows']>(async () => {}),
     batchUpdateValues: vi.fn<SheetsApi['batchUpdateValues']>(async (_id, data) => ({
       updatedRanges: data.map((d) => d.range),
     })),
