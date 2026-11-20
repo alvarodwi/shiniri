@@ -9,7 +9,7 @@ from .store import SOURCES, Store
 
 TABS = {"campaign": "Campaign", "tower": "Tower"}
 FORM = "cli-clears"
-_TAIL = ("stageName", "clearedAt", "recommendedCp", "teamCp", "synchroLevel",
+_TAIL = ("stageName", "dateCleared", "recommendedCp", "teamCp", "synchroLevel",
          "slot1", "slot2", "slot3", "slot4", "slot5")
 HEADERS = {"campaign": ("stageId", "mode", "chapter", *_TAIL), "tower": ("stageId", "mode", "floor", *_TAIL)}
 
