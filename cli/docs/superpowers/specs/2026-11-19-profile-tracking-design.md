@@ -1,100 +1,184 @@
-# Profile tracking: snapshots, daily reminders, profile menu
+# Profile tracking: one row a day to the Progression sheet
 
-> **Status: WORK IN PROGRESS, not approved. Shelved 2026-11-19 (second session).** `blabla.yml` (sample responses) lives only on the user's work Windows PC, so resume there or copy it over first.
->
-> **Decided in the second session:**
-> - **Drop the `profile` shell group** (`now` / `history` / `daily`, the `"profile"` scope). Viewing history belongs in a dashboard, not the shell. Keep only `shiniri-cli snapshot`. The Telegram reminder is still in scope unless the user says otherwise.
-> - **Telegram (Q2 answered):** the `ambil` project (`../ambil`, Kotlin) keeps the bot in `config.json` as `"telegram": {"token", "chatId"}`. `TelegramNotifier.kt` sends MarkdownV2 with every special character escaped, using an emoji header plus label lines (`✅ Job Success` / `Job: …` / `Message: …`). My call: copy the values into `config/telegram.json` with the same keys, match that style, and send plain text with no `parse_mode`.
-> - **Long-run direction (separate projects, not this spec):**
->   1. **Investment data to the gacha tracker sheet.** Fetch per-nikke investment data from blablalink and auto-update the `NikkeRoster` tab of the user's *NIKKE gacha tracker* spreadsheet (not the Progression Journal). The CLI fetches no investment data yet. The endpoints still need finding in `blabla.yml`. Blocker: the shiniri web app hasn't integrated the gacha tracker sheet either.
->   2. **Dashboard in the shiniri web app.** The user leans toward pushing raw JSON to Google Drive (for example, `rclone sync data/raw/json` from cron). The web app (a Vue SPA on Netlify with no backend, signed in through Google with only the `spreadsheets` permission) would add `drive.readonly`, because `drive.file` can't see files rclone uploads. Sheet updates need no backend either: an Apps Script attached to the sheet can read the Drive JSON on a timer, or shiniri-cli can write through a service account.
->
-> - **Direction: shiniri-cli becomes a headless fetcher, and the shell stays as the viewer.** My proposal, which the user leans toward: a one-shot command (working name `shiniri-cli fetch`) for cron that runs `sync_reference`, `fetch_clears` (campaign and tower), `fetch_union` and the profile snapshot. It sends a Telegram message on failure, especially `AuthError`, and `rclone` can run right after it. This replaces the snapshot-only command in the design below.
-> - **Keep the clear and union shell views; don't trim them.** They're a working prototype of the dashboard. Each command in `CLEAR_COMMANDS` and `UNION_COMMANDS` (`cli.py`) is a view the web app will need, and `queries.py` and `union_queries.py` hold the logic for each one. Use that catalog as the starting list when brainstorming the web dashboard. Delete the shell only once the dashboard covers it, as a separate cleanup.
-> - **Keep the parsing layer** (`Store.build_tables`, `write_union_parsed`). It maps nikke ids to names. Uploading the parsed CSVs to Drive alongside the raw JSON saves the browser from repeating that work.
->
-> Next session: brainstorm the investment → `NikkeRoster` project first (it's the near-term need), then decide whether `snapshot` still earns its place. Remaining open questions for `snapshot`:
->
-> **Open questions, most important first:**
-> 1. Where does the shell run day to day: the homeserver (SSH) or the Windows PC? Snapshots live in the homeserver's `data/`, so this decides whether we need syncing.
-> 2. How does the Kotlin automation store and use the Telegram bot (token and chat id format, any message style to match)?
-> 3. Is the "undone dailies" list right? What's missing, and what's noise (counsel, outpost storage)?
-> 4. Should the reminder stay quiet at certain hours (night), or send every 3h whenever something is left?
-> 5. Is the tracked-fields list for `history` right? Should anything else be tracked (currencies, sim room overclock, recycle room)?
-> 6. Approach A (a one-shot `snapshot` command plus cron/systemd) is my pick. Confirm, or prefer another.
-> 7. Cookie renewal through the Kotlin Chrome-profile login check: in scope now, or later?
+> Replaces the shelved 2026-11-19 draft: the snapshot files, the `profile` shell group and the Telegram
+> reminder are all dropped.
 
 ## Why
 
-Clear and union work as live query tools because the server keeps their history: every clear and every raid hit. Profile data is different. The server only answers "how things stand right now". To see account growth over time (level, team power, synchro, outpost, campaign and tower progress), something has to snapshot the profile on a schedule and keep every snapshot. The same scheduled run can check daily progress and send a Telegram nudge when dailies are still undone, so a forgotten daily gets caught within 3 hours.
+The server only reports "how the account stands right now", so growth over time (level, power, synchro,
+currencies, progress) has to be sampled. The user already keeps a Progression spreadsheet that the `shiniri`
+web app appends to. One automatic row a day, written once the daily is finished, gives a history in the place
+they already look at it, without typing anything.
 
 ## Goals
 
-- **One run** (`shiniri-cli snapshot`) does three things in order:
-  1. It calls the three profile requests.
-  2. It saves them together as one timestamped snapshot.
-  3. If dailies are undone, it sends a Telegram message listing what's left.
-- The homeserver runs it every 3 hours with its own scheduler.
-- **Cookie failures are never silent.** A rejected cookie (`code 300001`) or a transport failure sends a Telegram message saying so.
-- **A `profile` group in the shell**, built on the shared `GROUPS` mechanism, reads stored snapshots and never calls the server:
-  - `profile now`: the latest snapshot, as a summary of key fields.
-  - `profile history [field]`: one row per day (that day's last snapshot) for the tracked fields, or for one field.
-  - `profile daily`: the latest daily progress, the same list the reminder sends.
-- **The bot is the same one the Kotlin quest automation uses**, so no new bot is created.
+- `shiniri-cli watch` is a long-running process on the Linux homeserver, started by hand in `tmux` or with
+  `nohup` (the user's choice: "like a jar that stays active", no systemd, no cron).
+- Every hour, at minute :59 WIB (UTC+7), it checks daily progress. The game day resets at 03:00 WIB, so the
+  last check of a game day is 02:59.
+- The first check that finds the daily finished appends one row of profile data to a `Profile` tab in the
+  Progression spreadsheet. If the daily is still unfinished at the 02:59 check, the row is written anyway, so
+  every day gets a row.
+- **Atomic, the same way the web app writes:** the data row and its `AuditLog` row go in one
+  `values:batchUpdate` request, so either both land or neither does.
+- At most one row per game day, even across restarts.
 
 ## Non-goals
 
-- `GetUserGamePlayerInfo` (the user said basic info covers it).
-- Renewing the cookie automatically from the Kotlin automation's Chrome-profile login check. This is a likely follow-up and has its own design.
-- Telegram commands or replies. The bot only sends.
-- A long-running daemon inside this project.
+- Daily progress in the sheet. It lives only in `data/daily.json`, overwritten each game day, as the
+  "already written today?" guard.
+- Reminders, Telegram from this CLI, or a shell view of the data.
+- Process supervision (systemd, auto-start on boot). After a reboot the user restarts it.
+- Renewing the cookie. That's `ambil`'s job (see Cookies).
+- `GetUserGamePlayerInfo`. The basic info already covers it.
 
 ## Anti-goals
 
-- A reminder setup that fails quietly. An expired cookie that stops reminders without telling the user is worse than no reminders at all.
-- Spamming. One message per run, and none when everything is done.
+- Two rows for one game day, or a data row with no `AuditLog` row.
+- Overwriting anything already in the sheet.
+- A failed check (expired cookie, network, Sheets error) that kills the loop.
 
 ## Constraints
 
-- **History starts on the first snapshot.** The server has no past values.
-- **Request shape:** `POST https://api.blablalink.com/api/game/proxy/Game/<Name>` with body `{"intl_open_id": <game_openid cookie>, "nikke_area_id": 85}`. The names are `GetUserProfileBasicInfo`, `GetUserProfileOutpostInfo` and `GetUserDailyContentsProgress`. The cookie comes from `config/cookie.txt` (via `load_cookie`). `AREA_ID` and `AUTH_CODE` are already in `fetch.py`, and the retry/auth pattern is `union._call`.
-- **Sample responses** are in `blabla.yml`, under the `profile` folder.
-- **Where it runs:** the homeserver, which is up about 97% of the time, alongside the Kotlin automation.
-- **Secrets:** the Telegram bot token and chat id go in `config/telegram.json`, which is gitignored like `config/cookie.txt`.
+- **Profile requests:** `POST https://api.blablalink.com/api/game/proxy/Game/<Name>`, with body
+  `{"intl_open_id": <game_openid cookie>, "nikke_area_id": 85}` and the existing `HEADERS` and cookie client
+  (`fetch.make_client`). The three names are `GetUserDailyContentsProgress`, `GetUserProfileBasicInfo` and
+  `GetUserProfileOutpostInfo`. `code == 300001` (`AUTH_CODE`) means the cookie was rejected (`AuthError`).
+  Sample responses are in `blabla.yml` under the `profile` folder.
+- **Google auth:** the web app's sign-in happens in the browser and its token can't be renewed, so the CLI
+  uses a **service account**. Its key goes in `config/service-account.json`, and the sheet is shared with the
+  account's email as an editor. Scope: `https://www.googleapis.com/auth/spreadsheets`.
+- **Spreadsheet id:** `config/sheets.json`, `{"spreadsheet_id": "..."}`. For testing, use the id in
+  `../shiniri/.env.local` (`VITE_JOURNAL_SHEET_ID`). Following the web app's README, that id points at a
+  **copy** of the journal, so test rows never land in the real Progression sheet. Clear test rows (`Profile`
+  and `AuditLog`) by hand before the real run, because a test row dated today trips the duplicate guard.
+- `config/service-account.json` must be added to `.gitignore`. Only `config/cookie.txt` is ignored today.
+- Python ≥ 3.14, `httpx`, plus one new dependency for Google auth (see Approaches).
 
 ## Approaches
 
-- **A. One-shot command plus the homeserver's scheduler (chosen, my call).** `shiniri-cli snapshot` runs once and exits, and cron or a systemd timer runs it every 3 hours. Nothing has to stay alive, a crash only loses one run, and it reuses the existing `Store`, cookie and httpx code.
-- **B. A long-running daemon with its own timer loop.** It still needs something to keep it alive (systemd), so it adds a process to supervise and gains nothing over A.
-- **C. Have the Kotlin jar call the profile APIs and send the reminders.** It would keep everything in one place, but it splits profile logic across two languages. The shell's profile menu needs this project's stored snapshots anyway.
+**Process** (user picked B):
+- A. A systemd service with `Restart=always`. It starts on boot and restarts after a crash. Rejected by the
+  user, who doesn't want systemd.
+- **B. A plain long-running loop, run in `tmux` or with `nohup` (picked).** No setup. It stays down after a
+  reboot or crash until restarted.
 
-The user handed over the how ("let's just create the plan"), so A is my call.
+**Sheet writing** (user picked A):
+- **A. A port of the web app's `writeTabsAtEnd` (picked).** It checks the headers, finds the next empty row
+  from column A, confirms the target is empty, then sends one `batchUpdate` with the data row plus the
+  `AuditLog` row. This is atomic, and it matches the existing sheet conventions.
+- B. Google's `values.append`. Simpler, but the `AuditLog` row needs a second request, so it isn't atomic.
+- C. `gspread`. A heavy dependency that still splits the two writes.
 
 ## Design
 
-- **Storage:** each run saves `data/raw/json/profile/<YYYYMMDD-HHMM>.json` (local time). The file holds `{"taken_at": <epoch>, "basic": <data.basic_info>, "outpost": <data.outpost_info>, "daily": <data.daily_progress[0]>}`. Only answers with `code == 0` are kept. If any of the three fails, nothing is saved for that run and the failure is reported.
-- **Tracked fields for `history`** (my call, so they're easy to change in one tuple):
-  - `lv`, `team_combat`, `character_count`, `character_costume_count` (from basic)
-  - `synchro_level`, `outpost_battle_level` (from outpost)
-  - `progress_normal_campaign`, `progress_hard_campaign`, `progress_tribe_tower` (from basic)
-- **Undone dailies** (my call). An item counts as left when it is non-zero:
-  - `daily_mission_receivable_points > 0` (points earned but not claimed)
-  - `daily_mission_received_points < 100`
-  - `rookie_arena_remaining_count`
-  - `special_arena_remaining_count`
-  - `intercept_remaining_tickets`
-  - `counsel_remaining_count`
-  - any `tower_daily_info_list` entry with `is_opened` and `remaining_count > 0`
+### The loop (`shiniri-cli watch`)
 
-  Outpost storage fullness of 0.9 or more is also listed, as "outpost storage almost full".
-- **Telegram:** a `POST https://api.telegram.org/bot<token>/sendMessage` with `{"chat_id", "text"}` through httpx. If `config/telegram.json` is missing, `snapshot` prints the message instead and exits 0, which helps with testing on the PC.
-- **Exit code:** 0 on success, including "reminder sent". It is 1 when the snapshot failed, so the scheduler's logs show it.
-- **The profile group** reads snapshots through a `build_profile(store)` loader, in the same style as `build_union`. Its commands render a `Result` through the existing `_show` path with scope `"profile"`, which is added to `SCOPES`. They are always rebuilt (`force=True`), because snapshots arrive from another process and a cached export would go stale.
+- **Entry point:** `run()` in `cli.py` starts the shell today. `watch` as the first argv runs the loop instead,
+  and no argument still starts the shell.
+- **Timing:** it checks once on start (so a fresh start doesn't wait up to an hour), then sleeps until the next
+  :59 WIB and checks again, forever. WIB is a fixed UTC+7 offset with no daylight saving.
+- **Game day:** the WIB date of (now − 3h). The 02:59 check is the last one for the game day that started at
+  03:00 the previous calendar day.
+- **One check:**
+  1. Load `data/daily.json`. If its `day` isn't today's game day, start fresh: `{day, written: false}`.
+  2. If `written` is already true, do nothing.
+  3. Re-read `config/cookie.txt` with `load_cookie` (never cached, so a fresh cookie from `ambil` is picked
+     up), then fetch `GetUserDailyContentsProgress`. Save `daily_progress[0]` into `daily.json` under
+     `progress`.
+  4. If `daily_mission_received_points >= 100`, or this is the 02:59 check, fetch basic and outpost info,
+     build the row and write it (below). On success, set `written: true` and save.
+- **Errors:** `AuthError`, `httpx` errors, a non-zero `code` and Sheets errors are logged, and that check ends.
+  The loop carries on. The next hour retries, because `written` is still false. A failed 02:59 check means that
+  day has no row. That is accepted and the error is logged.
+- **Logging:** one timestamped line per check on stdout (for example `game day 2026-11-20: not done (30/100)`,
+  `wrote Profile!A12:AU12`, `cookie rejected`). Under `nohup` the user redirects it to a file.
+- `daily.json` is written with `store.atomic_write`.
 
-## Left to the builder (decide at home)
+### The row
 
-- **Where the shell runs** (the user decides). Snapshots live in `data/` on the homeserver. If the user runs the shell on the Windows PC, the profile menu there is empty unless `data/raw/json/profile/` is synced or the shell is used over SSH.
-- **The Telegram token and chat id format** in the Kotlin project. Copy them into `config/telegram.json` as `{"token": "...", "chat_id": "..."}`.
-- **The daily reset time.** The reminder doesn't need it, because it reads live remaining counts. But `history` "one row per day" uses local midnight; that's my call, and you can change it if reset-aligned days read better.
-- **What `progress_normal_campaign: 6050044` means.** It looks like mode/chapter/stage digits. Show it raw until it's decoded.
-- **The scheduler line** (cron or systemd timer) on the homeserver, for example `0 */3 * * * cd /path/shiniri-cli && uv run shiniri-cli snapshot`.
+The `Profile` tab, one row per game day. Headers (camelCase like the web app's tabs), checked word for word
+before every write:
+
+| Header | Source |
+|---|---|
+| `date` | game day, `YYYY-MM-DD` |
+| `takenAt` | WIB `YYYY-MM-DD HH:MM:SS`, as the web app's `wibTimestamp` writes it |
+| `dailyDone` | `TRUE` if the 100 points were claimed, `FALSE` if written by the 02:59 fallback |
+| `level`, `teamCombat`, `nikkes`, `costumes` | basic `lv`, `team_combat`, `character_count`, `character_costume_count` |
+| `elysionNikkes`, `missilisNikkes`, `tetraNikkes`, `pilgrimNikkes`, `abnormalNikkes` | `corporation_character_counts` by `corporation_type` 1, 2, 3, 4, 7 |
+| `paidGems`, `freeGems`, `battleData`, `credits`, `coreDust`, `recruitVouchers`, `advRecruitVouchers`, `silverMileage`, `goldMileage` | `currencies` by `type` 98, 99, 1000, 2000, 3000, 5100, 5200, 11000, 12000, written as numbers |
+| `easyCampaign`, `normalCampaign`, `hardCampaign` | `progress_*_campaign` stage ids, written as the stage name from `stage_list` (`6050044` → `50-36`, dropping the ` BOSS` / ` HARD BOSS` / ` STAGE` suffix). Falls back to the raw id if the stage isn't listed |
+| `tribeTower`, `elysionTower`, `missilisTower`, `tetraTower`, `pilgrimTower` | `progress_tribe_tower`, `progress_<corp>_tower` |
+| `overclockCurrent`, `overclockLatest` | `sim_room_overclock_current_sub_season_high_score`, `sim_room_overclock_latest_season_high_score` |
+| `synchroLevel`, `synchroSlots`, `outpostLevel` | outpost `synchro_level`, `synchro_nonempty_slot_count`, `outpost_battle_level` |
+| `recyclePersonal`, `recycleAttacker`, `recycleDefender`, `recycleSupporter`, `recycleElysion`, `recycleMissilis`, `recycleTetra`, `recyclePilgrim`, `recycleAbnormal` | `recycle_room_researches` `lv` by `tid` 1001, 1101, 1102, 1103, 1201–1205 |
+| `memoirs`, `callLogs`, `bgm`, `data` | lost relics: `memorial_counts` `HandWriting`, `CallLog`, then outpost `jukebox_count`, then the sum of every other `memorial_counts` category |
+
+That's 47 columns (A to AU). Left out: name, icon, ids, banned/maintenance flags, profile team, overclock
+history by season, infra core, tactic academy.
+
+A missing id (for example a new currency type the game adds) writes a blank cell, not an error. An unknown
+extra id is ignored. The mapping tables live as constants in one place, so adding a column is one edit plus a
+header in the sheet.
+
+### Sheet writer (port of `shiniri/src/services/sheets/tabWriter.ts`)
+
+Calls go through `httpx` to `https://sheets.googleapis.com/v4/spreadsheets/{id}/values/...`, with the bearer
+token from the service account credentials.
+1. Read row 1 of `Profile` and of `AuditLog`. Each must match its headers exactly
+   (`AuditLog`: `savedAt | form | ranges | rows`), or the write fails with a "headers changed" error.
+2. Read column A of each, unformatted, and take the row after the last non-blank cell.
+3. **Duplicate guard:** if the last `date` in `Profile` is already today's game day, skip the write and mark
+   `written: true`. This covers a lost or reset `daily.json`.
+4. Read each target range. If any cell is non-blank, refuse.
+5. One `values:batchUpdate` with `valueInputOption: USER_ENTERED` and both ranges. The `AuditLog` row is
+   `['<wib timestamp>, 'cli-profile', '<Profile range>, 1`. The leading `'` keeps the timestamp and the range
+   as text, the same as the web app.
+
+**Accepted race (user's choice):** the web app and `watch` both write the next `AuditLog` row. If a web
+save lands in the gap of a second or so between the CLI's empty check and its write (or the other way round),
+one audit row overwrites the other. Only the CLI writes to `Profile`, so its data rows are safe. Keep the
+single atomic write and mark the gap with a `shortcut:` comment, as `tabWriter.ts` does. Don't switch to
+`values.append`.
+
+### Cookies (contract with `ambil`, built in that repo, not here)
+
+`ambil` keeps a logged-in Chrome profile (`~/.blablalink-profile`) and visits blablalink daily. The follow-up
+in `ambil`: after each blablalink run, write that browser's `.blablalink.com` cookies as a Cookie header
+string (`name=value; ...`, including `game_token` and `game_openid`) to shiniri-cli's `config/cookie.txt`.
+Write it to a temp file in the same directory and rename it over the old one, so the CLI never reads half a
+file. The path is set in `ambil`'s config. When the browser session itself expires, `ambil` already sends its
+`SessionExpiredException` alert. The CLI needs nothing beyond re-reading the file on every check, which this
+design already does.
+
+**To verify once it runs:** that the browser's daily visit actually refreshes `game_token`. If it doesn't, the
+cookie expires on its own schedule whatever `ambil` does, and this contract needs rethinking.
+
+## Setup (homeserver, one time)
+
+1. **Google Cloud project:** go to <https://console.cloud.google.com>, then create a project (or reuse the
+   web app's), then *APIs & Services → Library → Google Sheets API → Enable*.
+2. **Service account:** *IAM & Admin → Service Accounts → Create service account*. Give it a name such as
+   `shiniri-cli` and grant no roles. Open it, go to *Keys → Add key → Create new key → JSON*, and a `.json`
+   file downloads.
+3. Copy that file to the homeserver as `shiniri-cli/config/service-account.json`, then run
+   `chmod 600 config/service-account.json`.
+4. **Share the sheet:** open the Progression spreadsheet, click *Share*, and add the service account's email
+   (`...@<project>.iam.gserviceaccount.com`, also in the JSON as `client_email`) as an **Editor**, with
+   "notify" turned off. Do the same for the test sheet.
+5. Write `config/sheets.json` as `{"spreadsheet_id": "<id from the sheet URL>"}`.
+6. Add a `Profile` tab whose row 1 holds the 47 headers above, in order. `AuditLog` already exists.
+7. Run it: `tmux new -s shiniri`, then `cd shiniri-cli && uv run shiniri-cli watch`, then detach with
+   `Ctrl-b d`. Or use `nohup uv run shiniri-cli watch >> data/watch.log 2>&1 &`.
+
+## Left to the builder
+
+- **Google auth library:** `google-auth` (`service_account.Credentials`, refreshed when it expires) is the
+  expected pick. It needs `requests` as its token transport. Signing the JWT by hand with `cryptography` is
+  also acceptable if that keeps the dependency set smaller.
+- Module layout. A `profile.py` (fetch, row building, guard file) and a `sheets.py` (writer) are suggested,
+  following the existing `union.py` style.
+- Tests use fake HTTP, like the existing fetch and union tests. Cover the game-day rollover at 03:00, the
+  02:59 fallback, the duplicate guard, the header mismatch, a non-empty target, and building the row from the
+  `blabla.yml` samples.
