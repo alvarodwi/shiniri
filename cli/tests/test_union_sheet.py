@@ -111,3 +111,8 @@ def test_fetch_error_still_writes_stored(union_store, monkeypatch):
     api = FakeSheets({**AUDIT, **sheet("union", [["season"]]), **sheet("roster", [["season"]])})
     text = asyncio.run(sync_union(union_store, None, api, timestamp="ts", now=99999))
     assert text == "Union +2 (fetch: ConnectError) · Roster +2 (fetch: ConnectError)"
+
+
+def test_season_missing_from_raid_list_is_not_locked(union_store):
+    union_store.save_raw("raid_list", [])  # no end times known: nothing can be trusted as locked
+    assert locked(build_union(union_store, None, 0)) == []

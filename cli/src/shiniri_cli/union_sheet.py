@@ -22,8 +22,9 @@ def _text(v) -> str:
 
 
 def locked(u: UnionData) -> list[int]:
+    # no end time (season missing from raid_list) means locked can't be known: never write it
     return sorted(n for n, s in u.seasons.items()
-                  if is_final({"fetched_ts": s["fetched_ts"] or 0}, {"end_ts": s["end_ts"] or 0}))
+                  if s["end_ts"] and is_final({"fetched_ts": s["fetched_ts"] or 0}, {"end_ts": s["end_ts"]}))
 
 
 def union_rows(u: UnionData, n: int) -> list[list]:
