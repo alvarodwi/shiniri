@@ -62,3 +62,40 @@ def test_one_tab_error_keeps_the_other(store, monkeypatch):
     text = asyncio.run(sync_clears(store, None, api, timestamp="ts"))
     assert text.startswith("Campaign: Campaign headers changed") and text.endswith(" · Tower +1")
     assert [rng for rng, _ in api.batches[0]][0] == "'Tower'!A2:M2"
+
+
+def test_overflow_ids_are_ignored(store):
+    api = FakeSheets({**AUDIT, **sheet("Tower", [["stageId"], ["inf"], ["1e400"]])})
+    assert append_missing(api, "tower", clear_rows(store.build_clears(), "tower"), timestamp="ts") == 1
+
+
+def test_corrupt_campaign_file_keeps_tower(store, monkeypatch):
+    async def none(*a, **k):
+        return 0
+    monkeypatch.setattr(clear_sheet, "fetch_clears", none)
+    (store.raw_dir / "campaign_clears.json").write_text("{nope", encoding="utf-8")
+    api = FakeSheets({**AUDIT, **sheet("Campaign", [["stageId"]]), **sheet("Tower", [["stageId"]])})
+    text = asyncio.run(sync_clears(store, None, api, timestamp="ts"))
+    assert text.startswith("Campaign: JSONDecodeError") and text.endswith(" · Tower +1")
+
+
+def test_fetch_error_still_appends_stored_clears(store, monkeypatch):
+    import httpx
+
+    async def down(*a, **k):
+        raise httpx.ConnectError("down")
+    monkeypatch.setattr(clear_sheet, "fetch_clears", down)
+    api = FakeSheets({**AUDIT, **sheet("Campaign", [["stageId"]]), **sheet("Tower", [["stageId"]])})
+    text = asyncio.run(sync_clears(store, None, api, timestamp="ts"))
+    assert text == "Campaign +1 (fetch: ConnectError) · Tower +1 (fetch: ConnectError)"
+
+
+def test_unexpected_fetch_error_keeps_both_tabs(store, monkeypatch):
+    async def bad(store_, source, client):
+        if source == "campaign":
+            raise ValueError("Expecting value")
+        return 0
+    monkeypatch.setattr(clear_sheet, "fetch_clears", bad)
+    api = FakeSheets({**AUDIT, **sheet("Campaign", [["stageId"]]), **sheet("Tower", [["stageId"]])})
+    text = asyncio.run(sync_clears(store, None, api, timestamp="ts"))
+    assert text == "Campaign +1 (fetch: ValueError: Expecting value) · Tower +1"

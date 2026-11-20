@@ -92,3 +92,9 @@ def test_wipe_only_scope(store):
 
 def test_export_name_keeps_args_apart():
     assert export_name("nikke", ["rapi", "red hood"]) != export_name("nikke", ["rapi: red hood"])
+
+
+def test_cleared_at_is_utc_whatever_the_machine_zone(store):
+    camp = store.build_clears(("campaign",))
+    assert [c["source"] for c in camp] == ["campaign"]
+    assert camp[0]["cleared_at"].utcoffset().total_seconds() == 0

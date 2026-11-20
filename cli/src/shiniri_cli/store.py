@@ -6,7 +6,7 @@ import json
 import os
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -31,17 +31,14 @@ def atomic_write(path: Path, text: str, encoding: str = "utf-8") -> None:
     os.replace(tmp, path)
 
 
-def _local_time(ts) -> datetime | None:
+def _utc_time(ts) -> datetime | None:
+    # UTC, so the sheet's WIB conversion never depends on the machine's zone
     if ts in (None, "", "0", 0):
         return None
     try:
-        return datetime.fromtimestamp(int(ts)).astimezone()
-    except (TypeError, ValueError, OSError):
+        return datetime.fromtimestamp(int(ts), timezone.utc)
+    except (TypeError, ValueError, OSError, OverflowError):
         return None
-
-
-def _fmt(dt: datetime | None) -> str:
-    return dt.strftime("%Y-%m-%d %H:%M:%S") if dt else ""
 
 
 def export_name(command: str, args: list[str]) -> str:
@@ -123,7 +120,7 @@ class Store:
                     "element": ((n.get("element_id") or {}).get("element") or {}).get("element")}
         return info
 
-    def build_clears(self) -> list[dict]:
+    def build_clears(self, sources: tuple[str, ...] = SOURCES) -> list[dict]:
         """Join raw clears with the reference files into flat rows, one per clear."""
         lookup, _ = self._nikkes()
         stages = {}
@@ -138,13 +135,13 @@ class Store:
                 "stage_name": f"{s.get('floor')}F", "recommended_cp": s.get("standard_battle_power", 0)}
 
         clears = []
-        for source in SOURCES:
+        for source in sources:
             raw = self.load_clears(source)
             for key in sorted(raw, key=int):
                 stage_id = int(key)
                 meta = stages.get((source, stage_id), {
                     "mode": "", "chapter": None, "floor": None, "stage_name": "", "recommended_cp": 0})
-                cleared_at = _local_time(raw[key].get("cleared_at"))
+                cleared_at = _utc_time(raw[key].get("cleared_at"))
                 base = {"source": source, "stage_id": stage_id, "mode": meta["mode"],
                         "chapter": meta["chapter"], "floor": meta["floor"], "cleared_at": cleared_at}
                 team = []
