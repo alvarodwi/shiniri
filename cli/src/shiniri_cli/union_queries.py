@@ -2,11 +2,23 @@
 
 import re
 from collections import Counter, defaultdict
+from dataclasses import dataclass
 from datetime import datetime
 from statistics import median
 
-from .queries import QueryError, Result
 from .union import CODES, WEAK_TO, UnionData, boss_code
+
+
+@dataclass
+class Result:
+    scope: str
+    columns: list[str]
+    rows: list[list]
+    summary: str = ""
+
+
+class QueryError(ValueError):
+    pass
 
 SIZE_TRUST = 7 * 86400  # the guild card is today's; past this it says nothing about that season
 

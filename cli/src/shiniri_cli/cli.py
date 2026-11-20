@@ -6,7 +6,6 @@ import shlex
 import sys
 import time
 from dataclasses import dataclass
-from datetime import date
 from pathlib import Path
 
 import httpx
@@ -14,37 +13,20 @@ from prompt_toolkit.completion import NestedCompleter, WordCompleter
 from prompt_toolkit.document import Document
 from rich.console import Console
 from rich.markup import escape
-from rich.progress import Progress
 from rich.table import Table
 
-from . import queries
 from . import union_queries as uq
-from .fetch import (AuthError, campaign_targets, fetch_clears, load_cookie, make_client, save_cookie,
-                    sync_reference, tower_targets)
-from .queries import QueryError, Result
-from .store import LEVELS, SCOPES, SOURCES, Store, export_name, scopes_to_wipe
+from .fetch import AuthError, load_cookie, make_client, save_cookie, sync_reference
+from .store import Store, export_name, scopes_to_wipe
 from .union import CODES, UnionError, build_union, fetch_union, write_union_parsed
+from .union_queries import QueryError, Result
 
 COMMANDS: dict[str, tuple[str, str, list[str]]] = {
-    "clear": ("clear [cmd]", "campaign & tower clears — help clear lists its commands", ["clear", "clear progress", "cl n crown"]),
     "union": ("union [cmd]", "union raid mode — help union lists its commands", ["union", "union s45", "union missed s44"]),
     "sync": ("sync", "re-download CDN reference files", ["sync"]),
     "cookie": ("cookie", "paste your Cookie header", ["cookie"]),
-    "help": ("help [group] [cmd]", "list commands, or show a group or one command in detail", ["help", "help clear", "help union hits"]),
+    "help": ("help [group] [cmd]", "list commands, or show a group or one command in detail", ["help", "help union", "help union hits"]),
     "quit": ("quit", "leave", ["quit"]),
-}
-CLEAR_COMMANDS: dict[str, tuple[str, str, list[str]]] = {
-    "fetch": ("fetch campaign|tower|all", "get new clears (needs cookie)", ["fetch tower", "fe all"]),
-    "nikke": ("nikke <name> [+ <name>]", "clears that used a Nikke (both, if two)", ["nikke crown", "n crown + anis: star"]),
-    "stage": ("stage <normal|hard> <ch>[-<stage>]", "campaign chapter, or one stage", ["stage hard 50", "st hard 50-36"]),
-    "floor": ("floor <tower> <n>", "tower floor clear", ["floor tribe 1030", "fl pilgrim 500"]),
-    "date": ("date <from>[..<to>]", "clears in a date range", ["date 2026-11-11", "d 2026-11-01..2026-11-11"]),
-    "top": ("top [tower|mode]", "most-used Nikkes", ["top", "top pilgrim", "t hard"]),
-    "synchro": ("synchro", "synchro level timeline", ["synchro"]),
-    "spread": ("spread [step]", "synchro levels in bands (default 5): first/last day at each", ["spread", "sp 10"]),
-    "progress": ("progress", "highest chapter / floor per mode", ["progress"]),
-    "help": ("help [cmd]", "list clear commands, or show one in detail", ["help", "help nikke"]),
-    "back": ("back", "return to the main shell", ["back"]),
 }
 UNION_COMMANDS: dict[str, tuple[str, str, list[str]]] = {
     "fetch": ("fetch", "download seasons not stored yet (needs cookie)", ["fetch"]),
@@ -65,13 +47,10 @@ UNION_COMMANDS: dict[str, tuple[str, str, list[str]]] = {
     "back": ("back", "return to the main shell", ["back"]),
 }
 UNION_FOOTER = "sN alone shows that season's recap · no season = live, else latest · ! rebuilds an export"
-CLEAR_FOOTER = "any unique prefix works (n, st, fl) · prefix a search with ! to rebuild its export"
-MAIN_FOOTER = "a group name alone enters it · add a command for a one-off (clear progress) · any unique prefix works"
+MAIN_FOOTER = "a group name alone enters it · add a command for a one-off (union s45) · any unique prefix works"
 GROUPS: dict[str, tuple[dict, str, str]] = {  # name -> (commands, help footer, handler method prefix)
-    "clear": (CLEAR_COMMANDS, CLEAR_FOOTER, "c_"),
     "union": (UNION_COMMANDS, UNION_FOOTER, "u_"),
 }
-FIXED_SCOPE = {"nikke": "all", "stage": "campaign", "floor": "tower", "date": "all", "synchro": "all", "spread": "all", "progress": "all"}
 
 
 @dataclass
@@ -125,41 +104,12 @@ class PrefixCompleter(NestedCompleter):
         yield from super().get_completions(document, complete_event)
 
 
-def _clear_habit(word: str) -> bool:
-    """A word typed at main that names a clear command: from before clear became a group."""
-    return any(c.startswith(word) for c in CLEAR_COMMANDS if c not in ("help", "back"))
-
-
-def _int(text: str, what: str) -> int:
-    try:
-        return int(text)
-    except ValueError:
-        raise QueryError(f"{what} must be a number, not '{text}'") from None
-
-
-def _date(text: str) -> date:
-    try:
-        return date.fromisoformat(text)
-    except ValueError:
-        raise QueryError(f"dates look like 2026-11-11, not '{text}'") from None
-
-
 class App:
     def __init__(self, store: Store, console: Console):
         self.store, self.out = store, console
         self.mode = "main"
         for line in store.migrate():
             self.out.print(f"[cyan]{line}[/]")
-        self.tables = store.build_tables()
-        parsed = [store.parsed_dir / f for f in ("campaign_clears.csv", "tower_clears.csv", "lineups.csv")]
-        raw_times = [f.stat().st_mtime for f in store.raw_dir.glob("*.json")]
-        if not all(p.exists() for p in parsed):
-            store.write_parsed(self.tables)
-        elif raw_times and max(raw_times) > min(p.stat().st_mtime for p in parsed):
-            # raw changed without a clean refresh (crash, hand edit): nothing derived can be trusted
-            store.write_parsed(self.tables)
-            store.wipe_exports(set(SCOPES))
-            self.out.print("[dim]raw data changed since last run · rebuilt parsed csv · cleared exports[/]")
         self._load_union()
         union_csv = store.parsed_dir / "union_hits.csv"
         union_times = [f.stat().st_mtime for f in (store.raw_dir / "union").glob("*.json")]
@@ -178,7 +128,6 @@ class App:
         self.union = build_union(self.store, me, time.time())
 
     def _build_completer(self):
-        towers = {c["mode"].lower() for c in self.tables.clears if c["source"] == "tower"}
         seasons = {f"s{n}" for n in self.union.seasons}
         names = sorted(set(self.union.names.values()))
         codes = {c.lower() for c in CODES}
@@ -190,16 +139,7 @@ class App:
             "top": seasons | {"all"}, "missed": seasons, "normal": seasons, "season": seasons,
             "boss": codes, "help": set(UNION_COMMANDS),
         }
-        clear = {
-            **{name: None for name in CLEAR_COMMANDS},
-            "nikke": WordCompleter(self.tables.nikke_names, ignore_case=True, sentence=True),
-            "floor": towers,
-            "top": towers | {"normal", "hard"},
-            "stage": {"normal", "hard"},
-            "fetch": {"campaign", "tower", "all"},
-            "help": set(CLEAR_COMMANDS),
-        }
-        groups = {"clear": clear, "union": union}
+        groups = {"union": union}
         self._group_completers = {g: PrefixCompleter.from_nested_dict(d) for g, d in groups.items()}
         return PrefixCompleter.from_nested_dict({
             **{name: None for name in COMMANDS}, **groups,
@@ -213,12 +153,10 @@ class App:
         return f"{self.mode}> " if self.mode in GROUPS else "> "
 
     # --- plumbing -------------------------------------------------------
-    def refresh(self, fetched: set[str] = frozenset(), synced: set[str] = frozenset()) -> None:
-        scopes = scopes_to_wipe(fetched=set(fetched), synced=set(synced))
+    def refresh(self, synced: set[str] = frozenset()) -> None:
+        scopes = scopes_to_wipe(synced=set(synced))
         if not scopes:
             return
-        self.tables = self.store.build_tables()
-        self.store.write_parsed(self.tables)
         self._load_union()
         write_union_parsed(self.store, self.union)
         self.store.wipe_exports(scopes)
@@ -226,10 +164,7 @@ class App:
         self.out.print(f"[dim]rebuilt parsed csv · cleared exports: {', '.join(sorted(scopes))}[/]")
 
     def status(self) -> str:
-        counts = {s: sum(1 for c in self.tables.clears if c["source"] == s) for s in SOURCES}
-        state = self.store.state()
-        fetched, synced = (state.get(k, "never") for k in ("fetch", "sync"))
-        return f"campaign {counts['campaign']} · tower {counts['tower']} · fetched {fetched} · synced {synced}"
+        return f"synced {self.store.state().get('sync', 'never')}"
 
     def execute(self, line: str) -> bool:
         if not line.strip().lstrip("!").strip():  # a bare ! is as empty as a blank line
@@ -247,15 +182,7 @@ class App:
                 else:
                     getattr(self, prefix + cmd.name)(cmd)
                 return True
-            try:
-                cmd = parse_command(line)
-            except QueryError:
-                text = line.strip()
-                word = text.lstrip("!").split()[0].lower()
-                if _clear_habit(word):
-                    bang = "!" if text.startswith("!") else ""
-                    raise QueryError(f"unknown command '{word}' — try {bang}clear {text.lstrip('!').strip()}") from None
-                raise
+            cmd = parse_command(line)
             if cmd.name == "quit":
                 return False
             getattr(self, f"do_{cmd.name}")(cmd)
@@ -268,60 +195,6 @@ class App:
         except Exception as e:
             self.out.print(f"[red]{type(e).__name__}: {e}[/]")
         return True
-
-    # --- searches -------------------------------------------------------
-    def _prepare(self, cmd: Command):
-        """Validate arguments; return a callable that runs the search on the current tables."""
-        a = cmd.args
-        match cmd.name:
-            case "nikke":
-                if not a:
-                    raise QueryError("usage: " + CLEAR_COMMANDS["nikke"][0])
-                return lambda: queries.nikke(self.tables, a)
-            case "stage":
-                if len(a) != 2:
-                    raise QueryError("usage: " + CLEAR_COMMANDS["stage"][0])
-                chapter = _int(a[1].split("-")[0], "chapter")
-                label = a[1] if "-" in a[1] else None
-                return lambda: queries.stage(self.tables, a[0], chapter, label)
-            case "floor":
-                if len(a) != 2:
-                    raise QueryError("usage: " + CLEAR_COMMANDS["floor"][0])
-                n = _int(a[1], "floor")
-                return lambda: queries.floor(self.tables, a[0], n)
-            case "date":
-                if len(a) != 1:
-                    raise QueryError("usage: " + CLEAR_COMMANDS["date"][0])
-                start, _, end = a[0].partition("..")
-                lo, hi = sorted((_date(start), _date(end or start)))
-                return lambda: queries.date_range(self.tables, lo, hi)
-            case "top":
-                return lambda: queries.top(self.tables, a[0] if a else None)
-            case "synchro":
-                return lambda: queries.synchro(self.tables)
-            case "spread":
-                if len(a) > 1:
-                    raise QueryError("usage: " + CLEAR_COMMANDS["spread"][0])
-                step = _int(a[0], "step") if a else 5
-                if step < 1:
-                    raise QueryError("step must be at least 1")
-                return lambda: queries.spread(self.tables, step)
-            case "progress":
-                return lambda: queries.progress(self.tables)
-
-    def _scope(self, cmd: Command) -> str:
-        if cmd.name != "top":
-            return FIXED_SCOPE[cmd.name]
-        if not cmd.args:
-            return "all"
-        return "campaign" if cmd.args[0].lower() in ("normal", "hard") else "tower"
-
-    def search(self, cmd: Command) -> None:
-        run = self._prepare(cmd)
-        if not self.tables.clears:
-            self.out.print("[yellow]no data yet — run sync, then clear fetch[/]")
-            return
-        self._show(self._scope(cmd), cmd.name, cmd.args, cmd.force, run)
 
     def _show(self, scope: str, name: str, args: list[str], force: bool, run) -> None:
         """Serve the search from its export file, or run it and write one."""
@@ -338,7 +211,7 @@ class App:
         if not result.rows and result.summary:
             pass  # the summary says why it's empty
         elif not result.rows:
-            self.out.print("[yellow]no matching clears[/]")
+            self.out.print("[yellow]no matching rows[/]")
         else:
             table = Table(*result.columns, header_style="bold magenta")
             for row in result.rows:
@@ -347,16 +220,9 @@ class App:
         if result.summary:
             self.out.print(f"[bold]{escape(result.summary)}[/]")
 
-    c_nikke = c_stage = c_floor = c_date = c_top = c_synchro = c_spread = c_progress = search
-
     # --- actions --------------------------------------------------------
     def do_help(self, cmd: Command) -> None:
-        try:
-            group = parse_command(cmd.args[0]).name if cmd.args else None
-        except QueryError:
-            if _clear_habit(cmd.args[0].lower()):
-                raise QueryError(f"unknown command '{cmd.args[0]}' — try help clear {' '.join(cmd.args)}") from None
-            raise
+        group = parse_command(cmd.args[0]).name if cmd.args else None
         if group in GROUPS:
             commands, footer, _ = GROUPS[group]
             self._help(commands, cmd.args[1:], footer)
@@ -390,10 +256,7 @@ class App:
         if sub.name != "back":
             getattr(self, prefix + sub.name)(sub)
 
-    do_clear = do_union = _enter_group
-
-    def c_help(self, cmd: Command) -> None:
-        self._help(CLEAR_COMMANDS, cmd.args, CLEAR_FOOTER)
+    do_union = _enter_group
 
     def u_help(self, cmd: Command) -> None:
         self._help(UNION_COMMANDS, cmd.args, UNION_FOOTER)
@@ -494,42 +357,6 @@ class App:
         save_cookie(self.store, header)
         self.out.print("[green]cookie saved to config/cookie.txt[/]")
 
-    def c_fetch(self, cmd: Command) -> None:
-        which = cmd.args[0].lower() if len(cmd.args) == 1 else ""
-        if which not in ("campaign", "tower", "all"):
-            raise QueryError("usage: " + CLEAR_COMMANDS["fetch"][0])
-        sources = SOURCES if which == "all" else (which,)
-        if any(self.store.load_raw(LEVELS[s]) is None for s in sources):
-            raise QueryError("no level list yet — run sync first")
-        try:
-            cookies = load_cookie(self.store)
-        except FileNotFoundError:
-            raise QueryError("no cookie saved — run cookie first") from None
-        before = {s: len(self.store.load_clears(s)) for s in sources}
-        try:
-            asyncio.run(self._fetch(sources, cookies))
-        except AuthError:
-            self.out.print("[red]cookie rejected (game not login) — run cookie[/]")
-        except KeyboardInterrupt:
-            self.out.print("[yellow]fetch interrupted — clears so far are saved[/]")
-        except Exception as e:
-            self.out.print(f"[red]fetch stopped: {type(e).__name__}: {e} — clears so far are saved[/]")
-        finally:
-            # whatever stopped the fetch, clears already saved must reach the parsed csv and wipe exports
-            added = {s: len(self.store.load_clears(s)) - before[s] for s in sources}
-            self.store.mark("fetch")
-            self.out.print(" · ".join(f"{s}: +{n}" for s, n in added.items()))
-            self.refresh(fetched={s for s, n in added.items() if n})
-
-    async def _fetch(self, sources, cookies) -> None:
-        async with make_client(cookies) as client:
-            with Progress(console=self.out, transient=True) as bar:
-                for source in sources:
-                    task = bar.add_task(source, total=None)
-                    def tick(label, done, total, task=task, source=source):
-                        bar.update(task, description=f"{source} · {label}", completed=done, total=total)
-                    await fetch_clears(self.store, source, client, tick)
-
     def do_sync(self, cmd: Command) -> None:
         async def run():
             async with httpx.AsyncClient() as client:
@@ -542,14 +369,6 @@ class App:
             self.out.print(f"[{colour}]{name}: {status}[/]")
         changed = {n for n, s in results.items() if s == "changed"}
         self.refresh(synced=changed)
-        for source in SOURCES:
-            if LEVELS[source] in changed:
-                stored = {int(k) for k in self.store.load_clears(source)}
-                levels = self.store.load_raw(LEVELS[source], [])
-                n = (len(campaign_targets(levels, stored)) if source == "campaign"
-                     else sum(map(len, tower_targets(levels, stored).values())))
-                self.out.print(f"{source}: {n} stages to check on next clear fetch {source}")
-
 
 def utf8(stream):
     # Windows falls back to cp1252 when output isn't a UTF-8 terminal; it can't print → or ·

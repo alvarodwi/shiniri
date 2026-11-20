@@ -63,11 +63,6 @@ def store(tmp_path):
     return Store(tmp_path)
 
 
-@pytest.fixture
-def tables(store):
-    return store.build_tables()
-
-
 SQUAD = [{"slot": 1, "tid": 433004, "lv": 800, "combat": 900000, "costume_id": 0},
          {"slot": 2, "tid": 301706, "lv": 800, "combat": 800000, "costume_id": 0}]
 BOSSES = {"HSTA": ("Black Smith H.S.T.A.", "100001"), "ZEUS": ("Storm Bringer Z.E.U.S.", "400001"),
