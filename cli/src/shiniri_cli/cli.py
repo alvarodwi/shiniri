@@ -413,11 +413,18 @@ def main(root: Path) -> None:
             break
 
 
+def _interrupt(signum, frame):
+    raise KeyboardInterrupt
+
+
 def run() -> None:
     """`uv run shiniri-cli [watch]` entry point. Data lives in the repo root, two levels above src/shiniri_cli/."""
     root = Path(__file__).resolve().parents[2]
     if sys.argv[1:] == ["watch"]:
+        import signal
+
         from . import profile
+        signal.signal(signal.SIGTERM, _interrupt)  # stop.sh sends SIGTERM; make it log "stopped" like Ctrl+C
         profile.watch(Store(root))
     else:
         main(root)

@@ -202,13 +202,17 @@ def _check(store: Store, now: datetime) -> str:
 
 
 def watch(store: Store, *, sleep=time.sleep, clock=lambda: datetime.now(WIB), once: bool = False) -> None:
-    """`shiniri-cli watch`: check now, then at every :59 WIB, forever. A failed check is logged, never fatal."""
-    while True:
-        try:
-            msg = _check(store, clock())
-        except Exception as e:  # missing config, bad key file, anything: log it and try next hour
-            msg = f"check failed: {type(e).__name__}: {e}"
-        print(f"{wib_timestamp(clock())} {msg}", flush=True)
-        if once:
-            return
-        sleep(max(0.0, (next_check(clock()) - clock()).total_seconds()))
+    """`shiniri-cli watch`: check now, then at every :59 WIB, forever. A failed check is logged, never fatal.
+    Stopped on Ctrl+C or SIGTERM: logs `stopped` and returns."""
+    try:
+        while True:
+            try:
+                msg = _check(store, clock())
+            except Exception as e:  # missing config, bad key file, anything: log it and try next hour
+                msg = f"check failed: {type(e).__name__}: {e}"
+            print(f"{wib_timestamp(clock())} {msg}", flush=True)
+            if once:
+                return
+            sleep(max(0.0, (next_check(clock()) - clock()).total_seconds()))
+    except KeyboardInterrupt:
+        print(f"{wib_timestamp(clock())} stopped", flush=True)
