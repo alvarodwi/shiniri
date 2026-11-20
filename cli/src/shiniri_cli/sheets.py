@@ -55,6 +55,17 @@ def column_a(api: SheetsApi, tab: str) -> list:
     return [r[0] if r else "" for r in api.get_values(f"{_quoted(tab)}!A:A", unformatted=True)]
 
 
+def int_ids(values: list) -> set[int]:
+    """The whole numbers in column A below the header, however they were typed; anything else is skipped."""
+    out = set()
+    for v in values[1:]:  # row 1 is the header
+        try:
+            out.add(int(float(v)))
+        except (TypeError, ValueError, OverflowError):
+            pass  # something typed by hand; not an id
+    return out
+
+
 def _checked(api: SheetsApi, tab: str, headers: Sequence[str]) -> tuple[int, str]:
     """(next empty row, last column-A value) after the header check."""
     first = (api.get_values(_range(tab, len(headers), 1, 1)) or [[]])[0]

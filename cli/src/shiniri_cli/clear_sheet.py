@@ -4,7 +4,7 @@ import httpx
 
 from .fetch import AuthError, fetch_clears
 from .profile import WIB
-from .sheets import SheetsApi, SheetsError, column_a, write_rows
+from .sheets import SheetsApi, SheetsError, column_a, int_ids, write_rows
 from .store import SOURCES, Store
 
 TABS = {"campaign": "Campaign", "tower": "Tower"}
@@ -30,19 +30,9 @@ def clear_rows(clears: list[dict], source: str) -> list[list]:
     return rows
 
 
-def _ids(values: list) -> set[int]:
-    out = set()
-    for v in values[1:]:  # row 1 is the header
-        try:
-            out.add(int(float(v)))
-        except (TypeError, ValueError, OverflowError):
-            pass  # something typed by hand; not a stage id
-    return out
-
-
 def append_missing(api: SheetsApi, source: str, rows: list[list], *, timestamp: str) -> int:
     """Append the rows whose stageId isn't in the tab yet; the number written."""
-    have = _ids(column_a(api, TABS[source]))
+    have = int_ids(column_a(api, TABS[source]))
     new = [r for r in rows if r[0] not in have]
     if new:
         write_rows(api, TABS[source], HEADERS[source], new, form=FORM, timestamp=timestamp)
