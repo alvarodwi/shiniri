@@ -1,22 +1,11 @@
 import httpx
 import pytest
 
-from shiniri_cli.sheets import HttpSheets, SheetsError, column_letter, serial_to_iso, write_row
+from conftest import FakeSheets
+
+from shiniri_cli.sheets import HttpSheets, SheetsError, column_letter, serial_to_iso, write_row, write_rows
 
 H = ("date", "x", "y")
-
-
-class FakeSheets:
-    def __init__(self, values: dict[str, list[list]]):
-        self.values = values
-        self.batches = []
-
-    def get_values(self, range_: str, unformatted: bool = False) -> list[list]:
-        return self.values.get(range_, [])
-
-    def batch_update(self, data):
-        self.batches.append(data)
-        return [r for r, _ in data]
 
 
 def fake(profile_a, audit_a=(("savedAt",),), target_profile=(), target_audit=()):
@@ -74,3 +63,20 @@ def test_http_sheets_error_carries_google_message():
     api = HttpSheets("sid", lambda: "tok", httpx.Client(transport=httpx.MockTransport(handler)))
     with pytest.raises(SheetsError, match="403.*permission"):
         api.get_values("'Profile'!A:A")
+
+
+def test_write_rows_block_and_audit_count():
+    api = fake([["date"], [46345]])
+    api.values["'Profile'!A3:C4"] = []
+    rng = write_rows(api, "Profile", H, [["a", 1, 2], ["b", 3, 4]], form="cli-clears", timestamp="ts")
+    assert rng == "'Profile'!A3:C4"
+    assert api.batches == [[("'Profile'!A3:C4", [["a", 1, 2], ["b", 3, 4]]),
+                            ("'AuditLog'!A2:D2", [["'ts", "cli-clears", "''Profile'!A3:C4", 2]])]]
+
+
+def test_write_rows_rejects_empty_and_bad_rows():
+    api = fake([["date"], [46345]])
+    for rows in ([], [["a", 1]], [["a", 1, 2], ["", 1, 2]]):
+        with pytest.raises(SheetsError):
+            write_rows(api, "Profile", H, rows, form="f", timestamp="t")
+    assert api.batches == []

@@ -54,6 +54,19 @@ FIXTURE = {
 }
 
 
+class FakeSheets:
+    def __init__(self, values: dict[str, list[list]]):
+        self.values = values
+        self.batches = []
+
+    def get_values(self, range_: str, unformatted: bool = False) -> list[list]:
+        return self.values.get(range_, [])
+
+    def batch_update(self, data):
+        self.batches.append(data)
+        return [r for r, _ in data]
+
+
 @pytest.fixture
 def store(tmp_path):
     raw = tmp_path / "data" / "raw" / "json"

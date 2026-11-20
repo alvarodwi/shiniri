@@ -50,6 +50,11 @@ def _range(tab: str, width: int, start: int, end: int) -> str:
     return f"{_quoted(tab)}!A{start}:{column_letter(width)}{end}"
 
 
+def column_a(api: SheetsApi, tab: str) -> list:
+    """Column A read unformatted, header included."""
+    return [r[0] if r else "" for r in api.get_values(f"{_quoted(tab)}!A:A", unformatted=True)]
+
+
 def _checked(api: SheetsApi, tab: str, headers: Sequence[str]) -> tuple[int, str]:
     """(next empty row, last column-A value) after the header check."""
     first = (api.get_values(_range(tab, len(headers), 1, 1)) or [[]])[0]
@@ -57,7 +62,7 @@ def _checked(api: SheetsApi, tab: str, headers: Sequence[str]) -> tuple[int, str
     if actual != list(headers):
         raise SheetsError(f"{tab} headers changed: expected [{' | '.join(headers)}], "
                           f"found [{' | '.join(actual)}]")
-    col_a = [r[0] if r else "" for r in api.get_values(f"{_quoted(tab)}!A:A", unformatted=True)]
+    col_a = column_a(api, tab)
     last = len(col_a) - 1
     while last >= 0 and not str(col_a[last]).strip():
         last -= 1
@@ -73,19 +78,26 @@ def write_row(api: SheetsApi, tab: str, headers: Sequence[str], row: list, *, fo
               unless_last_a: str | None = None) -> str | None:
     """Append `row` to `tab` plus its AuditLog row in one request. None when the last column-A value of
     `tab` already equals `unless_last_a`."""
-    if len(row) != len(headers) or not str(row[0]).strip():
-        raise SheetsError(f"a {tab} row needs {len(headers)} cells and a value in column A")
+    return write_rows(api, tab, headers, [row], form=form, timestamp=timestamp, unless_last_a=unless_last_a)
+
+
+def write_rows(api: SheetsApi, tab: str, headers: Sequence[str], rows: list[list], *, form: str, timestamp: str,
+               unless_last_a: str | None = None) -> str | None:
+    """Append `rows` to `tab` as one block plus one AuditLog row, in one request. None when the last
+    column-A value of `tab` already equals `unless_last_a`."""
+    if not rows or any(len(r) != len(headers) or not str(r[0]).strip() for r in rows):
+        raise SheetsError(f"{tab} rows need {len(headers)} cells each and a value in column A")
     start, last = _checked(api, tab, headers)
     if unless_last_a is not None and serial_to_iso(last) == unless_last_a:
         return None
     audit_start, _ = _checked(api, AUDIT_TAB, AUDIT_HEADERS)
-    target = _range(tab, len(headers), start, start)
+    target = _range(tab, len(headers), start, start + len(rows) - 1)
     audit = _range(AUDIT_TAB, len(AUDIT_HEADERS), audit_start, audit_start)
     _ensure_empty(api, target)
     _ensure_empty(api, audit)
     # Leading ' stores both as text: USER_ENTERED would eat the quote in 'Tab'!A1 and turn the timestamp
     # into a locale-dependent datetime.
-    data = [(target, [row]), (audit, [[f"'{timestamp}", form, f"'{target}", 1]])]
+    data = [(target, rows), (audit, [[f"'{timestamp}", form, f"'{target}", len(rows)]])]
     # shortcut: a web app save landing between the empty check and this write can overwrite one AuditLog
     # row; accepted for one person, switch the audit row to values.append if that changes.
     api.batch_update(data)
