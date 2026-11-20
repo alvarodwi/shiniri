@@ -219,3 +219,30 @@ def test_clears_error_keeps_profile_result(store):
     text = run_check(store, NOON, 100, make_write([]), clears=boom)
     assert "wrote 'Profile'!A5:AU5" in text and text.endswith(" · clears: RuntimeError: boom")
     assert guard(store)["written"] is True
+
+
+def test_check_joins_clears_and_union(store, monkeypatch):
+    from shiniri_cli import clear_sheet, profile, union_sheet
+
+    store.config_dir.mkdir(parents=True, exist_ok=True)
+    (store.config_dir / "sheets.json").write_text(json.dumps({"spreadsheet_id": "x"}), encoding="utf-8")
+    monkeypatch.setattr(profile, "load_cookie", lambda s: {"game_openid": "me"})
+    monkeypatch.setattr(profile, "service_account_token", lambda p: "token")
+    monkeypatch.setattr(profile, "HttpSheets", lambda *a: "sheets")
+    seen = {}
+
+    async def fake_check_once(store_, now, client, openid, write, clears=None):
+        return await clears()
+
+    async def fake_clears(store_, client, api, *, timestamp):
+        return "Campaign +0 · Tower +0"
+
+    async def fake_union(store_, client, api, *, timestamp, now):
+        seen.update(api=api, now=now)
+        return "Union +1 · Roster +1"
+    monkeypatch.setattr(profile, "check_once", fake_check_once)
+    monkeypatch.setattr(clear_sheet, "sync_clears", fake_clears)
+    monkeypatch.setattr(union_sheet, "sync_union", fake_union)
+    now = datetime(2026, 11, 20, 12, 59, tzinfo=WIB)
+    assert profile._check(store, now) == "Campaign +0 · Tower +0 · Union +1 · Roster +1"
+    assert seen == {"api": "sheets", "now": now.timestamp()}

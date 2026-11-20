@@ -179,6 +179,7 @@ async def _run_clears(clears: Callable[[], Awaitable[str]] | None) -> str:
 def _check(store: Store, now: datetime) -> str:
     # Every file is re-read each check, so a cookie ambil refreshed or a fixed config is picked up.
     from .clear_sheet import sync_clears  # clear_sheet imports WIB from here
+    from .union_sheet import sync_union
     cookies = load_cookie(store)
     sheet_id = json.loads((store.config_dir / "sheets.json").read_text(encoding="utf-8"))["spreadsheet_id"]
     token = service_account_token(store.config_dir / "service-account.json")
@@ -191,9 +192,12 @@ def _check(store: Store, now: datetime) -> str:
 
         async def go() -> str:
             async with make_client(cookies) as client:
-                return await check_once(store, now, client, cookies["game_openid"], write,
-                                        clears=lambda: sync_clears(store, client, sheets,
-                                                                   timestamp=wib_timestamp(now)))
+                async def sheet_sync() -> str:
+                    clears = await sync_clears(store, client, sheets, timestamp=wib_timestamp(now))
+                    union = await sync_union(store, client, sheets, timestamp=wib_timestamp(now),
+                                             now=now.timestamp())
+                    return f"{clears} · {union}"
+                return await check_once(store, now, client, cookies["game_openid"], write, clears=sheet_sync)
         return asyncio.run(go())
 
 
