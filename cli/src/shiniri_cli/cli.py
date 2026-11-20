@@ -3,6 +3,7 @@
 import asyncio
 import re
 import shlex
+import sys
 import time
 from dataclasses import dataclass
 from datetime import date
@@ -589,5 +590,10 @@ def main(root: Path) -> None:
 
 
 def run() -> None:
-    """`uv run shiniri-cli` entry point. Data lives in the repo root, two levels above src/shiniri_cli/."""
-    main(Path(__file__).resolve().parents[2])
+    """`uv run shiniri-cli [watch]` entry point. Data lives in the repo root, two levels above src/shiniri_cli/."""
+    root = Path(__file__).resolve().parents[2]
+    if sys.argv[1:] == ["watch"]:
+        from . import profile
+        profile.watch(Store(root))
+    else:
+        main(root)

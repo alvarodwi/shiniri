@@ -1,17 +1,21 @@
 """Daily profile row: game-day timing, the profile requests, the row for the Progression sheet."""
 
+import asyncio
 import json
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Callable
 
 import httpx
 
-from .fetch import AREA_ID, AuthError, api_call
-from .sheets import SheetsError
+from .fetch import AREA_ID, AuthError, api_call, load_cookie, make_client
+from .sheets import HttpSheets, SheetsError, service_account_token, write_row
 from .store import Store, atomic_write
 
 WIB = timezone(timedelta(hours=7))  # fixed offset, no DST; never the machine's zone
 RESET = timedelta(hours=3)          # the game day starts at 03:00 WIB
+PROFILE_TAB = "Profile"
+FORM = "cli-profile"
 
 CORPS = {1: "elysion", 2: "missilis", 3: "tetra", 4: "pilgrim", 7: "abnormal"}
 CURRENCIES = {98: "paidGems", 99: "freeGems", 1000: "battleData", 2000: "credits", 3000: "coreDust",
@@ -157,3 +161,34 @@ async def check_once(store: Store, now: datetime, client: httpx.AsyncClient, ope
         return f"game day {day}: {e}"
     except httpx.HTTPError as e:
         return f"game day {day}: {type(e).__name__}"
+
+
+def _check(store: Store, now: datetime) -> str:
+    # Every file is re-read each check, so a cookie ambil refreshed or a fixed config is picked up.
+    cookies = load_cookie(store)
+    sheet_id = json.loads((store.config_dir / "sheets.json").read_text(encoding="utf-8"))["spreadsheet_id"]
+    token = service_account_token(store.config_dir / "service-account.json")
+    with httpx.Client() as http:
+        sheets = HttpSheets(sheet_id, token, http)
+
+        def write(row: list, day: str) -> str | None:
+            return write_row(sheets, PROFILE_TAB, PROFILE_HEADERS, row, form=FORM,
+                             timestamp=wib_timestamp(now), unless_last_a=day)
+
+        async def go() -> str:
+            async with make_client(cookies) as client:
+                return await check_once(store, now, client, cookies["game_openid"], write)
+        return asyncio.run(go())
+
+
+def watch(store: Store, *, sleep=time.sleep, clock=lambda: datetime.now(WIB), once: bool = False) -> None:
+    """`shiniri-cli watch`: check now, then at every :59 WIB, forever. A failed check is logged, never fatal."""
+    while True:
+        try:
+            msg = _check(store, clock())
+        except Exception as e:  # missing config, bad key file, anything: log it and try next hour
+            msg = f"check failed: {type(e).__name__}: {e}"
+        print(f"{wib_timestamp(clock())} {msg}", flush=True)
+        if once:
+            return
+        sleep(max(0.0, (next_check(clock()) - clock()).total_seconds()))

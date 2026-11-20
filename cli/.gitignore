@@ -7,3 +7,5 @@ __pycache__/
 *.tmp
 .superpowers/
 .venv/
+config/service-account.json
+config/sheets.json
