@@ -125,3 +125,17 @@ def test_sync_reference(store):
     assert res["html"] == "failed: JSONDecodeError"
     assert store.load_raw("tower_list") == old_tower
     assert asyncio.run(sync_reference(store, httpx.AsyncClient(transport=httpx.MockTransport(handler))))["nikke"] == "unchanged"
+
+
+def test_sync_reference_only_named(store):
+    store.config_dir.mkdir(parents=True, exist_ok=True)
+    (store.config_dir / "sources.json").write_text(json.dumps({"nikke": "n/n.json", "raid_list": "r/r.json"}))
+    urls = []
+
+    def handler(req):
+        urls.append(str(req.url))
+        return httpx.Response(200, json=[{"id": 1000047}])
+
+    res = asyncio.run(sync_reference(store, httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+                                     names=("raid_list",)))
+    assert res == {"raid_list": "changed"} and urls == [cdn_url("r/r.json")]

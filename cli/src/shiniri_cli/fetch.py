@@ -4,7 +4,7 @@ import asyncio
 import hashlib
 import json
 import random
-from typing import Callable
+from typing import Callable, Collection
 
 import httpx
 
@@ -195,10 +195,14 @@ def cdn_url(path: str) -> str:
     return CDN_HOST + "/".join(segs + [f"{hashlib.md5(path.encode()).hexdigest()}.{ext}"])
 
 
-async def sync_reference(store: Store, client: httpx.AsyncClient) -> dict[str, str]:
+async def sync_reference(store: Store, client: httpx.AsyncClient,
+                         names: Collection[str] | None = None) -> dict[str, str]:
+    """Re-download the reference files; `names` limits it to those (default: all of sources.json)."""
     sources = json.loads((store.config_dir / "sources.json").read_text(encoding="utf-8"))
     out = {}
     for name, path in sources.items():
+        if names is not None and name not in names:
+            continue
         try:
             resp = await client.get(cdn_url(path), headers=CDN_HEADERS, timeout=30.0)
             resp.raise_for_status()
