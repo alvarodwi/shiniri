@@ -157,3 +157,33 @@ def test_other_errors_are_not_retried():
     with pytest.raises(SheetsError, match="403"):
         api.get_values("'Roster'!A:A")
     assert slept == []
+
+
+def test_ensure_rows_small_shortfall_gets_headroom():
+    api, calls = _grid_api({"AuditLog": 1000})
+    api.ensure_rows({"AuditLog": 1001})
+    api.ensure_rows({"AuditLog": 1002})
+    posts = [json.loads(c.content) for c in calls if c.method == "POST"]
+    assert posts == [{"requests": [{"appendDimension": {"sheetId": 0, "dimension": "ROWS", "length": 100}}]}]
+
+
+def _meta_api(props):
+    calls = []
+
+    def handler(req):
+        calls.append(req)
+        return httpx.Response(200, json={"sheets": [{"properties": p} for p in props]})
+    return HttpSheets("sid", lambda: "tok", httpx.Client(transport=httpx.MockTransport(handler))), calls
+
+
+def test_ensure_rows_sheet_id_zero_may_be_omitted():
+    api, calls = _meta_api([{"title": "Profile", "gridProperties": {"rowCount": 10}}])
+    api.ensure_rows({"Profile": 20})
+    assert json.loads(calls[-1].content)["requests"][0]["appendDimension"]["sheetId"] == 0
+
+
+def test_ensure_rows_ignores_non_grid_sheet_with_same_title():
+    api, calls = _meta_api([{"sheetId": 7, "title": "Union"}])
+    with pytest.raises(SheetsError, match="Union tab not found"):
+        api.ensure_rows({"Union": 5})
+    assert [c.method for c in calls] == ["GET"]

@@ -18,6 +18,7 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 AUDIT_TAB = "AuditLog"
 AUDIT_HEADERS = ("savedAt", "form", "ranges", "rows")
 SERIAL_EPOCH = date(1899, 12, 30)
+GROW_MIN = 100  # rows appended at least, so a full tab is not grown again on every write
 
 
 class SheetsError(Exception):
@@ -161,19 +162,21 @@ class HttpSheets:
         if self._grid is None:
             body = self._request("GET", self.base,
                                  params={"fields": "sheets.properties(sheetId,title,gridProperties.rowCount)"})
-            self._grid = {p["title"]: [p["sheetId"], p.get("gridProperties", {}).get("rowCount", 0)]
-                          for p in (sh["properties"] for sh in body.get("sheets", []))}
+            # sheetId 0 may be omitted as a default; a sheet without gridProperties (a chart) is no tab
+            self._grid = {p["title"]: [p.get("sheetId", 0), p["gridProperties"].get("rowCount", 0)]
+                          for p in (sh["properties"] for sh in body.get("sheets", []))
+                          if "gridProperties" in p}
         missing = [t for t in rows if t not in self._grid]
         if missing:
             raise SheetsError(f"{', '.join(missing)} tab not found")
-        short = {t: n for t, n in rows.items() if self._grid[t][1] < n}
+        short = {t: max(n - self._grid[t][1], GROW_MIN) for t, n in rows.items() if self._grid[t][1] < n}
         if not short:
             return
         self._request("POST", f"{self.base}:batchUpdate", json={"requests": [
-            {"appendDimension": {"sheetId": self._grid[t][0], "dimension": "ROWS", "length": n - self._grid[t][1]}}
+            {"appendDimension": {"sheetId": self._grid[t][0], "dimension": "ROWS", "length": n}}
             for t, n in short.items()]})
         for t, n in short.items():
-            self._grid[t][1] = n
+            self._grid[t][1] += n
 
 
 def service_account_token(path: Path) -> Callable[[], str]:
