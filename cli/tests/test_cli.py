@@ -248,8 +248,13 @@ def test_run_dispatches_watch(monkeypatch):
     monkeypatch.setattr(sys, "argv", ["shiniri-cli", "watch"])
     monkeypatch.setattr("shiniri_cli.profile.watch", lambda store, **kw: called.append(store))
     monkeypatch.setattr("shiniri_cli.cli.main", lambda root: called.append("shell"))
+    handlers = {}
+    monkeypatch.setattr("signal.signal", lambda sig, h: handlers.__setitem__(sig, h))
     cli.run()
     assert len(called) == 1 and called[0] != "shell"
+    import signal
+    with pytest.raises(KeyboardInterrupt):  # SIGTERM takes the same clean exit as Ctrl+C
+        handlers[signal.SIGTERM](signal.SIGTERM, None)
 
 
 def test_watch_logs_missing_config_and_keeps_going(store, capsys):
@@ -259,6 +264,22 @@ def test_watch_logs_missing_config_and_keeps_going(store, capsys):
     watch(store, once=True, clock=lambda: datetime(2026, 11, 20, 12, tzinfo=WIB))
     out = capsys.readouterr().out
     assert out.startswith("2026-11-20 12:00:00 ") and "cookie.txt" in out
+
+
+def test_watch_stops_cleanly_on_interrupt(store, capsys, monkeypatch):
+    from datetime import datetime
+
+    from shiniri_cli import profile
+    clock = lambda: datetime(2026, 11, 20, 12, tzinfo=profile.WIB)
+
+    def stop(_):
+        raise KeyboardInterrupt
+    profile.watch(store, sleep=stop, clock=clock)  # interrupted while sleeping
+    monkeypatch.setattr(profile, "_check", lambda s, now: stop(0))
+    profile.watch(store, clock=clock)  # interrupted mid-check
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[-1] == "2026-11-20 12:00:00 stopped"
+    assert lines.count("2026-11-20 12:00:00 stopped") == 2
 
 
 def test_fetch_status_colours():
