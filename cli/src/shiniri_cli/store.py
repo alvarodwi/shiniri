@@ -6,7 +6,7 @@ import json
 import os
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +15,7 @@ SOURCES = ("campaign", "tower")
 LEVELS = {"campaign": "stage_list", "tower": "tower_list"}
 OLD_NAMES = {"nikke": "nikke_list_en", "historical_roster": "character_id_map",
              "campaign_level": "stage_list", "tower_level": "tower_list"}
-SCOPES = ("campaign", "tower", "all", "union")
+SCOPES = ("union",)
 
 
 def format_dupes(grade: int, core: int) -> str:
@@ -31,28 +31,14 @@ def atomic_write(path: Path, text: str, encoding: str = "utf-8") -> None:
     os.replace(tmp, path)
 
 
-LINEUP_KEYS = ("source", "stage_id", "mode", "chapter", "floor", "cleared_at", "slot", "tid", "name",
-               "dupe", "level", "cp", "element", "weapon", "burst", "manufacturer")
-
-
-@dataclass
-class Tables:
-    clears: list[dict]
-    lineups: list[dict]
-    nikke_names: list[str]
-
-
-def _local_time(ts) -> datetime | None:
+def _utc_time(ts) -> datetime | None:
+    # UTC, so the sheet's WIB conversion never depends on the machine's zone
     if ts in (None, "", "0", 0):
         return None
     try:
-        return datetime.fromtimestamp(int(ts)).astimezone()
-    except (TypeError, ValueError, OSError):
+        return datetime.fromtimestamp(int(ts), timezone.utc)
+    except (TypeError, ValueError, OSError, OverflowError):
         return None
-
-
-def _fmt(dt: datetime | None) -> str:
-    return dt.strftime("%Y-%m-%d %H:%M:%S") if dt else ""
 
 
 def export_name(command: str, args: list[str]) -> str:
@@ -61,15 +47,9 @@ def export_name(command: str, args: list[str]) -> str:
     return "__".join(re.sub(r"[^a-z0-9]+", "_", p.lower()).strip("_") for p in [command, *args])
 
 
-def scopes_to_wipe(fetched: set[str] = frozenset(), synced: set[str] = frozenset()) -> set[str]:
-    if synced & {"nikke_list_en", "character_id_map"}:
-        return set(SCOPES)
-    out = set(fetched)
-    out |= {source for source, name in LEVELS.items() if name in synced}
-    out = out | {"all"} if out else set()
-    if "raid_list" in synced:  # the live season comes from it
-        out.add("union")
-    return out
+def scopes_to_wipe(synced: set[str] = frozenset()) -> set[str]:
+    # union shows Nikke names and takes the live season from raid_list
+    return {"union"} if synced & {"nikke_list_en", "character_id_map", "raid_list"} else set()
 
 
 def write_csv(path: Path, header: list[str], rows: list[list]) -> None:
@@ -140,9 +120,9 @@ class Store:
                     "element": ((n.get("element_id") or {}).get("element") or {}).get("element")}
         return info
 
-    def build_tables(self) -> "Tables":
-        """Join raw clears with the reference files into flat rows."""
-        lookup, by_id = self._nikkes()
+    def build_clears(self, sources: tuple[str, ...] = SOURCES) -> list[dict]:
+        """Join raw clears with the reference files into flat rows, one per clear."""
+        lookup, _ = self._nikkes()
         stages = {}
         for s in self.load_raw("stage_list", []):
             stages[("campaign", s["id"])] = {
@@ -154,14 +134,14 @@ class Store:
                 "mode": str(s.get("tower_type", "")).capitalize(), "chapter": None, "floor": s.get("floor"),
                 "stage_name": f"{s.get('floor')}F", "recommended_cp": s.get("standard_battle_power", 0)}
 
-        clears, lineups = [], []
-        for source in SOURCES:
+        clears = []
+        for source in sources:
             raw = self.load_clears(source)
             for key in sorted(raw, key=int):
                 stage_id = int(key)
                 meta = stages.get((source, stage_id), {
                     "mode": "", "chapter": None, "floor": None, "stage_name": "", "recommended_cp": 0})
-                cleared_at = _local_time(raw[key].get("cleared_at"))
+                cleared_at = _utc_time(raw[key].get("cleared_at"))
                 base = {"source": source, "stage_id": stage_id, "mode": meta["mode"],
                         "chapter": meta["chapter"], "floor": meta["floor"], "cleared_at": cleared_at}
                 team = []
@@ -180,26 +160,7 @@ class Store:
                 clears.append({**base, "stage_name": meta["stage_name"],
                                "recommended_cp": meta["recommended_cp"],
                                "team_cp": sum(u["cp"] for u in team), "synchro_level": synchro, "team": team})
-                lineups.extend(team)
-        names = sorted({(n.get("name_localkey") or {}).get("name") for n in by_id.values()} - {None})
-        return Tables(clears, lineups, names)
-
-    def write_parsed(self, tables: "Tables") -> None:
-        # shortcut: rebuilds all three CSVs every time (~10k rows, sub-second); split per source if it gets slow.
-        for source, place in (("campaign", "chapter"), ("tower", "floor")):
-            header = ["stage_id", "mode", place, "stage_name", "date_cleared", "recommended_cp",
-                      "team_cp", "synchro_level", "slot1", "slot2", "slot3", "slot4", "slot5"]
-            rows = []
-            for c in tables.clears:
-                if c["source"] != source:
-                    continue
-                slots = {u["slot"]: u["name"] for u in c["team"]}
-                rows.append([c["stage_id"], c["mode"], c[place], c["stage_name"], _fmt(c["cleared_at"]),
-                             c["recommended_cp"], c["team_cp"], c["synchro_level"],
-                             *(slots.get(i, "") for i in range(1, 6))])
-            write_csv(self.parsed_dir / f"{source}_clears.csv", header, rows)
-        write_csv(self.parsed_dir / "lineups.csv", list(LINEUP_KEYS),
-                  [[_fmt(u[k]) if k == "cleared_at" else u[k] for k in LINEUP_KEYS] for u in tables.lineups])
+        return clears
 
     def state(self) -> dict[str, str]:
         """When fetch / sync last ran. Lives outside raw/ so it never marks raw as changed."""
@@ -220,7 +181,7 @@ class Store:
             atomic_write(path.with_suffix(".summary.txt"), result.summary)
 
     def read_export(self, path: Path):
-        from .queries import Result  # queries imports store
+        from .union_queries import Result  # union_queries imports store
         if not path.exists():
             return None
         with open(path, encoding="utf-8-sig", newline="") as f:

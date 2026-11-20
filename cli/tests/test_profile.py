@@ -125,11 +125,18 @@ def make_write(writes):
     return lambda row, day: writes.append((row, day)) or "'Profile'!A5:AU5"
 
 
-def run_check(store, now, points, write):
+def run_check(store, now, points, write, clears=None):
     c = client_for({"GetUserDailyContentsProgress": daily(points),
                     "GetUserProfileBasicInfo": PROFILE_FIXTURE["basic"],
                     "GetUserProfileOutpostInfo": PROFILE_FIXTURE["outpost"]})
-    return asyncio.run(check_once(store, now, c, "42", write))
+    return asyncio.run(check_once(store, now, c, "42", write, clears=clears))
+
+
+def fake_clears(calls, text="Campaign +3 · Tower +0"):
+    async def run():
+        calls.append(1)
+        return text
+    return run
 
 
 def guard(store):
@@ -186,3 +193,29 @@ def test_write_failure_is_logged_and_retried_next_hour(store, exc, text):
 def test_rejected_cookie_is_logged(store):
     c = client_for({"GetUserDailyContentsProgress": {"code": 300001, "msg": "game not login"}})
     assert "cookie rejected" in asyncio.run(check_once(store, NOON, c, "42", make_write([])))
+
+
+def test_clears_run_after_write(store):
+    calls = []
+    text = run_check(store, NOON, 100, make_write([]), clears=fake_clears(calls))
+    assert text.endswith("wrote 'Profile'!A5:AU5 · Campaign +3 · Tower +0") and calls == [1]
+
+
+def test_clears_run_when_day_already_in_sheet(store):
+    calls = []
+    text = run_check(store, NOON, 100, lambda row, day: None, clears=fake_clears(calls))
+    assert text.endswith("already in the sheet · Campaign +3 · Tower +0")
+
+
+def test_clears_not_run_when_not_done(store):
+    calls = []
+    run_check(store, NOON, 30, make_write([]), clears=fake_clears(calls))
+    assert calls == []
+
+
+def test_clears_error_keeps_profile_result(store):
+    async def boom():
+        raise RuntimeError("boom")
+    text = run_check(store, NOON, 100, make_write([]), clears=boom)
+    assert "wrote 'Profile'!A5:AU5" in text and text.endswith(" · clears: RuntimeError: boom")
+    assert guard(store)["written"] is True

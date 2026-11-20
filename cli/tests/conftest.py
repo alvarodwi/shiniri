@@ -54,6 +54,19 @@ FIXTURE = {
 }
 
 
+class FakeSheets:
+    def __init__(self, values: dict[str, list[list]]):
+        self.values = values
+        self.batches = []
+
+    def get_values(self, range_: str, unformatted: bool = False) -> list[list]:
+        return self.values.get(range_, [])
+
+    def batch_update(self, data):
+        self.batches.append(data)
+        return [r for r, _ in data]
+
+
 @pytest.fixture
 def store(tmp_path):
     raw = tmp_path / "data" / "raw" / "json"
@@ -61,11 +74,6 @@ def store(tmp_path):
     for name, obj in FIXTURE.items():
         (raw / f"{name}.json").write_text(json.dumps(obj), encoding="utf-8")
     return Store(tmp_path)
-
-
-@pytest.fixture
-def tables(store):
-    return store.build_tables()
 
 
 SQUAD = [{"slot": 1, "tid": 433004, "lv": 800, "combat": 900000, "costume_id": 0},

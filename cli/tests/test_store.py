@@ -1,8 +1,7 @@
-import csv
 import json
 from datetime import datetime
 
-from shiniri_cli.queries import Result
+from shiniri_cli.union_queries import Result
 from shiniri_cli.store import Store, export_name, format_dupes, scopes_to_wipe
 
 
@@ -43,35 +42,25 @@ def test_migrate_converts_legacy(tmp_path):
     assert s.migrate() == []
 
 
-def test_build_tables_joins(store):
-    t = store.build_tables()
-    camp = next(c for c in t.clears if c["source"] == "campaign")
+def test_build_clears_joins(store):
+    clears = store.build_clears()
+    camp = next(c for c in clears if c["source"] == "campaign")
     assert (camp["stage_id"], camp["mode"], camp["chapter"], camp["stage_name"]) == (6002003, "Normal", 2, "2-3 STAGE")
     assert camp["team_cp"] == 909195 and camp["synchro_level"] == "740"
     assert camp["cleared_at"] == datetime.fromtimestamp(1793443017).astimezone()
     assert [(u["name"], u["dupe"]) for u in camp["team"]] == [("Crown", "MLB"), ("Anis: Star", "C2")]
-    tower = next(c for c in t.clears if c["source"] == "tower")
+    tower = next(c for c in clears if c["source"] == "tower")
     assert (tower["mode"], tower["floor"], tower["stage_name"]) == ("Tribe", 1, "1F")
     assert [(u["slot"], u["name"], u["dupe"]) for u in tower["team"]] == [(1, "NIKKE_999999", "N/A"), (2, "Anis: Star", "C2")]
-    assert len(t.lineups) == 4 and "Anis" in t.nikke_names
 
 
 def test_cleared_at_zero_is_none(store):
     store.save_clears("tower", {"50002": {"cleared_at": "0", "list": [{"slot": 1, "tid": 433004, "lv": 5, "combat": 1}]}})
-    assert store.build_tables().clears[-1]["cleared_at"] is None
+    assert store.build_clears()[-1]["cleared_at"] is None
 
 
-def test_write_parsed(store):
-    store.write_parsed(store.build_tables())
-    with open(store.parsed_dir / "lineups.csv", encoding="utf-8-sig") as f:
-        rows = list(csv.DictReader(f))
-    assert len(rows) == 4 and {r["name"] for r in rows} >= {"Crown", "NIKKE_999999"}
-    assert (store.parsed_dir / "campaign_clears.csv").exists() and (store.parsed_dir / "tower_clears.csv").exists()
-
-
-def test_empty_store_builds_empty_tables(tmp_path):
-    t = Store(tmp_path).build_tables()
-    assert (t.clears, t.lineups, t.nikke_names) == ([], [], [])
+def test_empty_store_builds_no_clears(tmp_path):
+    assert Store(tmp_path).build_clears() == []
 
 
 def test_export_name_windows_safe():
@@ -88,11 +77,10 @@ def test_export_roundtrip(store):
 
 
 def test_scopes_to_wipe():
-    assert scopes_to_wipe(fetched={"tower"}) == {"tower", "all"}
-    assert scopes_to_wipe(synced={"nikke_list_en"}) == {"campaign", "tower", "all", "union"}
-    assert scopes_to_wipe(synced={"stage_list"}) == {"campaign", "all"}
-    assert scopes_to_wipe() == set()
+    assert scopes_to_wipe(synced={"nikke_list_en"}) == {"union"}
     assert scopes_to_wipe(synced={"raid_list"}) == {"union"}
+    assert scopes_to_wipe(synced={"stage_list"}) == set()
+    assert scopes_to_wipe() == set()
 
 
 def test_wipe_only_scope(store):
@@ -104,3 +92,9 @@ def test_wipe_only_scope(store):
 
 def test_export_name_keeps_args_apart():
     assert export_name("nikke", ["rapi", "red hood"]) != export_name("nikke", ["rapi: red hood"])
+
+
+def test_cleared_at_is_utc_whatever_the_machine_zone(store):
+    camp = store.build_clears(("campaign",))
+    assert [c["source"] for c in camp] == ["campaign"]
+    assert camp[0]["cleared_at"].utcoffset().total_seconds() == 0

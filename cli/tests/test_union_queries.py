@@ -1,6 +1,6 @@
 import pytest
 
-from shiniri_cli.queries import QueryError
+from shiniri_cli.union_queries import QueryError
 from shiniri_cli.union_queries import fmt_dmg, short_dmg, hits, missed, normal, pick_season, recap, resolve_member
 
 
