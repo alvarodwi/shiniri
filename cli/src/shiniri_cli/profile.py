@@ -4,7 +4,7 @@ import asyncio
 import json
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Callable
+from typing import Awaitable, Callable
 
 import httpx
 
@@ -131,9 +131,11 @@ def _save_guard(store: Store, guard: dict) -> None:
 
 
 async def check_once(store: Store, now: datetime, client: httpx.AsyncClient, openid: str,
-                     write: Callable[[list, str], str | None]) -> str:
+                     write: Callable[[list, str], str | None],
+                     clears: Callable[[], Awaitable[str]] | None = None) -> str:
     """One hourly check. `write(row, day)` returns the range written, or None when the sheet already has
-    the day. Returns the log line; never raises for an expected failure, so the loop keeps going."""
+    the day. `clears()` runs once the day is written and its text joins the log line. Returns the log
+    line; never raises for an expected failure, so the loop keeps going."""
     day = game_day(now)
     guard = load_guard(store, day)
     if guard["written"]:
@@ -153,8 +155,10 @@ async def check_once(store: Store, now: datetime, client: httpx.AsyncClient, ope
         guard["written"] = True
         _save_guard(store, guard)
         if written is None:
-            return f"game day {day}: already in the sheet"
-        return f"game day {day}: wrote {written}" + ("" if done else f" (daily not done, {points}/100)")
+            msg = f"game day {day}: already in the sheet"
+        else:
+            msg = f"game day {day}: wrote {written}" + ("" if done else f" (daily not done, {points}/100)")
+        return msg + await _run_clears(clears)
     except AuthError as e:
         return f"game day {day}: cookie rejected: {e}"
     except (ProfileError, SheetsError) as e:
@@ -163,8 +167,18 @@ async def check_once(store: Store, now: datetime, client: httpx.AsyncClient, ope
         return f"game day {day}: {type(e).__name__}"
 
 
+async def _run_clears(clears: Callable[[], Awaitable[str]] | None) -> str:
+    if clears is None:
+        return ""
+    try:
+        return " · " + await clears()
+    except Exception as e:  # the profile row is already safe; tomorrow's run picks up missed clears
+        return f" · clears: {type(e).__name__}: {e}"
+
+
 def _check(store: Store, now: datetime) -> str:
     # Every file is re-read each check, so a cookie ambil refreshed or a fixed config is picked up.
+    from .clear_sheet import sync_clears  # clear_sheet imports WIB from here
     cookies = load_cookie(store)
     sheet_id = json.loads((store.config_dir / "sheets.json").read_text(encoding="utf-8"))["spreadsheet_id"]
     token = service_account_token(store.config_dir / "service-account.json")
@@ -177,7 +191,9 @@ def _check(store: Store, now: datetime) -> str:
 
         async def go() -> str:
             async with make_client(cookies) as client:
-                return await check_once(store, now, client, cookies["game_openid"], write)
+                return await check_once(store, now, client, cookies["game_openid"], write,
+                                        clears=lambda: sync_clears(store, client, sheets,
+                                                                   timestamp=wib_timestamp(now)))
         return asyncio.run(go())
 
 
