@@ -12,6 +12,7 @@ from .store import Store, atomic_write
 
 AREA_ID = 85
 AUTH_CODE = 300001  # {"code": 300001, "msg": "game not login"}
+API = "https://api.blablalink.com/api/game/proxy/Game/"
 URLS = {
     "campaign": "https://api.blablalink.com/api/game/proxy/Game/GetMainQuestClearLineup",
     "tower": "https://api.blablalink.com/api/game/proxy/Game/GetCampaignStageCharacterInfo",
@@ -75,6 +76,28 @@ def load_cookie(store: Store) -> dict[str, str]:
 
 def make_client(cookies: dict[str, str]) -> httpx.AsyncClient:
     return httpx.AsyncClient(headers=HEADERS, cookies=cookies, timeout=12.0)
+
+
+async def api_call(client: httpx.AsyncClient, name: str, body: dict) -> dict:
+    """The response body; AuthError on a rejected cookie, a {"msg"} dict on transport errors."""
+    for attempt in range(2):
+        try:
+            resp = await client.post(API + name, json=body, timeout=20.0)
+        except httpx.HTTPError as e:
+            err = {"code": -1, "msg": type(e).__name__}
+        else:
+            if resp.status_code == 200:
+                try:
+                    data = resp.json()
+                except ValueError:
+                    data = {"code": -1, "msg": "not json"}
+                if data.get("code") == AUTH_CODE:
+                    raise AuthError(data.get("msg", "game not login"))
+                return data
+            err = {"code": -1, "msg": f"HTTP {resp.status_code}"}
+        if attempt == 0:
+            await asyncio.sleep(1.5)
+    return err
 
 
 def campaign_targets(levels: list[dict], stored: set[int]) -> list[dict]:

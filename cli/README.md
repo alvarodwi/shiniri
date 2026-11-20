@@ -94,11 +94,53 @@ downloaded cleanly is never downloaded again or overwritten, and a failed downlo
 replaces a stored file. The server only answers while you're in the union, so
 `data/raw/json/union/` is the only copy once you leave. Back it up.
 
+## Daily profile row
+
+`uv run shiniri-cli watch` keeps running. It checks your daily once when it starts, then at
+every :59 WIB. Once all 100 daily mission points are claimed, it appends one row of profile
+data (level, power, nikkes, currencies, progress, synchro, recycle room, lost relics) to the
+`Profile` tab of the Progression sheet. It writes that row and an `AuditLog` row in one
+request, the same way the shiniri web app does. If the daily isn't finished by the last check
+of the game day (02:59 WIB, before the 03:00 reset), the row is written anyway with
+`dailyDone` FALSE. `data/daily.json` holds today's progress and whether the row is written. It
+never goes to the sheet. A failed check is logged and retried the next hour.
+
+The cookie is read again on every check. When ambil runs on the same machine with
+`cookieExportPath` pointing at `config/cookie.txt`, it keeps the cookie fresh.
+
+One-time setup:
+
+1. In <https://console.cloud.google.com>, pick or create a project. Then go to *APIs & Services*,
+   *Library*, *Google Sheets API*, and click *Enable*.
+2. Go to *IAM & Admin*, *Service Accounts*, *Create service account*. Name it (for example
+   `shiniri-cli`) and grant no roles. Open it, then go to *Keys*, *Add key*, *Create new key*,
+   *JSON*.
+3. Save the downloaded file as `config/service-account.json` and run `chmod 600` on it.
+4. Share the spreadsheet with the account's `client_email` (from the JSON) as an **Editor**.
+5. Write `config/sheets.json`: `{"spreadsheet_id": "<the id from the sheet URL>"}`.
+6. Add a `Profile` tab with this header row, in order:
+   `date takenAt dailyDone level teamCombat nikkes costumes elysionNikkes missilisNikkes
+   tetraNikkes pilgrimNikkes abnormalNikkes paidGems freeGems battleData credits coreDust
+   recruitVouchers advRecruitVouchers silverMileage goldMileage easyCampaign normalCampaign
+   hardCampaign tribeTower elysionTower missilisTower tetraTower pilgrimTower overclockCurrent
+   overclockLatest synchroLevel synchroSlots outpostLevel recyclePersonal recycleAttacker
+   recycleDefender recycleSupporter recycleElysion recycleMissilis recycleTetra recyclePilgrim
+   recycleAbnormal memoirs callLogs bgm data` (47 columns, A to AU)
+7. Start it with `./start.sh`, which runs `watch` in the background and refuses to start a second
+   copy. Stop it with `./stop.sh`. The log is `data/watch.log`, linked to the newest of the last
+   5 session logs in `data/logs/`. After a reboot, run `./start.sh` again.
+
+Test against a copy of the sheet first. Then clear the test rows from `Profile` and `AuditLog`.
+Otherwise a test row dated today makes the real run think today is already written.
+
 ## Where things live
 
 ```
 config/sources.json      CDN paths of the reference files (committed)
 config/cookie.txt        your cookie (git-ignored)
+config/sheets.json       the Progression spreadsheet id (git-ignored)
+config/service-account.json  the Google service account key (git-ignored)
+data/daily.json          today's daily progress, the guard for the profile row
 data/raw/json/           what the server sent: the source of truth (union/ holds one file per raid season)
 data/parsed/csv/         campaign_clears.csv, tower_clears.csv, lineups.csv (rebuilt from raw)
 data/exports/            one CSV per search, grouped into campaign/, tower/ and all/

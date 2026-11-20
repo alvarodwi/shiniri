@@ -390,3 +390,24 @@ def test_clear_top_one_shot_force(store):
     assert "cached" in out.export_text()
     app.execute("!clear top")
     assert "cached" not in out.export_text()
+
+
+def test_run_dispatches_watch(monkeypatch):
+    import sys
+
+    from shiniri_cli import cli
+    called = []
+    monkeypatch.setattr(sys, "argv", ["shiniri-cli", "watch"])
+    monkeypatch.setattr("shiniri_cli.profile.watch", lambda store, **kw: called.append(store))
+    monkeypatch.setattr("shiniri_cli.cli.main", lambda root: called.append("shell"))
+    cli.run()
+    assert len(called) == 1 and called[0] != "shell"
+
+
+def test_watch_logs_missing_config_and_keeps_going(store, capsys):
+    from datetime import datetime
+
+    from shiniri_cli.profile import WIB, watch
+    watch(store, once=True, clock=lambda: datetime(2026, 11, 20, 12, tzinfo=WIB))
+    out = capsys.readouterr().out
+    assert out.startswith("2026-11-20 12:00:00 ") and "cookie.txt" in out
