@@ -93,7 +93,7 @@ def _add_season(store, sid, start, end):
 def test_fetch_saves_missing_and_keeps_final(union_store):
     _add_season(union_store, 1000047, 900, 1100)
     seen = []
-    assert _run(union_store, _client(seen), 1200) == {45: "kept (+roster)", 46: "kept (+roster)", 47: "saved"}
+    assert _run(union_store, _client(seen), 1200) == {45: "kept", 46: "kept (+roster)", 47: "saved"}
     assert {s for _, s in seen if s} == {"1000047"}
     saved = union_store.load_raw("union/1000047")
     assert saved["fetched_ts"] == 1200 and saved["guild"]["guild_member_cnt"] == 4
@@ -244,3 +244,18 @@ def test_build_union_carries_members_and_hit_nickname(union_store):
     u = build_union(union_store, None, 0)
     assert u.seasons[46]["members"] is None
     assert {h["nickname"] for h in u.hits if h["season"] == 45 and h["openid"] == "b"} == {"BRAVO_OLD"}
+
+
+def test_only_newest_locked_season_gets_current_roster(union_store):
+    seen = []
+    res = _run(union_store, _client(seen), 5000)  # s45 and s46 both locked and inside SIZE_TRUST
+    assert res[45] == "kept" and res[46] == "kept (+roster)"
+    assert "members" not in union_store.load_raw("union/1000045")
+    assert [n for n, _ in seen].count("GetGuildMembers") == 1
+
+
+def test_members_without_id_are_dropped(union_store):
+    _add_season(union_store, 1000047, 900, 1100)
+    bad = {"code": 0, "data": {"items": [{"nickname": "NOID"}, "junk", MEMBERS_OK["data"]["items"][0]]}}
+    _run(union_store, _client([], members=bad), 1200)
+    assert union_store.load_raw("union/1000047")["members"] == MEMBERS_OK["data"]["items"]

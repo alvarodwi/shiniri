@@ -259,3 +259,10 @@ def test_watch_logs_missing_config_and_keeps_going(store, capsys):
     watch(store, once=True, clock=lambda: datetime(2026, 11, 20, 12, tzinfo=WIB))
     out = capsys.readouterr().out
     assert out.startswith("2026-11-20 12:00:00 ") and "cookie.txt" in out
+
+
+def test_fetch_status_colours():
+    from shiniri_cli.cli import fetch_colour
+    assert fetch_colour("saved") == "green"
+    assert fetch_colour("kept") == fetch_colour("kept (+roster)") == fetch_colour("kept (other union)") == "dim"
+    assert fetch_colour("failed: boom") == "red"

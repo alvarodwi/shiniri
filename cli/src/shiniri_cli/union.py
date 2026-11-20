@@ -89,7 +89,8 @@ async def _members(client: httpx.AsyncClient, guild_id: str) -> list[dict] | Non
     """The union's current members, or None when the answer isn't a usable one."""
     resp = await api_call(client, "GetGuildMembers", {"guild_id": guild_id, "nikke_area_id": str(AREA_ID)})
     items = resp["data"].get("items") if _ok(resp) else None
-    return items if isinstance(items, list) and items else None
+    kept = [m for m in items if isinstance(m, dict) and m.get("member_id")] if isinstance(items, list) else []
+    return kept or None
 
 
 async def fetch_union(store: Store, client: httpx.AsyncClient, now: float, live_only: bool = False,
@@ -102,6 +103,7 @@ async def fetch_union(store: Store, client: httpx.AsyncClient, now: float, live_
     if guild.get("code") != 0 or not card:
         raise UnionError(f"union info refused: {guild.get('msg') or 'no union info'}")
     out = {} if results is None else results
+    newest = None  # (n, sid, stored, season) of the newest locked season of this union
     for season in store.load_raw("raid_list", []):
         if season.get("start_ts", 0) > now:
             continue
@@ -112,12 +114,8 @@ async def fetch_union(store: Store, client: httpx.AsyncClient, now: float, live_
         other = stored and str((stored.get("guild") or {}).get("guild_id")) != str(card["guild_id"])
         if is_final(stored, season):
             out[n] = "kept"
-            # locked before rosters were stored: today's roster still describes a season that just ended
-            if not other and "members" not in stored and now <= season.get("end_ts", 0) + SIZE_TRUST:
-                members = await _members(client, str(card["guild_id"]))
-                if members:
-                    store.save_raw(f"union/{sid}", {**stored, "members": members})
-                    out[n] = "kept (+roster)"
+            if not other and (newest is None or n > newest[0]):
+                newest = (n, sid, stored, season)
             continue
         if other:
             out[n] = "kept (other union)"  # a past union's season can't be fetched again
@@ -137,6 +135,14 @@ async def fetch_union(store: Store, client: httpx.AsyncClient, now: float, live_
         else:
             out[n] = f"failed: {raid.get('msg') or level.get('msg') or 'no data'}"
         await asyncio.sleep(random.uniform(*delay))
+    # locked before rosters were stored: today's roster still describes the season that just ended,
+    # never an older one
+    if newest and "members" not in newest[2] and now <= newest[3].get("end_ts", 0) + SIZE_TRUST:
+        n, sid, stored, _ = newest
+        members = await _members(client, str(card["guild_id"]))
+        if members:
+            store.save_raw(f"union/{sid}", {**stored, "members": members})
+            out[n] = "kept (+roster)"
     return out
 
 

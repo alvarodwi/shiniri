@@ -64,17 +64,21 @@ def append_seasons(api: SheetsApi, kind: str, rows_by_season: dict[int, list[lis
 async def sync_union(store: Store, client: httpx.AsyncClient, api: SheetsApi, *, timestamp: str, now: float) -> str:
     """Refresh raid_list and the stored seasons, then write the locked seasons each tab is missing. Never
     raises: a failed fetch still writes what's stored, and one tab's failure never stops the other."""
-    note = ""
+    notes = []
     try:
         async with httpx.AsyncClient() as cdn:  # its own client: the game cookies never go to the CDN host
             await sync_reference(store, cdn, names=("raid_list",))
+    except Exception as e:  # a bad sources.json and the like: the stored raid_list still works
+        notes.append(f"raid_list: {type(e).__name__}: {e}")
+    try:
         await fetch_union(store, client, now)
     except AuthError as e:
-        note = f" (fetch: cookie rejected: {e})"
+        notes.append(f"fetch: cookie rejected: {e}")
     except httpx.HTTPError as e:
-        note = f" (fetch: {type(e).__name__})"
+        notes.append(f"fetch: {type(e).__name__}")
     except Exception as e:  # UnionError, a corrupt season file and the like
-        note = f" (fetch: {type(e).__name__}: {e})"
+        notes.append(f"fetch: {type(e).__name__}: {e}")
+    note = f" ({'; '.join(notes)})" if notes else ""
     parts = []
     try:
         u = build_union(store, None, now)

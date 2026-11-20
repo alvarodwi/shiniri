@@ -341,7 +341,7 @@ class App:
             interrupted = True
         finally:
             for n, status in sorted(results.items()):
-                colour = {"saved": "green", "kept": "dim"}.get(status, "red")
+                colour = fetch_colour(status)
                 self.out.print(f"[{colour}]s{n}: {status}[/]")
             if live_only and not results and not interrupted:
                 self.out.print("[yellow]no union raid running right now[/]")
@@ -369,6 +369,11 @@ class App:
             self.out.print(f"[{colour}]{name}: {status}[/]")
         changed = {n for n, s in results.items() if s == "changed"}
         self.refresh(synced=changed)
+
+def fetch_colour(status: str) -> str:
+    """`union fetch` status colour: every "kept …" variant is a success, not a failure."""
+    return "green" if status == "saved" else "dim" if status.startswith("kept") else "red"
+
 
 def utf8(stream):
     # Windows falls back to cp1252 when output isn't a UTF-8 terminal; it can't print → or ·

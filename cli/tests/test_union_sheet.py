@@ -116,3 +116,21 @@ def test_fetch_error_still_writes_stored(union_store, monkeypatch):
 def test_season_missing_from_raid_list_is_not_locked(union_store):
     union_store.save_raw("raid_list", [])  # no end times known: nothing can be trusted as locked
     assert locked(build_union(union_store, None, 0)) == []
+
+
+def test_refresh_error_still_fetches(union_store, monkeypatch):
+    fetched = []
+
+    async def refresh(*a, **k):
+        raise FileNotFoundError("sources.json")
+
+    async def fetch(*a, **k):
+        fetched.append(1)
+        return {}
+    monkeypatch.setattr(union_sheet, "sync_reference", refresh)
+    monkeypatch.setattr(union_sheet, "fetch_union", fetch)
+    api = FakeSheets({**AUDIT, **sheet("union", [["season"]]), **sheet("roster", [["season"]])})
+    text = asyncio.run(sync_union(union_store, None, api, timestamp="ts", now=99999))
+    assert fetched == [1]
+    assert text == ("Union +2 (raid_list: FileNotFoundError: sources.json) · "
+                    "Roster +2 (raid_list: FileNotFoundError: sources.json)")
