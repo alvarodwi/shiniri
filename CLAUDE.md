@@ -36,21 +36,28 @@ purpose (TypeScript vs Python), and that's expected.
 
 ## Development flow
 
-1. Branch `feat/<name>` or `fix/<name>` from `develop`. Branch and commit rules are in
-   `CONTRIBUTING.md`.
-2. Brainstorm.
-3. Write a short design doc in `docs/superpowers/specs/`, then a plan in `docs/superpowers/plans/`.
-   Doc names say which part they touch.
-4. Implement in this session ("natively"), not with a subagent per task. This is the default;
-   don't ask which execution style.
-5. Run the checks of each part the change touches, as named in that part's `CLAUDE.md`.
-6. One fresh reviewer checks the whole branch. Fix all of its findings on the branch, minor ones
-   included.
-7. Give the owner the exact pre-merge checks for each touched part. The owner runs them and
-   reports back.
-8. Don't commit until the owner says so. On "commit and merge": one commit on the feature branch,
-   then fast-forward `develop` and delete the merged branch. Don't push unless asked.
-9. Anything found after the merge becomes a new `feat/` or `fix/` branch.
+Each step runs in its own session and stops when it is done; the owner starts the next one. Opus
+runs brainstorm, plan and review. A cheaper model (Sonnet or lower) runs execute and merge.
+
+1. **Brainstorm (Opus).** Branch `feat/<name>` or `fix/<name>` from `develop` (branch and commit
+   rules are in `CONTRIBUTING.md`). Write a short design doc in `docs/superpowers/specs/`. Doc
+   names say which part they touch.
+2. **Plan (Opus).** Write the plan in `docs/superpowers/plans/`. Write every sheet string (tab
+   names, headers, values) verbatim, so execution never guesses. Stop.
+3. **Execute (cheaper model).** Implement the plan in this session ("natively"), not with a
+   subagent per task; don't ask which execution style. On later rounds, fix every finding of the
+   latest `## Review N` section of the plan instead, minor ones included. Run the checks of each
+   part the change touches, as named in that part's `CLAUDE.md`. Stop; never start a review.
+4. **Review (Opus).** One fresh reviewer checks the whole branch against the spec and plan, and
+   appends its findings to the plan as `## Review N` (N counts up from 1). Then give the owner the
+   exact pre-merge checks for each touched part; the owner runs them and reports back. Stop.
+
+   Steps 3 and 4 repeat until the owner says "merge" or "release".
+5. **Merge/release (cheaper model).** Don't commit until the owner says so. On "commit and merge":
+   one commit on the feature branch, then fast-forward `develop` and delete the merged branch.
+   Release steps are in `ui/CLAUDE.md`. Don't push unless asked.
+
+Anything found after the merge becomes a new `feat/` or `fix/` branch.
 
 A change to the sheet contract (write behaviour, headers, tab names) updates `ui/` and `cli/` on
 the same branch, under one spec. Say plainly when a change needs a manual sheet step, and that the
