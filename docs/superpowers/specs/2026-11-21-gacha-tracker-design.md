@@ -18,7 +18,8 @@ only the owner's own tracking.
   it (prod already; the owner adds it to the test copy).
 - Development uses the test copy, never prod.
 - Gacha tabs: `Social`, `Event`, `Ordinary`, `Molds`, `SpareBody`, `Other`. They stay, one row per
-  session in each tab's own columns. Other mixes freebies and step-up recruits; that stays.
+  session in each tab's own columns. SpareBody and Other were restructured; see
+  `2026-11-21-sparebody-other-design.md`.
 - Before a tab gets a page, the owner renames its headers to lowerCamelCase and flattens 2-row
   headers (`Resources Used` over `Gems`/`Tix` becomes `gems`, `tix`), on both sheets.
 - Several rows share a date (Social in the morning, Event twice later). Gacha rows are never
@@ -57,7 +58,7 @@ columns. Rules from the owner, 2026-11-21 (compare `manufacturer` case-insensiti
   allowed.
 - `Ordinary`: `PILGRIM` allowed, no `ABNORMAL`.
 - `Molds`: rules differ per mold type (a Pilgrim mold can give Pilgrim). Settled in its own spec.
-- `SpareBody` and `Other`: have their own filters. Settled in their own specs.
+- `SpareBody` and `Other`: settled in `2026-11-21-sparebody-other-design.md`.
 
 `rateUpType` exists only on the `Event` tab. How it is entered (typed, picked from a list, and what
 it does to the picker) is an open question for the Event spec's brainstorm; its header text is asked
