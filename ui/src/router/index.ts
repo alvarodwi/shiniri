@@ -7,8 +7,10 @@ import Level from '@/pages/Level.vue'
 import Log from '@/pages/Log.vue'
 import MoldsPage from '@/pages/Molds.vue'
 import OrdinaryPage from '@/pages/Ordinary.vue'
+import OtherPage from '@/pages/Other.vue'
 import Social from '@/pages/Social.vue'
 import SoloRaid from '@/pages/SoloRaid.vue'
+import SpareBodyPage from '@/pages/SpareBody.vue'
 import Special from '@/pages/Special.vue'
 
 export const router = createRouter({
@@ -19,6 +21,8 @@ export const router = createRouter({
     { path: '/event', component: EventPage },
     { path: '/ordinary', component: OrdinaryPage },
     { path: '/molds', component: MoldsPage },
+    { path: '/sparebody', component: SpareBodyPage },
+    { path: '/other', component: OtherPage },
     { path: '/gear', component: Gear },
     { path: '/level', component: Level },
     { path: '/social', component: Social },

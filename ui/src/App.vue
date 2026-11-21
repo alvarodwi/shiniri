@@ -16,6 +16,8 @@ const links = [
   { to: '/event', label: 'Event' },
   { to: '/ordinary', label: 'Ordinary' },
   { to: '/molds', label: 'Molds' },
+  { to: '/sparebody', label: 'SpareBody' },
+  { to: '/other', label: 'Other' },
   { to: '/gear', label: 'Gear' },
   { to: '/level', label: 'Level' },
   { to: '/social', label: 'Social' },

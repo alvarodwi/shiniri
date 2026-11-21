@@ -13,3 +13,8 @@ export const LEVEL_MAX_JUMP = 20
 
 // Solo Raid ranks below this placement show as a top-% on the in-game leaderboard.
 export const SOLO_RAID_MAX_PLACE = 100
+
+// Copies in one save (a typo guard, not a cap on copies owned): 11 takes a Nikke from zero to C7
+// (1 copy, 3 spare bodies to MLB, 7 more to C7). Saves never count copies owned, so overcore
+// copies log like any other; overcore itself is tracked by hand in Overcored.
+export const MAX_COPIES = 11

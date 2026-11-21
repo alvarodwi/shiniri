@@ -5,6 +5,8 @@ import {
   LEVEL_TAB,
   NIKKE_DATABASE_TAB,
   MOLDS_TAB,
+  SPARE_BODY_TAB,
+  OTHER_TAB,
   ORDINARY_TAB,
   SOCIAL_TAB,
   SOLO_RAID_TAB,
@@ -110,6 +112,14 @@ export const MOCK_SHEETS = sheets([
   tab(MOLDS_TAB, [
     ['2026-11-06', 'Yellow Mold', 5, 2, "'Maiden, Folkwang", ''],
     ['2026-11-13', 'Purple Mold', 3, 0, '', ''],
+  ]),
+  tab(SPARE_BODY_TAB, [
+    ['2026-11-18', "'Marian: Queen", 'Gold Mileage', ''],
+    ['2026-07-23', "'Flora", 'Silver Mileage', ''],
+  ]),
+  tab(OTHER_TAB, [
+    ['2026-04-23', 'Welfare Unit', "'3.5 Anniv", '', '', 1, 1, "'Avistar", ''],
+    ['2026-01-05', 'Guaranteed SSR', "'Step Up 2026", '', 6600, 31, 2, "'Yan, Grave", ''],
   ]),
   tab(SOCIAL_TAB, [
     ['2026-11-04', 10, 1, "'Rumani", ''],

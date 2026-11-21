@@ -31,11 +31,16 @@ def test_event_row_order_then_column_order():
 
 def test_missing_header_goes_on():
     tabs = {"Event": [["date", "Rate-Up Name", "ssrDetails"], ["2023-06-30", "Nope", "Eve"]],
-            "Other": [["date", "ssrDetails"], ["2022-11-08", "Anis"]]}
+            "Other": [["date", "rateUpName", "ssrDetails"], ["2022-11-08", "", "Anis"]]}
     lines = names.sweep(DB, tabs)
     assert lines[0] == 'Event: no column "rateUpName"'
     assert lines[1].startswith("Event!C2  Eve")
     assert lines[-1] == "1 unknown names in 1 cells"
+
+
+def test_other_rate_up_name_is_swept():
+    lines = names.sweep(DB, {"Other": [["date", "rateUpName", "ssrDetails"], ["2026-11-05", "Scarlt", "Anis"]]})
+    assert lines[0].startswith("Other!B2  Scarlt")
 
 
 def test_duplicate_database_names():

@@ -21,7 +21,7 @@ COLUMNS = {  # tab -> name columns, by row-1 header text; dict order is report o
     "Ordinary": ("ssrDetails",),
     "Molds": ("result",),
     "SpareBody": ("target",),
-    "Other": ("ssrDetails",),
+    "Other": ("rateUpName", "ssrDetails"),
 }
 
 

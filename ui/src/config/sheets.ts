@@ -99,6 +99,30 @@ export const MOLDS_TAB: TabSpec = {
   headers: ['date', 'moldType', 'amount', 'ssr', 'result', 'notes'],
 }
 
+// One row per copy; see services/spareBody/spareBodyRows.ts.
+export const SPARE_BODY_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
+  tab: 'SpareBody',
+  headers: ['date', 'target', 'source', 'notes'],
+}
+
+// totalSsr is the count of ssrDetails; see services/other/otherRows.ts.
+export const OTHER_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
+  tab: 'Other',
+  headers: [
+    'date',
+    'sourceType',
+    'sourceInfo',
+    'rateUpName',
+    'gems',
+    'times',
+    'totalSsr',
+    'ssrDetails',
+    'notes',
+  ],
+}
+
 // Every save appends one row here, in the same write as its data.
 export const AUDIT_HEADERS = ['savedAt', 'form', 'ranges', 'rows'] as const
 
