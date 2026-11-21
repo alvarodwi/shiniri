@@ -46,6 +46,24 @@ only the owner's own tracking.
 6. **Later:** a `Roster` history tab from `GetUserCharacters` (append-only, so dated snapshots, not a
    current roster), `Spending`, then the dashboard.
 
+## Picker pools
+
+Each page's picker offers only the Nikkes that source can give, filtered on `NikkeDatabase`
+columns. Rules from the owner, 2026-11-21 (compare `manufacturer` case-insensitively):
+
+- All pages: `rarity` is `SSR` (the tabs count SSRs).
+- `Social`: no `ABNORMAL`, no `PILGRIM`.
+- `Event`: `ABNORMAL` only when the banner's `rateUpType` is `Collaboration Limited`. `PILGRIM`
+  allowed.
+- `Ordinary`: `PILGRIM` allowed, no `ABNORMAL`.
+- `Molds`: rules differ per mold type (a Pilgrim mold can give Pilgrim). Settled in its own spec.
+- `SpareBody` and `Other`: have their own filters. Settled in their own specs.
+
+`rateUpType` exists only on the `Event` tab. How it is entered (typed, picked from a list, and what
+it does to the picker) is an open question for the Event spec's brainstorm; its header text is asked
+for there, not guessed. Social is built (filter in `socialStore.ssrNikkes`); when Event or Ordinary arrives, lift
+the shared part out of that getter rather than copying it.
+
 ## Not in scope
 
 - Live roster, investment status, full or medium Nikke art.
