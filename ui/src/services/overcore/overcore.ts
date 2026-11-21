@@ -116,9 +116,10 @@ export function remark(
   rand: () => number = Math.random,
 ): string | null {
   if (!found.length) return null
-  const base = painLevel(from, detail)
+  // The line always fits the source (a mold is never "bought"); a Pilgrim adds PILGRIM_LINE instead
+  // of borrowing the next level's line.
+  const level = painLevel(from, detail) as keyof typeof OVERCORE_LINES
   const pilgrim = found.some((f) => isPilgrim(f.name, nikkes))
-  const level = Math.min(7, base + (pilgrim ? 1 : 0)) as keyof typeof OVERCORE_LINES
   const who = found.map((f) => `${f.name} C${f.copy - 4}`)
   const list = who.length > 1 ? `${who.slice(0, -1).join(', ')} and ${who.at(-1)}` : who[0]
   const lines = OVERCORE_LINES[level]

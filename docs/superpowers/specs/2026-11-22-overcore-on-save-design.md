@@ -58,14 +58,14 @@ every day.
 | 6 | SpareBody with `Silver Mileage` or `Union Chip` |
 | 7 | SpareBody with `Gold Mileage` |
 
-- A Pilgrim overcore goes up one level, capped at 7 (my call, from "pilgrim overcore is agony").
+- A Pilgrim overcore never changes the line: the line always fits the source (owner, 2026-11-22: a Pilgrim Perfect Mold overcore got SpareBody's "You bought…" line, and molds aren't bought). Pilgrim pain shows as the Pilgrim line instead.
 - A save with several overcores gets one remark, from its most painful one, naming all of them.
 
 ### Remarks
 
 `ui/src/config/overcoreLines.ts` holds the lines, so the owner can make them worse without touching
-logic: a few lines per level, picked at random, plus one Pilgrim line appended when the Pilgrim bump
-applied. `{who}` is the Nikke and its core label: copy 12 is `C8`, copy 13 `C9` (copy − 4), so
+logic: a few lines per level, picked at random, plus one Pilgrim line appended when any overcore in the
+save is a Pilgrim. `{who}` is the Nikke and its core label: copy 12 is `C8`, copy 13 `C9` (copy − 4), so
 `Rapi C8`. With several overcores it's a list: `Noah C8, Noah C9 and Liter C8` (my call). Each
 overcore pays 6000 Body Labels. Starting lines (one per level, owner polishes):
 
@@ -110,9 +110,9 @@ documents them step by step so a browser test can replay them:
 1. **Level 7:** SpareBody, `Gold Mileage`, target `Rapi`, 1 copy. Rapi is at copy 11 in the mock
    AllPulls and RosterLog, so the save writes one Overcored row (`from` `SpareBody`, `manufacturer`
    `Elysion`) and shows a level 7 remark with `Rapi C8`.
-2. **Level 6:** Molds, `Pilgrim Perfect Mold`, result `Noah`. The mock NikkeDatabase gains `Noah`
+2. **Level 5 + Pilgrim:** Molds, `Pilgrim Perfect Mold`, result `Noah`. The mock NikkeDatabase gains `Noah`
    (`PILGRIM`) at copy 11, so the save writes one Overcored row (`from` `Molds`, `manufacturer`
-   `Pilgrim`) and shows a level 6 remark (5 + the Pilgrim bump) ending with the Pilgrim line.
+   `Pilgrim`) and shows a level 5 (Perfect Mold) remark ending with the Pilgrim line.
 
 The mock RosterLog baseline is dated well before today (the forms default to today's game day), so
 both saves fall after it. The mock AllPulls is static (formulas aren't computed), so repeating a

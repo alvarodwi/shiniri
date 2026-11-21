@@ -71,7 +71,7 @@ describe('mock sheet with the real stores', () => {
     expect(store.remark).toContain('Rapi C8')
   })
 
-  it('level 6: Pilgrim Perfect Mold Noah', async () => {
+  it('level 5 + Pilgrim line: Pilgrim Perfect Mold Noah', async () => {
     const api = createMockSheetsApi(MOCK_SHEETS)
     const added = overcoredWrites(api)
     const store = useMoldsStore()

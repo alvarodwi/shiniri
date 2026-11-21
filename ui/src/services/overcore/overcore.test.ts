@@ -113,9 +113,10 @@ describe('overcore', () => {
     ])
   })
 
-  it('remark: worst level, every overcore named, Pilgrim bump and line', () => {
+  it('remark: the source level line, every overcore named, Pilgrim line added', () => {
+    // A Pilgrim from a Perfect Mold keeps the mold line (level 5), never SpareBody's "bought" line.
     const r = remark([{ name: 'Noah', copy: 12 }], 'Molds', 'Pilgrim Perfect Mold', nikkes, () => 0)
-    expect(r).toBe(`${OVERCORE_LINES[6][0].replace('{who}', 'Noah C8')} ${PILGRIM_LINE}`)
+    expect(r).toBe(`${OVERCORE_LINES[5][0].replace('{who}', 'Noah C8')} ${PILGRIM_LINE}`)
     expect(
       remark(
         [
@@ -134,7 +135,7 @@ describe('overcore', () => {
     expect(remark([], 'Other', '', nikkes)).toBeNull()
   })
 
-  it('remark: unknown Nikke gets no Pilgrim bump', () => {
+  it('remark: unknown Nikke gets no Pilgrim line', () => {
     expect(remark([{ name: 'Ghost', copy: 12 }], 'Event', '', nikkes, () => 0)).toBe(
       OVERCORE_LINES[3][0].replace('{who}', 'Ghost C8'),
     )
