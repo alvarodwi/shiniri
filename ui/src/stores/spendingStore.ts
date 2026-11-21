@@ -94,12 +94,15 @@ export const useSpendingStore = defineStore('spending', {
       e.ssr = ''
       e.month = ''
       e.platform = ''
+      e.priceIdr = ''
+      e.priceUsd = ''
     },
 
     // The monthly pass in one tap: prices and platform as last time, when there is a last time.
     quickMonthly() {
       this.setType('Monthly Pass')
       const prev = lastMonthly(this.history)
+      this.entry.platform = ''
       this.entry.priceIdr = prev?.priceIdr ?? ''
       this.entry.priceUsd = prev?.priceUsd ?? ''
     },

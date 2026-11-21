@@ -92,6 +92,34 @@ describe('spendingStore', () => {
     expect(store.entry.platform).toBe('')
   })
 
+  it('does not carry monthly prices into another type', async () => {
+    const store = useSpendingStore()
+    await store.load(fakeApi(MONTHLY_ROWS))
+    store.quickMonthly()
+    store.setType('Event Pass')
+    store.entry.ssr = 'Isabel'
+    expect(store.entry.priceIdr).toBe('')
+    expect(store.row).toBeNull()
+  })
+
+  it('resets a tapped platform on a repeat quick fill', async () => {
+    const store = useSpendingStore()
+    await store.load(fakeApi(MONTHLY_ROWS))
+    store.quickMonthly()
+    store.entry.platform = 'Apple'
+    store.quickMonthly()
+    expect(store.platform).toBe('RazerGold')
+  })
+
+  it('quick-fills from the last monthly row with usable prices', async () => {
+    const store = useSpendingStore()
+    await store.load(
+      fakeApi([...MONTHLY_ROWS, [46200, '30-day supply', 'Monthly Pass', '', '', 'Apple', '']]),
+    )
+    store.quickMonthly()
+    expect([store.entry.priceIdr, store.entry.priceUsd]).toEqual(['79000', '4.99'])
+  })
+
   it('saves one row with its audit row and resets the form', async () => {
     const api = fakeApi(MONTHLY_ROWS)
     const store = useSpendingStore()

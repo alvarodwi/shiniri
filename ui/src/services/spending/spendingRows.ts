@@ -69,8 +69,16 @@ export function suggestedPlatform(history: Purchase[], name: string, type: strin
   )
 }
 
+// Whole rupiah and dollars with up to two decimals; separators are rejected so 79.000 never lands
+// as 79.
+const IDR = /^[1-9]\d*$/
+const USD = /^(?!0+(\.0+)?$)\d+(\.\d{1,2})?$/
+export const validIdr = (s: string): boolean => IDR.test(s.trim())
+export const validUsd = (s: string): boolean => USD.test(s.trim())
+
+// The last monthly pass with usable prices, so one hand row without prices can't blank the fill.
 export const lastMonthly = (history: Purchase[]): Purchase | undefined =>
-  last(history, (p) => p.packageName === MONTHLY)
+  last(history, (p) => p.packageName === MONTHLY && validIdr(p.priceIdr) && validUsd(p.priceUsd))
 
 // Names logged under a type, newest first, for the free-text suggestions.
 export const pastNames = (history: Purchase[], type: string): string[] => [
@@ -82,11 +90,6 @@ export const pastNames = (history: Purchase[], type: string): string[] => [
   ),
 ]
 
-// Whole rupiah and dollars with up to two decimals; separators are rejected so 79.000 never lands
-// as 79.
-const IDR = /^[1-9]\d*$/
-const USD = /^(?!0+(\.0+)?$)\d+(\.\d{1,2})?$/
-
 // Columns A-G of Spending, or null while something required is missing or invalid.
 export function toRow(e: SpendingEntry, platform: string): Cell[] | null {
   const name = packageName(e)
@@ -94,6 +97,6 @@ export function toRow(e: SpendingEntry, platform: string): Cell[] | null {
   const usd = e.priceUsd.trim()
   if (!e.date || !name || !(SPENDING_TYPES as readonly string[]).includes(e.type)) return null
   if (!(PLATFORMS as readonly string[]).includes(platform)) return null
-  if (!IDR.test(idr) || !USD.test(usd)) return null
+  if (!validIdr(idr) || !validUsd(usd)) return null
   return [e.date, asText(name), e.type, Number(idr), Number(usd), platform, asText(e.notes.trim())]
 }

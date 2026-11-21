@@ -2,7 +2,7 @@
 import { computed, onMounted } from 'vue'
 
 import NikkePicker from '@/components/nikke/NikkePicker.vue'
-import { monthOf } from '@/services/spending/spendingRows'
+import { monthOf, validIdr, validUsd } from '@/services/spending/spendingRows'
 import { useSpendingStore } from '@/stores/spendingStore'
 import { MONTHLY, MONTHS, PLATFORMS, SPENDING_TYPES } from '@/types/spending'
 
@@ -16,6 +16,9 @@ const bySsr = computed(() =>
 )
 const byMonth = computed(() => ['Mission Pass', 'Event Pass'].includes(type.value))
 const byName = computed(() => ['Campaign Pass', 'Music Pack'].includes(type.value))
+// Typed but unusable prices say why Save stays off; a blank one needs no hint.
+const badIdr = computed(() => !!store.entry.priceIdr.trim() && !validIdr(store.entry.priceIdr))
+const badUsd = computed(() => !!store.entry.priceUsd.trim() && !validUsd(store.entry.priceUsd))
 </script>
 
 <template>
@@ -101,8 +104,13 @@ const byName = computed(() => ['Campaign Pass', 'Music Pack'].includes(type.valu
               inputmode="numeric"
               autocomplete="off"
               placeholder="79000"
+              :aria-invalid="badIdr"
+              aria-describedby="spending-idr-hint"
               class="focus rule-ink paper min-h-11 w-32 border px-2"
             />
+            <span v-if="badIdr" id="spending-idr-hint" class="text-accent-ink text-xs">
+              Whole rupiah, no dots or commas
+            </span>
           </div>
           <div class="flex flex-col gap-1">
             <label for="spending-usd">Price (USD)</label>
@@ -113,8 +121,13 @@ const byName = computed(() => ['Campaign Pass', 'Music Pack'].includes(type.valu
               inputmode="decimal"
               autocomplete="off"
               placeholder="4.99"
+              :aria-invalid="badUsd"
+              aria-describedby="spending-usd-hint"
               class="focus rule-ink paper min-h-11 w-28 border px-2"
             />
+            <span v-if="badUsd" id="spending-usd-hint" class="text-accent-ink text-xs">
+              Like 4.99, dot for cents
+            </span>
           </div>
         </div>
 
