@@ -54,7 +54,7 @@ only the owner's own tracking.
    5. Overcore on save (ui): a pulled copy numbered 12 or higher (baseline copies + pulls since)
       gets a congratulation and an `Overcored` row in the same write. Hand rows already there stay. Built: `2026-11-22-overcore-on-save-design.md`.
    6. `Spending` page (ui), a form. Headers already renamed on both sheets.
-   7. `AcquisitionLog`: fix its formulas, and fill the pre-tracking `?` cells from the baseline.
+   7. `AcquisitionLog`: fix its formulas, and fill the pre-tracking `?` cells from the baseline. Built: `2026-11-22-acquisitionlog-formula-design.md`.
    8. Later: `CostumeGallery` (waits on medium image URLs) and the dashboard, which reads
       `Spending` and the rest.
    Everything else in the hand-kept list below is to be dropped.
