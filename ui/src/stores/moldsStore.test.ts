@@ -1,0 +1,95 @@
+import { createPinia, setActivePinia } from 'pinia'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+import { useMoldsStore } from './moldsStore'
+
+import { NIKKE_DATABASE_TAB, MOLDS_TAB } from '@/config/sheets'
+import type { SheetsApi } from '@/services/google/sheetsApi'
+
+const DB = "'NikkeDatabase'!A1:J"
+const dbRow = (code: string, name: string, manufacturer: string) => [
+  code,
+  name,
+  'SSR',
+  manufacturer,
+  'Attacker',
+  'Step3',
+  'Fire',
+  'AR',
+  '12',
+  '',
+]
+
+function fakeApi() {
+  const values: Record<string, string[][]> = {
+    "'AuditLog'!A1:D1": [['savedAt', 'form', 'ranges', 'rows']],
+    "'AuditLog'!A:A": [['savedAt']],
+    "'Molds'!A1:F1": [[...MOLDS_TAB.headers]],
+    "'Molds'!A:A": [['date'], ['2026-11-17']],
+    [DB]: [
+      [...NIKKE_DATABASE_TAB.headers],
+      dbRow('5001', 'Elysion', 'ELYSION'),
+      dbRow('5002', 'Modernia', 'Pilgrim'),
+      dbRow('5003', 'Asuka', 'ABNORMAL'),
+    ],
+  }
+  return {
+    values,
+    getValues: vi.fn(async (_id: string, range: string) => values[range] ?? []),
+    ensureRows: vi.fn<SheetsApi['ensureRows']>(async () => {}),
+    batchUpdateValues: vi.fn<SheetsApi['batchUpdateValues']>(async (_id, data) => ({
+      updatedRanges: data.map((d) => d.range),
+    })),
+  } satisfies SheetsApi & { values: unknown }
+}
+
+beforeEach(() => setActivePinia(createPinia()))
+
+describe('moldsStore', () => {
+  it('has an empty pool until a type is set, then the type pool', async () => {
+    const store = useMoldsStore()
+    await store.load(fakeApi())
+    expect(store.pool).toEqual([])
+    store.setMoldType('Pilgrim Mold')
+    expect(store.pool.map((n) => n.name)).toEqual(['Modernia'])
+  })
+
+  it('drops names outside the new pool when the type changes', async () => {
+    const store = useMoldsStore()
+    await store.load(fakeApi())
+    store.setMoldType('Yellow Mold')
+    store.entry.names = ['Elysion', 'Modernia']
+    store.setMoldType('Elysion Mold')
+    expect(store.entry.names).toEqual(['Elysion'])
+  })
+
+  it('cannot save while the row is invalid', async () => {
+    const store = useMoldsStore()
+    await store.load(fakeApi())
+    expect(store.canSave).toBe(false)
+    store.setMoldType('Yellow Mold')
+    store.entry.amount = '1'
+    expect(store.canSave).toBe(true)
+  })
+
+  it('writes one row with an audit row, then resets', async () => {
+    const store = useMoldsStore()
+    const api = fakeApi()
+    await store.load(api)
+    store.entry.date = '2026-11-21'
+    store.setMoldType('Yellow Mold')
+    store.entry.amount = '5'
+    store.entry.names = ['Elysion']
+    await store.save(api)
+    const [, data] = api.batchUpdateValues.mock.calls[0]
+    expect(data[0]).toEqual({
+      range: "'Molds'!A3:F3",
+      rows: [['2026-11-21', "'Yellow Mold", 5, 1, "'Elysion", '']],
+    })
+    expect(data[1].rows[0][1]).toBe('Molds')
+    expect(store.entry.names).toEqual([])
+    expect(store.entry.moldType).toBe('')
+    expect(store.status).toBe('saved')
+    expect(store.lastSaved).toBe("'Molds'!A3:F3")
+  })
+})

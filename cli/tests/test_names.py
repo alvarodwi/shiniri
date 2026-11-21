@@ -6,7 +6,7 @@ DB = [["nameCode", "name"], ["5118", "Asuka"], ["5069", "Rei"], ["5119", "Rei"],
 
 
 def test_unknown_part_with_cell_and_closest():
-    tabs = {"Molds": [["date", "moldtype", "amount", "ssr", "result"],
+    tabs = {"Molds": [["date", "moldType", "amount", "ssr", "result"],
                       ["2023-06-30", "Yellow Mold", "5", "2", "Anis, Crwn\nAsuka"],
                       ["2023-07-01", "Purple Mold", "3", "0", ""],
                       ["2023-07-02", "Purple Mold", "3", "0"]]}  # ragged: trailing blank dropped

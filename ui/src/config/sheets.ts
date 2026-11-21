@@ -92,6 +92,13 @@ export const ORDINARY_TAB: TabSpec = {
   headers: ['date', 'gems', 'tix', 'times', 'totalSsr', 'ssrDetails', 'notes'],
 }
 
+// ssr is the count of result; see services/molds/moldRows.ts.
+export const MOLDS_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
+  tab: 'Molds',
+  headers: ['date', 'moldType', 'amount', 'ssr', 'result', 'notes'],
+}
+
 // Every save appends one row here, in the same write as its data.
 export const AUDIT_HEADERS = ['savedAt', 'form', 'ranges', 'rows'] as const
 
