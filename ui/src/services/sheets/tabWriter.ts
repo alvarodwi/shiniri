@@ -62,12 +62,16 @@ export function nextEmptyRow(colA: string[]): number {
 export type RowCell = Cell | ((sheetRow: number) => Cell)
 export type WriteTarget = { tab: TabSpec; rows: RowCell[][] }
 
+export function checkHeaders(tab: TabSpec, row: string[]): void {
+  const actual = tab.headers.map((_, i) => String(row[i] ?? '').trim())
+  if (actual.some((h, i) => h !== tab.headers[i]))
+    throw new HeaderMismatchError(tab.headers, actual)
+}
+
 // Header check, then the next empty row from column A.
 async function startRow(api: SheetsApi, tab: TabSpec): Promise<number> {
   const [headerRow = []] = await readRows(api, tab, 1, 1)
-  const actual = tab.headers.map((_, i) => (headerRow[i] ?? '').trim())
-  if (actual.some((h, i) => h !== tab.headers[i]))
-    throw new HeaderMismatchError(tab.headers, actual)
+  checkHeaders(tab, headerRow)
   return nextEmptyRow(await readColumnA(api, tab))
 }
 

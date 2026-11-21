@@ -39,7 +39,8 @@ only the owner's own tracking.
    `2026-11-21-collab-aliases-design.md`.
 4. **ui: gacha sheet wiring.** A second entry in `SPREADSHEETS` with its own `AuditLog` and env var.
    The pages read `NikkeDatabase` for name pickers and `ui/public/img/nikke/si/` icons (by
-   `resourceId`).
+   `resourceId`). Spec: `2026-11-21-gacha-sheet-ui-design.md`. It adds the reader and icon helper;
+   the shared picker component is built in step 5's Social page.
 5. **ui: one page per gacha tab, one spec each.** Social first (simplest), then the rest. Names come
    from the picker only, so new rows always match `NikkeDatabase`.
 6. **Later:** a `Roster` history tab from `GetUserCharacters` (append-only, so dated snapshots, not a

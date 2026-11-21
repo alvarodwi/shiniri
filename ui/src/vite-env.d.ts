@@ -7,4 +7,5 @@ declare const __MOCK__: boolean
 interface ImportMetaEnv {
   readonly VITE_GOOGLE_CLIENT_ID: string
   readonly VITE_JOURNAL_SHEET_ID: string
+  readonly VITE_GACHA_SHEET_ID: string
 }

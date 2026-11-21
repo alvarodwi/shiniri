@@ -43,6 +43,24 @@ export const FURNACE_TAB: TabSpec = {
   headers: ['Date', 'Target', 'Sacrifice 1', 'Sacrifice 2', 'Result'],
 }
 
+// Read-only here: the cli writes it.
+export const NIKKE_DATABASE_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
+  tab: 'NikkeDatabase',
+  headers: [
+    'nameCode',
+    'name',
+    'rarity',
+    'manufacturer',
+    'class',
+    'burst',
+    'element',
+    'weapon',
+    'resourceId',
+    'releaseDate',
+  ],
+}
+
 // Every save appends one row here, in the same write as its data.
 export const AUDIT_HEADERS = ['savedAt', 'form', 'ranges', 'rows'] as const
 
@@ -53,6 +71,14 @@ export const SPREADSHEETS: Spreadsheet[] = [
     name: 'Progression',
     audit: {
       spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
+      tab: 'AuditLog',
+      headers: AUDIT_HEADERS,
+    },
+  },
+  {
+    name: 'Gacha',
+    audit: {
+      spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
       tab: 'AuditLog',
       headers: AUDIT_HEADERS,
     },

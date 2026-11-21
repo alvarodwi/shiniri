@@ -1,7 +1,7 @@
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import type { Cell } from '@/types/sheet'
 
-// Dev-only stand-in for the Sheets API (yarn dev:mock): one in-memory grid per tab, nothing leaves
+// Dev-only stand-in for the Sheets API (yarn dev:mock): one in-memory grid per tab of each spreadsheet id, nothing leaves
 // the browser. It covers the A1 ranges the app uses: 'Tab'!A1:G1, 'Tab'!A:A, 'Tab'!B12.
 
 const RANGE = /^'((?:[^']|'')+)'!([A-Z]+)(\d*)(?::([A-Z]+)(\d*))?$/
@@ -34,15 +34,21 @@ const stored = (c: Cell): string => {
 }
 
 // `tabs` holds stored values (what a cell contains), so seeds are copied as they are.
-export function createMockSheetsApi(tabs: Record<string, Cell[][]>): SheetsApi {
+export function createMockSheetsApi(sheets: Record<string, Record<string, Cell[][]>>): SheetsApi {
   const grid = new Map(
-    Object.entries(tabs).map(([tab, rows]) => [tab, rows.map((r) => r.map(asRead))]),
+    Object.entries(sheets).map(([id, tabs]) => [
+      id,
+      new Map(
+        Object.entries(tabs).map(([tab, rows]) => [tab, rows.map((r) => r.map(asRead))] as const),
+      ),
+    ]),
   )
+  const tabOf = (id: string, tab: string) => grid.get(id)?.get(tab)
 
   return {
-    async getValues(_id, range) {
+    async getValues(id, range) {
       const { tab, col, lastCol, row, lastRow } = parse(range)
-      const rows = (grid.get(tab) ?? []).slice(row, lastRow + 1).map((r) => {
+      const rows = (tabOf(id, tab) ?? []).slice(row, lastRow + 1).map((r) => {
         const cells = Array.from({ length: lastCol - col + 1 }, (_, i) => r[col + i] ?? '')
         while (cells.length && isEmpty(cells[cells.length - 1])) cells.pop()
         return cells
@@ -51,13 +57,15 @@ export function createMockSheetsApi(tabs: Record<string, Cell[][]>): SheetsApi {
       return rows
     },
 
-    async batchUpdateValues(_id, data) {
+    async batchUpdateValues(id, data) {
       // All or nothing, like the real batch: every range is checked before any cell is written.
       const writes = data.map(({ range, rows }) => {
         const { tab, col, row } = parse(range)
-        const sheet = grid.get(tab)
+        const sheet = tabOf(id, tab)
         if (!sheet)
-          throw new Error(`Mock sheet has no tab ${tab}. Add it to services/mock/fixtures.ts.`)
+          throw new Error(
+            `Mock sheet ${id} has no tab ${tab}. Add it to services/mock/fixtures.ts.`,
+          )
         return { sheet, col, row, rows }
       })
       for (const { sheet, col, row, rows } of writes) {

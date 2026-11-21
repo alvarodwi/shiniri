@@ -1,7 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { MOCK_TABS } from './fixtures'
+import { MOCK_SHEETS } from './fixtures'
 import { createMockSheetsApi } from './mockSheetsApi'
 
 import { useLevelStore } from '@/stores/levelStore'
@@ -13,7 +13,7 @@ beforeEach(() => setActivePinia(createPinia()))
 
 describe('mock sheet with the real stores', () => {
   it('saves a level jump, then shows the next level and a Level row in the log', async () => {
-    const api = createMockSheetsApi(MOCK_TABS)
+    const api = createMockSheetsApi(MOCK_SHEETS)
     const level = useLevelStore()
     await level.load(api)
     expect(level.last).toBe(780)
@@ -26,11 +26,14 @@ describe('mock sheet with the real stores', () => {
 
     const log = useLogStore()
     await log.load(api)
+    expect(log.sections.map((s) => s.name)).toEqual(['Progression', 'Gacha'])
     expect(log.sections[0].entries[0]).toMatchObject({ form: 'Level', rows: '2' })
+    // the journal save did not land in the gacha log
+    expect(log.sections[1].entries[0]).toMatchObject({ form: 'cli-nikke-database' })
   })
 
   it('saves a solo raid season and moves on to the next one', async () => {
-    const api = createMockSheetsApi(MOCK_TABS)
+    const api = createMockSheetsApi(MOCK_SHEETS)
     const raid = useSoloRaidStore()
     await raid.load(api)
     expect(raid.entry.season).toBe(45)

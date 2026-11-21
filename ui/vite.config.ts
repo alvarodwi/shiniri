@@ -24,6 +24,8 @@ export default defineConfig(({ command, mode }) => {
     },
     test: {
       environment: 'happy-dom',
+      // tests must not depend on .env.local
+      env: { VITE_JOURNAL_SHEET_ID: 'test-journal', VITE_GACHA_SHEET_ID: 'test-gacha' },
     },
   }
 })

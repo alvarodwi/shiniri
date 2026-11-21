@@ -57,6 +57,6 @@ dashboard), label every input, and hide sheet links on small screens.
   computed, and sheet links open a dead page (the sheet ID is a placeholder).
 - Mock mode exists only under `vite --mode mock` on the dev server (`__MOCK__` in
   `vite.config.ts`); builds never contain it. A new form adds its tab to
-  `src/services/mock/fixtures.ts`.
+  `MOCK_SHEETS` in `src/services/mock/fixtures.ts`.
 - Headless check without a browser tool:
   `google-chrome --headless=new --virtual-time-budget=5000 --dump-dom http://localhost:5173/#/level`.

@@ -2,6 +2,7 @@ import {
   ANOMALY_TAB,
   FURNACE_TAB,
   LEVEL_TAB,
+  NIKKE_DATABASE_TAB,
   SOLO_RAID_TAB,
   SPREADSHEETS,
   T9MANU_TAB,
@@ -12,14 +13,33 @@ import type { Cell } from '@/types/sheet'
 // Starting data for yarn dev:mock. Headers come from the real TabSpecs; rows are made up but shaped
 // like the journal, with past dates only so today's forms are open. A new form adds its tab here.
 
-const tab = (spec: TabSpec, rows: Cell[][]): [string, Cell[][]] => [
-  spec.tab,
-  [[...spec.headers], ...rows],
-]
+type Seed = [TabSpec, Cell[][]]
+
+// Groups seeds by spreadsheet id, then tab name, so same-named tabs (AuditLog) stay apart.
+const sheets = (seeds: Seed[]): Record<string, Record<string, Cell[][]>> => {
+  const out: Record<string, Record<string, Cell[][]>> = {}
+  for (const [spec, rows] of seeds)
+    (out[spec.spreadsheetId] ??= {})[spec.tab] = [[...spec.headers], ...rows]
+  return out
+}
+
+const tab = (spec: TabSpec, rows: Cell[][]): Seed => [spec, rows]
+
+// Each AuditLog is seeded by its own SPREADSHEETS entry.
+const AUDIT_ROWS: Record<string, Cell[][]> = {
+  Progression: [
+    ['2026-11-17 21:04:12', 'Anomaly', "'Anomaly'!A2:I3", 2],
+    ['2026-11-18 20:55:33', 'Anomaly', "'Anomaly'!A4:I5", 2],
+  ],
+  Gacha: [
+    ['2026-11-21 06:00:05', 'cli-nikke-database', "'NikkeDatabase'!A2:J4", 3],
+    ['2026-11-21 07:00:05', 'cli-nikke-database', "'NikkeDatabase'!A5:J5", 1],
+  ],
+}
 
 const days = (n: number) => `=IF(B${n + 1}="","",B${n + 1}-B${n})`
 
-export const MOCK_TABS: Record<string, Cell[][]> = Object.fromEntries([
+export const MOCK_SHEETS = sheets([
   tab(ANOMALY_TAB, [
     ['2026-11-17', 'Kraken', 9, true, 2, '', '', 'Modules', ''],
     ['2026-11-17', 'Ultra', 9, true, 0, 'Attacker', 'Tetra', 'Helmet', ''],
@@ -58,10 +78,22 @@ export const MOCK_TABS: Record<string, Cell[][]> = Object.fromEntries([
     [43, '2026-09-12', 'Mother Whale', 'Electric', 9876543210, '9.12%', ''],
     [44, '2026-10-15', 'Gravedigger', 'Fire', 11234567890, '8.40%', 'new team'],
   ]),
-  ...SPREADSHEETS.map((s) =>
-    tab(s.audit, [
-      ['2026-11-17 21:04:12', 'Anomaly', "'Anomaly'!A2:I3", 2],
-      ['2026-11-18 20:55:33', 'Anomaly', "'Anomaly'!A4:I5", 2],
-    ]),
-  ),
+  tab(NIKKE_DATABASE_TAB, [
+    [5001, 'Rapi', 'SSR', 'ELYSION', 'Attacker', 'Step3', 'Fire', 'AR', 10, 45000],
+    [5002, 'Anis', 'SR', 'TETRA', 'Supporter', 'Step1', 'Electronic', 'SG', 11, 45000],
+    [
+      5003,
+      'Asuka Shikinami Langley',
+      'SSR',
+      'ABNORMAL',
+      'Attacker',
+      'Step3',
+      'Fire',
+      'AR',
+      312,
+      '',
+    ],
+    [5004, 'New Nikke', 'SSR', 'MISSILIS', 'Defender', 'Step2', 'Water', 'MG', 999, ''],
+  ]),
+  ...SPREADSHEETS.map((s) => tab(s.audit, AUDIT_ROWS[s.name])),
 ])

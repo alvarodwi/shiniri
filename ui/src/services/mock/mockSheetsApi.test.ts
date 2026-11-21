@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { MOCK_TABS } from './fixtures'
+import { MOCK_SHEETS } from './fixtures'
 import { createMockSheetsApi } from './mockSheetsApi'
 
 import {
@@ -13,12 +13,14 @@ import {
 } from '@/config/sheets'
 
 const grid = () => ({
-  T: [
-    ['date', 'boss', 'note'],
-    ['2026-11-10', 'Kraken', 5],
-    ['', '', ''],
-    ['2026-11-12', 'Ultra', ''],
-  ],
+  id: {
+    T: [
+      ['date', 'boss', 'note'],
+      ['2026-11-10', 'Kraken', 5],
+      ['', '', ''],
+      ['2026-11-12', 'Ultra', ''],
+    ],
+  },
 })
 
 describe('createMockSheetsApi reads', () => {
@@ -41,7 +43,7 @@ describe('createMockSheetsApi reads', () => {
   })
 
   it('keeps seeded values as they are stored, apostrophes included', async () => {
-    const api = createMockSheetsApi({ T: [['ranges'], ["'Anomaly'!A2:I3"]] })
+    const api = createMockSheetsApi({ id: { T: [['ranges'], ["'Anomaly'!A2:I3"]] } })
     expect(await api.getValues('id', "'T'!A2")).toEqual([["'Anomaly'!A2:I3"]])
   })
 
@@ -53,7 +55,7 @@ describe('createMockSheetsApi reads', () => {
     const tabs = grid()
     const api = createMockSheetsApi(tabs)
     await api.batchUpdateValues('id', [{ range: "'T'!A5:C5", rows: [['x', 'y', 'z']] }])
-    expect(tabs.T).toHaveLength(4)
+    expect(tabs.id.T).toHaveLength(4)
   })
 })
 
@@ -88,7 +90,7 @@ describe('createMockSheetsApi writes', () => {
   })
 
   it('reads booleans back as TRUE and FALSE, like the real API', async () => {
-    const api = createMockSheetsApi({ T: [['dropped'], [false]] })
+    const api = createMockSheetsApi({ id: { T: [['dropped'], [false]] } })
     await api.batchUpdateValues('id', [{ range: "'T'!A3:A3", rows: [[true]] }])
     expect(await api.getValues('id', "'T'!A:A")).toEqual([['dropped'], ['FALSE'], ['TRUE']])
   })
@@ -108,13 +110,29 @@ describe('createMockSheetsApi writes', () => {
   })
 })
 
-describe('MOCK_TABS', () => {
+describe('same-named tabs in two spreadsheets', () => {
+  it('keeps same-named tabs of different spreadsheets apart', async () => {
+    const api = createMockSheetsApi({
+      a: { AuditLog: [['savedAt'], ['x']] },
+      b: { AuditLog: [['savedAt']] },
+    })
+    await api.batchUpdateValues('b', [{ range: "'AuditLog'!A2:A2", rows: [['y']] }])
+    expect(await api.getValues('a', "'AuditLog'!A:A")).toEqual([['savedAt'], ['x']])
+    expect(await api.getValues('b', "'AuditLog'!A:A")).toEqual([['savedAt'], ['y']])
+  })
+})
+
+describe('MOCK_SHEETS', () => {
   it('seeds every tab the app writes with its real headers and some rows', () => {
     const specs = [ANOMALY_TAB, T9MANU_TAB, FURNACE_TAB, LEVEL_TAB, SOLO_RAID_TAB]
     for (const spec of [...specs, ...SPREADSHEETS.map((s) => s.audit)]) {
-      const tab = MOCK_TABS[spec.tab]
+      const tab = MOCK_SHEETS[spec.spreadsheetId]?.[spec.tab]
       expect(tab?.[0], spec.tab).toEqual([...spec.headers])
       expect(tab.length, spec.tab).toBeGreaterThanOrEqual(3)
     }
+  })
+
+  it('gives every spreadsheet its own id', () => {
+    expect(new Set(SPREADSHEETS.map((s) => s.audit.spreadsheetId)).size).toBe(SPREADSHEETS.length)
   })
 })
