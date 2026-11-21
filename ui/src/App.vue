@@ -14,6 +14,7 @@ const MockBanner = __MOCK__
 const links = [
   { to: '/anomaly', label: 'Anomaly' },
   { to: '/event', label: 'Event' },
+  { to: '/ordinary', label: 'Ordinary' },
   { to: '/gear', label: 'Gear' },
   { to: '/level', label: 'Level' },
   { to: '/social', label: 'Social' },

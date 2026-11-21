@@ -85,6 +85,13 @@ export const EVENT_TAB: TabSpec = {
   ],
 }
 
+// times is tix + gems / 300 and totalSsr is the count of ssrDetails; see services/ordinary/ordinaryRows.ts.
+export const ORDINARY_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
+  tab: 'Ordinary',
+  headers: ['date', 'gems', 'tix', 'times', 'totalSsr', 'ssrDetails', 'notes'],
+}
+
 // Every save appends one row here, in the same write as its data.
 export const AUDIT_HEADERS = ['savedAt', 'form', 'ranges', 'rows'] as const
 

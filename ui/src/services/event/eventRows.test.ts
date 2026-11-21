@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { pullsHint, toRow } from './eventRows'
+import { toRow } from './eventRows'
 
 import type { EventEntry } from '@/types/event'
 
@@ -90,27 +90,5 @@ describe('toRow', () => {
     expect(row?.[3]).toBe(300)
     expect(row?.[4]).toBe(1)
     expect(row?.[5]).toBe(2)
-  })
-})
-
-describe('pullsHint', () => {
-  it('explains the rate while both currencies are blank', () => {
-    expect(pullsHint(entry({ gems: '', tix: '' }))).toBe('300 gems = 1 voucher = 1 pull')
-  })
-
-  it('shows the pull count, even before a banner type is chosen', () => {
-    expect(pullsHint(entry({ gems: '600', tix: '1', rateUpType: '' }))).toBe('3 pulls')
-  })
-
-  it('says why a total below one pull cannot be saved', () => {
-    expect(pullsHint(entry({ gems: '0', tix: '0' }))).toBe('Under 1 pull')
-  })
-
-  it('says why gems that are not a multiple of 300 cannot be saved', () => {
-    expect(pullsHint(entry({ gems: '450', tix: '1' }))).toBe('Gems come in multiples of 300')
-  })
-
-  it('says when an amount is not a whole number', () => {
-    expect(pullsHint(entry({ gems: 'abc', tix: '1' }))).toBe('Gems and tix are whole numbers')
   })
 })

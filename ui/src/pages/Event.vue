@@ -2,7 +2,7 @@
 import { onMounted } from 'vue'
 
 import NikkePicker from '@/components/nikke/NikkePicker.vue'
-import { pullsHint } from '@/services/event/eventRows'
+import { pullsHint } from '@/services/gacha/pulls'
 import { useEventStore } from '@/stores/eventStore'
 import { RATE_UP_TYPES } from '@/types/event'
 

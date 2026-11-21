@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 
 import Anomaly from '@/pages/Anomaly.vue'
 import EventPage from '@/pages/Event.vue'
+import OrdinaryPage from '@/pages/Ordinary.vue'
 import Gear from '@/pages/Gear.vue'
 import Level from '@/pages/Level.vue'
 import Log from '@/pages/Log.vue'
@@ -15,6 +16,7 @@ export const router = createRouter({
     { path: '/', redirect: '/anomaly' },
     { path: '/anomaly', component: Anomaly },
     { path: '/event', component: EventPage },
+    { path: '/ordinary', component: OrdinaryPage },
     { path: '/gear', component: Gear },
     { path: '/level', component: Level },
     { path: '/social', component: Social },

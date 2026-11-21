@@ -4,6 +4,7 @@ import {
   FURNACE_TAB,
   LEVEL_TAB,
   NIKKE_DATABASE_TAB,
+  ORDINARY_TAB,
   SOCIAL_TAB,
   SOLO_RAID_TAB,
   SPREADSHEETS,
@@ -100,6 +101,10 @@ export const MOCK_SHEETS = sheets([
   tab(EVENT_TAB, [
     ['2026-11-10', "'Rumani", 'Regular', 1500, 3, 8, 1, "'Rumani", ''],
     ['2026-11-14', '', 'Summer Limited', 0, 10, 10, 0, '', "'free banner"],
+  ]),
+  tab(ORDINARY_TAB, [
+    ['2026-11-05', 0, 60, 60, 2, "'Alice, Maxwell", ''],
+    ['2026-11-12', 0, 40, 40, 0, '', "'shafted"],
   ]),
   tab(SOCIAL_TAB, [
     ['2026-11-04', 10, 1, "'Rumani", ''],
