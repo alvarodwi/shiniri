@@ -251,8 +251,53 @@ def test_check_joins_clears_and_union(store, monkeypatch):
     now = datetime(2026, 11, 20, 12, 59, tzinfo=WIB)
     lines = []
     assert profile._check(store, now, lines.append) == "Campaign +0 · Tower +0 · Union +1 · Roster +1"
-    assert lines == ["sync: raid_list changed", "Campaign: wrote"]
+    assert lines == ["sync: raid_list changed", "Campaign: wrote", "NikkeDatabase: no gacha_spreadsheet_id"]
     assert seen == {"api": "sheets", "now": now.timestamp()}
+
+
+def _check_with_gacha(store, monkeypatch, fake_nikke):
+    from shiniri_cli import clear_sheet, nikke_sheet, profile, union_sheet
+
+    store.config_dir.mkdir(parents=True, exist_ok=True)
+    (store.config_dir / "sheets.json").write_text(
+        json.dumps({"spreadsheet_id": "x", "gacha_spreadsheet_id": "g"}), encoding="utf-8")
+    monkeypatch.setattr(profile, "load_cookie", lambda s: {"game_openid": "me"})
+    monkeypatch.setattr(profile, "service_account_token", lambda p: "token")
+    monkeypatch.setattr(profile, "HttpSheets", lambda sid, *a: f"sheets:{sid}")
+    apis = {}
+
+    async def fake_check_once(store_, now, client, openid, write, clears=None):
+        return await clears()
+
+    async def fake_clears(store_, client, api, *, timestamp, log):
+        apis["clears"] = api
+        return "Campaign +0"
+
+    async def fake_union(store_, client, api, *, timestamp, now, log):
+        apis["union"] = api
+        return "Union +1"
+
+    async def fake_sync(store_, client):
+        return {"raid_list": "changed"}
+    monkeypatch.setattr(profile, "check_once", fake_check_once)
+    monkeypatch.setattr(clear_sheet, "sync_clears", fake_clears)
+    monkeypatch.setattr(union_sheet, "sync_union", fake_union)
+    monkeypatch.setattr(profile, "sync_reference", fake_sync)
+    monkeypatch.setattr(nikke_sheet, "sync_nikke_database", lambda store_, api, *, timestamp: fake_nikke(api))
+    lines = []
+    text = profile._check(store, datetime(2026, 11, 20, 12, 59, tzinfo=WIB), lines.append)
+    return text, lines, apis
+
+
+def test_check_syncs_nikke_database(store, monkeypatch):
+    seen = []
+
+    def fake_nikke(api):
+        seen.append(api)
+        return "NikkeDatabase +2"
+    text, lines, apis = _check_with_gacha(store, monkeypatch, fake_nikke)
+    assert seen == ["sheets:g"] and lines[-1] == "NikkeDatabase +2"
+    assert apis == {"clears": "sheets:x", "union": "sheets:x"} and text == "Campaign +0 · Union +1"
 
 
 def test_refresh_reference_line(store, monkeypatch):

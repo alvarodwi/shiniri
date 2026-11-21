@@ -129,7 +129,8 @@ One-time setup:
    *JSON*.
 3. Save the downloaded file as `config/service-account.json` and run `chmod 600` on it.
 4. Share the spreadsheet with the account's `client_email` (from the JSON) as an **Editor**.
-5. Write `config/sheets.json`: `{"spreadsheet_id": "<the id from the sheet URL>"}`.
+5. Write `config/sheets.json`: `{"spreadsheet_id": "<progression sheet id>", "gacha_spreadsheet_id": "<gacha sheet id>"}`.
+   The gacha key is optional (without it `watch` logs `NikkeDatabase: no gacha_spreadsheet_id` and goes on), and the service account needs edit access to that sheet too.
 6. Add a `Profile` tab with this header row, in order:
    `date takenAt dailyDone level teamCombat nikkes costumes elysionNikkes missilisNikkes
    tetraNikkes pilgrimNikkes abnormalNikkes paidGems freeGems battleData credits coreDust
@@ -138,7 +139,10 @@ One-time setup:
    overclockLatest synchroLevel synchroSlots outpostLevel recyclePersonal recycleAttacker
    recycleDefender recycleSupporter recycleElysion recycleMissilis recycleTetra recyclePilgrim
    recycleAbnormal memoirs callLogs bgm data` (47 columns, A to AU)
-7. Start it with `./start.sh`, which runs `watch` in the background and refuses to start a second
+7. If you set `gacha_spreadsheet_id`, add two tabs to that sheet, each with this header row, in
+   order: `NikkeDatabase` with `nameCode name rarity manufacturer class burst element weapon
+   resourceId releaseDate` (10 columns, A to J), and `AuditLog` with `savedAt form ranges rows`.
+8. Start it with `./start.sh`, which runs `watch` in the background and refuses to start a second
    copy. Stop it with `./stop.sh`. The log is `data/watch.log`, linked to the newest of the last
    5 session logs in `data/logs/`. After a reboot, run `./start.sh` again.
 

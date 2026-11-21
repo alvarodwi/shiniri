@@ -193,13 +193,14 @@ async def refresh_reference(store: Store) -> str:
 def _check(store: Store, now: datetime, log: Callable[[str], None]) -> str:
     log(asyncio.run(refresh_reference(store)))  # first: profile, clears and union all read these files
     # Every file is re-read each check, so a cookie ambil refreshed or a fixed config is picked up.
+    from . import nikke_sheet
     from .clear_sheet import sync_clears  # clear_sheet imports WIB from here
     from .union_sheet import sync_union
     cookies = load_cookie(store)
-    sheet_id = json.loads((store.config_dir / "sheets.json").read_text(encoding="utf-8"))["spreadsheet_id"]
+    ids = json.loads((store.config_dir / "sheets.json").read_text(encoding="utf-8"))
     token = service_account_token(store.config_dir / "service-account.json")
     with httpx.Client() as http:
-        sheets = HttpSheets(sheet_id, token, http)
+        sheets = HttpSheets(ids["spreadsheet_id"], token, http)
 
         def write(row: list, day: str) -> str | None:
             return write_row(sheets, PROFILE_TAB, PROFILE_HEADERS, row, form=FORM,
@@ -213,7 +214,13 @@ def _check(store: Store, now: datetime, log: Callable[[str], None]) -> str:
                                              now=now.timestamp(), log=log)
                     return f"{clears} · {union}"
                 return await check_once(store, now, client, cookies["game_openid"], write, clears=sheet_sync)
-        return asyncio.run(go())
+        text = asyncio.run(go())  # after the daily write, so a slow gacha step cannot cross the 03:00 reset
+        if gacha_id := ids.get("gacha_spreadsheet_id"):  # never raises: a failure is its own line
+            log(nikke_sheet.sync_nikke_database(store, HttpSheets(gacha_id, token, http),
+                                                timestamp=wib_timestamp(now)))
+        else:
+            log("NikkeDatabase: no gacha_spreadsheet_id")
+        return text
 
 
 def watch(store: Store, *, sleep=time.sleep, clock=lambda: datetime.now(WIB), once: bool = False) -> None:

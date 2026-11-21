@@ -39,6 +39,11 @@ purpose (TypeScript vs Python), and that's expected.
 Each step runs in its own session and stops when it is done; the owner starts the next one. Opus
 runs brainstorm, plan and review. A cheaper model (Sonnet or lower) runs execute and merge.
 
+On the `opusplan` model (Opus in plan mode, Sonnet outside it): start brainstorm, plan and review in
+plan mode (shift+tab), so Opus does the thinking. Write the spec, plan or `## Review N` only after
+the plan is approved, and copy its content, sheet strings included, verbatim. Execute and merge
+stay out of plan mode.
+
 1. **Brainstorm (Opus).** Branch `feat/<name>` or `fix/<name>` from `develop` (branch and commit
    rules are in `CONTRIBUTING.md`). Write a short design doc in `docs/superpowers/specs/`. Doc
    names say which part they touch.
