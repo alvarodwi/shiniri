@@ -31,6 +31,7 @@ function fakeApi() {
       dbRow('5001', 'Elysion', 'ELYSION'),
       dbRow('5002', 'Modernia', 'Pilgrim'),
       dbRow('5003', 'Asuka', 'ABNORMAL'),
+      dbRow('5004', 'Maxwell', 'Missilis'),
     ],
   }
   return {
@@ -58,7 +59,7 @@ describe('moldsStore', () => {
     const store = useMoldsStore()
     await store.load(fakeApi())
     store.setMoldType('Yellow Mold')
-    store.entry.names = ['Elysion', 'Modernia']
+    store.entry.names = ['Elysion', 'Maxwell']
     store.setMoldType('Elysion Mold')
     expect(store.entry.names).toEqual(['Elysion'])
   })
@@ -84,7 +85,7 @@ describe('moldsStore', () => {
     const [, data] = api.batchUpdateValues.mock.calls[0]
     expect(data[0]).toEqual({
       range: "'Molds'!A3:F3",
-      rows: [['2026-11-21', "'Yellow Mold", 5, 1, "'Elysion", '']],
+      rows: [['2026-11-21', 'Yellow Mold', 5, 1, "'Elysion", '']],
     })
     expect(data[1].rows[0][1]).toBe('Molds')
     expect(store.entry.names).toEqual([])

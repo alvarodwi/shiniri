@@ -108,8 +108,8 @@ export const MOCK_SHEETS = sheets([
     ['2026-11-12', 0, 40, 40, 0, '', "'shafted"],
   ]),
   tab(MOLDS_TAB, [
-    ['2026-11-06', "'Yellow Mold", 5, 2, "'Maiden, Folkwang", ''],
-    ['2026-11-13', "'Purple Mold", 3, 0, '', ''],
+    ['2026-11-06', 'Yellow Mold', 5, 2, "'Maiden, Folkwang", ''],
+    ['2026-11-13', 'Purple Mold', 3, 0, '', ''],
   ]),
   tab(SOCIAL_TAB, [
     ['2026-11-04', 10, 1, "'Rumani", ''],

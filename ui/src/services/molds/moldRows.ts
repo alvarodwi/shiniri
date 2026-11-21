@@ -23,12 +23,5 @@ export function toRow(e: MoldsEntry): Cell[] | null {
   const n = Number(amount)
   if (n < 1 || e.names.length > n) return null
   if (isPerfect(e.moldType) && e.names.length !== n) return null
-  return [
-    e.date,
-    asText(e.moldType),
-    n,
-    e.names.length,
-    asText(e.names.join(', ')),
-    asText(e.notes.trim()),
-  ]
+  return [e.date, e.moldType, n, e.names.length, asText(e.names.join(', ')), asText(e.notes.trim())]
 }

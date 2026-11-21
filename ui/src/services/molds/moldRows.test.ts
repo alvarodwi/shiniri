@@ -48,7 +48,7 @@ describe('toRow', () => {
   it('builds columns A-F', () => {
     expect(toRow(entry({ amount: ' 5 ', names: ['Maiden', 'Folkwang'], notes: ' ok ' }))).toEqual([
       '2026-11-21',
-      "'Yellow Mold",
+      'Yellow Mold',
       5,
       2,
       "'Maiden, Folkwang",
@@ -59,7 +59,7 @@ describe('toRow', () => {
   it('allows zero SSRs on a plain mold', () => {
     expect(toRow(entry({ moldType: 'Purple Mold', amount: '1' }))).toEqual([
       '2026-11-21',
-      "'Purple Mold",
+      'Purple Mold',
       1,
       0,
       '',
