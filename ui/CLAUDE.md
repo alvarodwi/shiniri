@@ -58,5 +58,11 @@ dashboard), label every input, and hide sheet links on small screens.
 - Mock mode exists only under `vite --mode mock` on the dev server (`__MOCK__` in
   `vite.config.ts`); builds never contain it. A new form adds its tab to
   `MOCK_SHEETS` in `src/services/mock/fixtures.ts`.
+- Overcore scenarios (the mock AllPulls and RosterLog put Rapi and Noah at copy 11):
+  1. `#/sparebody`: source Gold Mileage, target Rapi, copies 1, Save. Expect the "Saved to ..." line
+     plus a remark containing `Rapi C8`.
+  2. `#/molds`: Pilgrim Perfect Mold, Amount opened 1, pick Noah, Save session. Expect a remark containing
+     `Noah C8` and ending `And she's a Pilgrim.`
+  3. The mock AllPulls is static, so repeats show C8 again; reload to reset.
 - Headless check without a browser tool:
   `google-chrome --headless=new --virtual-time-budget=5000 --dump-dom http://localhost:5173/#/level`.

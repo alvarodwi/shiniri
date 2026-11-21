@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia'
 
-import { SPARE_BODY_TAB } from '@/config/sheets'
+import { OVERCORED_TAB, SPARE_BODY_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import { readNikkes } from '@/services/nikke/nikkeDatabase'
 import type { Nikke } from '@/services/nikke/nikkeDatabase'
+import { checkOvercores } from '@/services/overcore/overcore'
 import { writeTabsAtEnd } from '@/services/sheets/tabWriter'
-import { spareBodyPool, toRows } from '@/services/spareBody/spareBodyRows'
+import { parseCopies, spareBodyPool, toRows } from '@/services/spareBody/spareBodyRows'
 import { sheetsApi } from '@/stores/authStore'
 import type { SpareBodyEntry } from '@/types/spareBody'
 import { gameDay } from '@/utils/gameDay'
@@ -25,6 +26,7 @@ export const useSpareBodyStore = defineStore('spareBody', {
     status: 'idle' as 'idle' | 'loading' | 'saving' | 'saved' | 'error',
     error: null as string | null,
     lastSaved: null as string | null,
+    remark: null as string | null,
   }),
 
   getters: {
@@ -69,12 +71,25 @@ export const useSpareBodyStore = defineStore('spareBody', {
       this.status = 'saving'
       this.error = null
       this.lastSaved = null
+      this.remark = null
       try {
+        const entry = this.entry
+        const oc = await checkOvercores(api, {
+          from: 'SpareBody',
+          detail: entry.source,
+          date: entry.date,
+          names: Array(parseCopies(entry.copies) ?? 0).fill(entry.target),
+          nikkes: this.nikkes,
+        })
         const { updatedRanges } = await writeTabsAtEnd(
           api,
-          [{ tab: SPARE_BODY_TAB, rows }],
+          [
+            { tab: SPARE_BODY_TAB, rows },
+            ...(oc.rows.length ? [{ tab: OVERCORED_TAB, rows: oc.rows }] : []),
+          ],
           'SpareBody',
         )
+        this.remark = oc.remark
         // Clear the form before reloading, so a failed reload can't leave the rows to be saved twice.
         this.entry = newEntry()
         this.lastSaved = updatedRanges[0]

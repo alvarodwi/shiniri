@@ -2,6 +2,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useOrdinaryStore } from './ordinaryStore'
+import { baseline, overcoreValues } from './overcoreTestData'
 
 import { NIKKE_DATABASE_TAB, ORDINARY_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
@@ -24,6 +25,7 @@ function fakeApi() {
   const values: Record<string, string[][]> = {
     "'AuditLog'!A1:D1": [['savedAt', 'form', 'ranges', 'rows']],
     "'AuditLog'!A:A": [['savedAt']],
+    ...overcoreValues(),
     "'Ordinary'!A1:G1": [[...ORDINARY_TAB.headers]],
     "'Ordinary'!A:A": [['date'], ['2026-11-17']],
     [DB]: [
@@ -97,5 +99,46 @@ describe('ordinaryStore', () => {
     await store.save(api)
     expect(store.entry.names).toEqual([])
     expect(store.status).toBe('error')
+  })
+
+  it('writes the Overcored row in the same batch and sets a remark', async () => {
+    const store = useOrdinaryStore()
+    const api = fakeApi()
+    api.values["'RosterLog'!A1:D"].push(baseline('Elysion'))
+    await store.load(api)
+    store.entry.date = '2026-11-21'
+    store.entry.gems = '600'
+    store.entry.tix = '0'
+    store.add('Elysion')
+    await store.save(api)
+    const [, data] = api.batchUpdateValues.mock.calls[0]
+    expect(data.map((d) => d.range.split('!')[0])).toEqual([
+      `'Ordinary'`,
+      `'Overcored'`,
+      `'AuditLog'`,
+    ])
+    expect(data[1].rows).toEqual([['2026-11-21', 'Ordinary', "'Elysion", 'Elysion', '']])
+    expect(store.remark).toMatch(/C8/)
+    expect(store.status).toBe('saved')
+  })
+
+  it('a failed AllPulls read writes nothing and keeps the entry', async () => {
+    const store = useOrdinaryStore()
+    const api = fakeApi()
+    await store.load(api)
+    store.entry.date = '2026-11-21'
+    store.entry.gems = '600'
+    store.entry.tix = '0'
+    store.add('Elysion')
+    const read = api.getValues.getMockImplementation()!
+    api.getValues.mockImplementation(async (id: string, range: string) => {
+      if (range.startsWith("'AllPulls'")) throw new Error('no access')
+      return read(id, range)
+    })
+    await store.save(api)
+    expect(store.status).toBe('error')
+    expect(api.batchUpdateValues).not.toHaveBeenCalled()
+    expect(store.remark).toBeNull()
+    expect(store.entry.names.length).toBe(1)
   })
 })

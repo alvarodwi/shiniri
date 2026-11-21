@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia'
 
-import { EVENT_TAB } from '@/config/sheets'
+import { OVERCORED_TAB, EVENT_TAB } from '@/config/sheets'
 import { toRow } from '@/services/event/eventRows'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import { readNikkes } from '@/services/nikke/nikkeDatabase'
 import type { Nikke } from '@/services/nikke/nikkeDatabase'
 import { ssrPool } from '@/services/nikke/nikkePool'
+import { checkOvercores } from '@/services/overcore/overcore'
 import { writeTabsAtEnd } from '@/services/sheets/tabWriter'
 import { sheetsApi } from '@/stores/authStore'
 import { COLLAB_TYPE } from '@/types/event'
@@ -32,6 +33,7 @@ export const useEventStore = defineStore('event', {
     status: 'idle' as 'idle' | 'loading' | 'saving' | 'saved' | 'error',
     error: null as string | null,
     lastSaved: null as string | null,
+    remark: null as string | null,
   }),
 
   getters: {
@@ -90,12 +92,25 @@ export const useEventStore = defineStore('event', {
       this.status = 'saving'
       this.error = null
       this.lastSaved = null
+      this.remark = null
       try {
+        const entry = this.entry
+        const oc = await checkOvercores(api, {
+          from: 'Event',
+          detail: '',
+          date: entry.date,
+          names: entry.names,
+          nikkes: this.nikkes,
+        })
         const { updatedRanges } = await writeTabsAtEnd(
           api,
-          [{ tab: EVENT_TAB, rows: [row] }],
+          [
+            { tab: EVENT_TAB, rows: [row] },
+            ...(oc.rows.length ? [{ tab: OVERCORED_TAB, rows: oc.rows }] : []),
+          ],
           'Event',
         )
+        this.remark = oc.remark
         // Clear the form before reloading, so a failed reload can't leave the row to be saved twice.
         this.entry = newEntry()
         this.lastSaved = updatedRanges[0]

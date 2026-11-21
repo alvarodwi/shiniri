@@ -53,7 +53,7 @@ describe('toNikkes', () => {
 describe('readNikkes', () => {
   it('reads the mock NikkeDatabase', async () => {
     const nikkes = await readNikkes(createMockSheetsApi(MOCK_SHEETS))
-    expect(nikkes).toHaveLength(4)
+    expect(nikkes).toHaveLength(5)
     expect(nikkes[0].name).toBe('Rapi')
   })
 

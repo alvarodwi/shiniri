@@ -1,9 +1,12 @@
 import {
+  ALL_PULLS_TAB,
   ANOMALY_TAB,
   EVENT_TAB,
   FURNACE_TAB,
   LEVEL_TAB,
   NIKKE_DATABASE_TAB,
+  OVERCORED_TAB,
+  ROSTER_LOG_TAB,
   MOLDS_TAB,
   SPARE_BODY_TAB,
   OTHER_TAB,
@@ -100,7 +103,19 @@ export const MOCK_SHEETS = sheets([
       '',
     ],
     [5004, 'New Nikke', 'SSR', 'MISSILIS', 'Defender', 'Step2', 'Water', 'MG', 999, ''],
+    [5005, 'Noah', 'SSR', 'PILGRIM', 'Defender', 'Step2', 'Wind', 'RL', 13, 45000],
   ]),
+  // Rapi and Noah sit at copy 11 (C10), so one more copy is an overcore: the two mock scenarios.
+  tab(ROSTER_LOG_TAB, [
+    ['2026-11-01', 5001, 'Rapi', 10],
+    ['2026-11-01', 5005, 'Noah', 11],
+  ]),
+  // Static, as the formula would show: the mock doesn't compute formulas.
+  tab(ALL_PULLS_TAB, [
+    ['2026-10-20', 'Rapi', 'Event', false, '', false],
+    ['2026-11-02', 'Rapi', 'Event', false, 11, false],
+  ]),
+  tab(OVERCORED_TAB, [['2025-05-01', 'Event Banner', 'Noah', 'Pilgrim', 'pilgrim core 8 pain']]),
   tab(EVENT_TAB, [
     ['2026-11-10', "'Rumani", 'Regular', 1500, 3, 8, 1, "'Rumani", ''],
     ['2026-11-14', '', 'Summer Limited', 0, 10, 10, 0, '', "'free banner"],

@@ -2,6 +2,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useOtherStore } from './otherStore'
+import { baseline, overcoreValues } from './overcoreTestData'
 
 import { NIKKE_DATABASE_TAB, OTHER_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
@@ -24,6 +25,7 @@ function fakeApi() {
   const values: Record<string, string[][]> = {
     "'AuditLog'!A1:D1": [['savedAt', 'form', 'ranges', 'rows']],
     "'AuditLog'!A:A": [['savedAt']],
+    ...overcoreValues(),
     "'Other'!A1:I1": [[...OTHER_TAB.headers]],
     "'Other'!A:A": [['date'], ['2026-11-17']],
     [DB]: [
@@ -97,5 +99,43 @@ describe('otherStore', () => {
     expect(store.entry.sourceType).toBe('')
     expect(store.status).toBe('saved')
     expect(store.lastSaved).toBe("'Other'!A3:I4")
+  })
+
+  it('writes the Overcored row in the same batch and sets a remark', async () => {
+    const store = useOtherStore()
+    const api = fakeApi()
+    api.values["'RosterLog'!A1:D"].push(baseline('Modernia'))
+    await store.load(api)
+    store.entry.date = '2026-11-21'
+    store.setSourceType('Welfare Unit')
+    Object.assign(store.entry, { sourceInfo: '3.5 Anniv', names: ['Modernia'], copies: '2' })
+    await store.save(api)
+    const [, data] = api.batchUpdateValues.mock.calls[0]
+    expect(data.map((d) => d.range.split('!')[0])).toEqual([`'Other'`, `'Overcored'`, `'AuditLog'`])
+    expect(data[1].rows).toEqual([
+      ['2026-11-21', 'Other', "'Modernia", 'Pilgrim', ''],
+      ['2026-11-21', 'Other', "'Modernia", 'Pilgrim', ''],
+    ])
+    expect(store.remark).toMatch(/C8/)
+    expect(store.status).toBe('saved')
+  })
+
+  it('a failed AllPulls read writes nothing and keeps the entry', async () => {
+    const store = useOtherStore()
+    const api = fakeApi()
+    await store.load(api)
+    store.entry.date = '2026-11-21'
+    store.setSourceType('Welfare Unit')
+    Object.assign(store.entry, { sourceInfo: '3.5 Anniv', names: ['Asuka'], copies: '2' })
+    const read = api.getValues.getMockImplementation()!
+    api.getValues.mockImplementation(async (id: string, range: string) => {
+      if (range.startsWith("'AllPulls'")) throw new Error('no access')
+      return read(id, range)
+    })
+    await store.save(api)
+    expect(store.status).toBe('error')
+    expect(api.batchUpdateValues).not.toHaveBeenCalled()
+    expect(store.remark).toBeNull()
+    expect(store.entry.names.length).toBe(1)
   })
 })

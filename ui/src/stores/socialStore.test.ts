@@ -1,6 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { baseline, overcoreValues } from './overcoreTestData'
 import { useSocialStore } from './socialStore'
 
 import { NIKKE_DATABASE_TAB, SOCIAL_TAB } from '@/config/sheets'
@@ -12,6 +13,7 @@ function fakeApi() {
   const values: Record<string, string[][]> = {
     "'AuditLog'!A1:D1": [['savedAt', 'form', 'ranges', 'rows']],
     "'AuditLog'!A:A": [['savedAt']],
+    ...overcoreValues(),
     "'Social'!A1:E1": [[...SOCIAL_TAB.headers]],
     "'Social'!A:A": [['date'], ['2026-11-17']],
     [DB]: [
@@ -138,5 +140,44 @@ describe('socialStore', () => {
     expect(store.error).toBe('no access')
     expect(store.entry.times).toBe('10')
     expect(store.canSave).toBe(false)
+  })
+
+  it('writes the Overcored row in the same batch and sets a remark', async () => {
+    const store = useSocialStore()
+    const api = fakeApi()
+    api.values["'RosterLog'!A1:D"].push(baseline('Biscuit'))
+    await store.load(api)
+    store.entry.date = '2026-11-21'
+    store.entry.times = '20'
+    store.add('Biscuit')
+    await store.save(api)
+    const [, data] = api.batchUpdateValues.mock.calls[0]
+    expect(data.map((d) => d.range.split('!')[0])).toEqual([
+      `'Social'`,
+      `'Overcored'`,
+      `'AuditLog'`,
+    ])
+    expect(data[1].rows).toEqual([['2026-11-21', 'Social', "'Biscuit", 'Tetra', '']])
+    expect(store.remark).toMatch(/C8/)
+    expect(store.status).toBe('saved')
+  })
+
+  it('a failed AllPulls read writes nothing and keeps the entry', async () => {
+    const store = useSocialStore()
+    const api = fakeApi()
+    await store.load(api)
+    store.entry.date = '2026-11-21'
+    store.entry.times = '20'
+    store.add('Biscuit')
+    const read = api.getValues.getMockImplementation()!
+    api.getValues.mockImplementation(async (id: string, range: string) => {
+      if (range.startsWith("'AllPulls'")) throw new Error('no access')
+      return read(id, range)
+    })
+    await store.save(api)
+    expect(store.status).toBe('error')
+    expect(api.batchUpdateValues).not.toHaveBeenCalled()
+    expect(store.remark).toBeNull()
+    expect(store.entry.names.length).toBe(1)
   })
 })

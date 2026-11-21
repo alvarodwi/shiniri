@@ -1,12 +1,15 @@
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { MOCK_SHEETS } from './fixtures'
 import { createMockSheetsApi } from './mockSheetsApi'
 
 import { useLevelStore } from '@/stores/levelStore'
 import { useLogStore } from '@/stores/logStore'
+import { useMoldsStore } from '@/stores/moldsStore'
 import { useSoloRaidStore } from '@/stores/soloRaidStore'
+import { useSpareBodyStore } from '@/stores/spareBodyStore'
+import { gameDay } from '@/utils/gameDay'
 
 // The real stores against the mock sheet: what yarn dev:mock shows after a save.
 beforeEach(() => setActivePinia(createPinia()))
@@ -44,5 +47,40 @@ describe('mock sheet with the real stores', () => {
     expect(raid.status).toBe('saved')
     expect(raid.entry.season).toBe(46)
     expect(raid.bosses[0]).toBe('Kraken')
+  })
+
+  // The two painful overcores `yarn dev:mock` reproduces (see ui/CLAUDE.md, Reviewing the UI).
+  const overcoredWrites = (api: ReturnType<typeof createMockSheetsApi>) => {
+    const spy = vi.spyOn(api, 'batchUpdateValues')
+    return () =>
+      spy.mock.calls.flatMap(([, data]) =>
+        data.filter((d) => d.range.startsWith("'Overcored'")).flatMap((d) => d.rows),
+      )
+  }
+
+  it('level 7: Gold Mileage Rapi', async () => {
+    const api = createMockSheetsApi(MOCK_SHEETS)
+    const added = overcoredWrites(api)
+    const store = useSpareBodyStore()
+    await store.load(api)
+    store.setSource('Gold Mileage')
+    Object.assign(store.entry, { target: 'Rapi', copies: '1' })
+    await store.save(api)
+    expect(store.status).toBe('saved')
+    expect(added()).toEqual([[gameDay(), 'SpareBody', "'Rapi", 'Elysion', '']])
+    expect(store.remark).toContain('Rapi C8')
+  })
+
+  it('level 6: Pilgrim Perfect Mold Noah', async () => {
+    const api = createMockSheetsApi(MOCK_SHEETS)
+    const added = overcoredWrites(api)
+    const store = useMoldsStore()
+    await store.load(api)
+    store.setMoldType('Pilgrim Perfect Mold')
+    Object.assign(store.entry, { amount: '1', names: ['Noah'] })
+    await store.save(api)
+    expect(store.status).toBe('saved')
+    expect(added()).toEqual([[gameDay(), 'Molds', "'Noah", 'Pilgrim', '']])
+    expect(store.remark).toMatch(/Noah C8.*And she's a Pilgrim\.$/)
   })
 })

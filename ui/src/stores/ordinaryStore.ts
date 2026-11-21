@@ -1,11 +1,12 @@
 import { defineStore } from 'pinia'
 
-import { ORDINARY_TAB } from '@/config/sheets'
+import { OVERCORED_TAB, ORDINARY_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import { readNikkes } from '@/services/nikke/nikkeDatabase'
 import type { Nikke } from '@/services/nikke/nikkeDatabase'
 import { ssrPool } from '@/services/nikke/nikkePool'
 import { toRow } from '@/services/ordinary/ordinaryRows'
+import { checkOvercores } from '@/services/overcore/overcore'
 import { writeTabsAtEnd } from '@/services/sheets/tabWriter'
 import { sheetsApi } from '@/stores/authStore'
 import type { OrdinaryEntry } from '@/types/ordinary'
@@ -26,6 +27,7 @@ export const useOrdinaryStore = defineStore('ordinary', {
     status: 'idle' as 'idle' | 'loading' | 'saving' | 'saved' | 'error',
     error: null as string | null,
     lastSaved: null as string | null,
+    remark: null as string | null,
   }),
 
   getters: {
@@ -73,12 +75,25 @@ export const useOrdinaryStore = defineStore('ordinary', {
       this.status = 'saving'
       this.error = null
       this.lastSaved = null
+      this.remark = null
       try {
+        const entry = this.entry
+        const oc = await checkOvercores(api, {
+          from: 'Ordinary',
+          detail: '',
+          date: entry.date,
+          names: entry.names,
+          nikkes: this.nikkes,
+        })
         const { updatedRanges } = await writeTabsAtEnd(
           api,
-          [{ tab: ORDINARY_TAB, rows: [row] }],
+          [
+            { tab: ORDINARY_TAB, rows: [row] },
+            ...(oc.rows.length ? [{ tab: OVERCORED_TAB, rows: oc.rows }] : []),
+          ],
           'Ordinary',
         )
+        this.remark = oc.remark
         // Clear the form before reloading, so a failed reload can't leave the row to be saved twice.
         this.entry = newEntry()
         this.lastSaved = updatedRanges[0]

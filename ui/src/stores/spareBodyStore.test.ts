@@ -1,6 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { baseline, overcoreValues } from './overcoreTestData'
 import { useSpareBodyStore } from './spareBodyStore'
 
 import { NIKKE_DATABASE_TAB, SPARE_BODY_TAB } from '@/config/sheets'
@@ -24,6 +25,7 @@ function fakeApi() {
   const values: Record<string, string[][]> = {
     "'AuditLog'!A1:D1": [['savedAt', 'form', 'ranges', 'rows']],
     "'AuditLog'!A:A": [['savedAt']],
+    ...overcoreValues(),
     "'SpareBody'!A1:D1": [[...SPARE_BODY_TAB.headers]],
     "'SpareBody'!A:A": [['date'], ['2026-11-17']],
     [DB]: [
@@ -104,5 +106,50 @@ describe('spareBodyStore', () => {
     expect(store.entry.copies).toBe('1')
     expect(store.status).toBe('saved')
     expect(store.lastSaved).toBe("'SpareBody'!A3:D4")
+  })
+
+  it('writes the Overcored row in the same batch and sets a remark', async () => {
+    const store = useSpareBodyStore()
+    const api = fakeApi()
+    api.values["'RosterLog'!A1:D"].push(baseline('Asuka'))
+    await store.load(api)
+    store.entry.date = '2026-11-21'
+    store.setSource('Gold Mileage')
+    store.entry.target = 'Asuka'
+    store.entry.copies = '2'
+    await store.save(api)
+    const [, data] = api.batchUpdateValues.mock.calls[0]
+    expect(data.map((d) => d.range.split('!')[0])).toEqual([
+      `'SpareBody'`,
+      `'Overcored'`,
+      `'AuditLog'`,
+    ])
+    expect(data[1].rows).toEqual([
+      ['2026-11-21', 'SpareBody', "'Asuka", 'Abnormal', ''],
+      ['2026-11-21', 'SpareBody', "'Asuka", 'Abnormal', ''],
+    ])
+    expect(store.remark).toMatch(/C9/)
+    expect(data[1].rows).toHaveLength(2)
+    expect(store.status).toBe('saved')
+  })
+
+  it('a failed AllPulls read writes nothing and keeps the entry', async () => {
+    const store = useSpareBodyStore()
+    const api = fakeApi()
+    await store.load(api)
+    store.entry.date = '2026-11-21'
+    store.setSource('Gold Mileage')
+    store.entry.target = 'Asuka'
+    store.entry.copies = '2'
+    const read = api.getValues.getMockImplementation()!
+    api.getValues.mockImplementation(async (id: string, range: string) => {
+      if (range.startsWith("'AllPulls'")) throw new Error('no access')
+      return read(id, range)
+    })
+    await store.save(api)
+    expect(store.status).toBe('error')
+    expect(api.batchUpdateValues).not.toHaveBeenCalled()
+    expect(store.remark).toBeNull()
+    expect(store.entry.target).toBe('Asuka')
   })
 })

@@ -146,3 +146,24 @@ export const SPREADSHEETS: Spreadsheet[] = [
     },
   },
 ]
+
+// Read-only here: sheet formulas fill copy and isOvercore.
+export const ALL_PULLS_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
+  tab: 'AllPulls',
+  headers: ['date', 'ssr', 'source', 'spook', 'copy', 'isOvercore'],
+}
+
+// Read-only here: the cli writes it.
+export const ROSTER_LOG_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
+  tab: 'RosterLog',
+  headers: ['date', 'nameCode', 'name', 'copies'],
+}
+
+// One row per Nikke copy past C7; notes stays blank, the owner fills it by hand.
+export const OVERCORED_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
+  tab: 'Overcored',
+  headers: ['date', 'from', 'ssr', 'manufacturer', 'notes'],
+}

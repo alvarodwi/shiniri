@@ -2,6 +2,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useMoldsStore } from './moldsStore'
+import { baseline, overcoreValues } from './overcoreTestData'
 
 import { NIKKE_DATABASE_TAB, MOLDS_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
@@ -24,6 +25,7 @@ function fakeApi() {
   const values: Record<string, string[][]> = {
     "'AuditLog'!A1:D1": [['savedAt', 'form', 'ranges', 'rows']],
     "'AuditLog'!A:A": [['savedAt']],
+    ...overcoreValues(),
     "'Molds'!A1:F1": [[...MOLDS_TAB.headers]],
     "'Molds'!A:A": [['date'], ['2026-11-17']],
     [DB]: [
@@ -92,5 +94,43 @@ describe('moldsStore', () => {
     expect(store.entry.moldType).toBe('')
     expect(store.status).toBe('saved')
     expect(store.lastSaved).toBe("'Molds'!A3:F3")
+  })
+
+  it('writes the Overcored row in the same batch and sets a remark', async () => {
+    const store = useMoldsStore()
+    const api = fakeApi()
+    api.values["'RosterLog'!A1:D"].push(baseline('Modernia'))
+    await store.load(api)
+    store.entry.date = '2026-11-21'
+    store.setMoldType('Pilgrim Perfect Mold')
+    store.entry.amount = '1'
+    store.entry.names = ['Modernia']
+    await store.save(api)
+    const [, data] = api.batchUpdateValues.mock.calls[0]
+    expect(data.map((d) => d.range.split('!')[0])).toEqual([`'Molds'`, `'Overcored'`, `'AuditLog'`])
+    expect(data[1].rows).toEqual([['2026-11-21', 'Molds', "'Modernia", 'Pilgrim', '']])
+    expect(store.remark).toMatch(/C8/)
+    expect(store.remark).toMatch(/And she's a Pilgrim\.$/)
+    expect(store.status).toBe('saved')
+  })
+
+  it('a failed AllPulls read writes nothing and keeps the entry', async () => {
+    const store = useMoldsStore()
+    const api = fakeApi()
+    await store.load(api)
+    store.entry.date = '2026-11-21'
+    store.setMoldType('Pilgrim Perfect Mold')
+    store.entry.amount = '1'
+    store.entry.names = ['Modernia']
+    const read = api.getValues.getMockImplementation()!
+    api.getValues.mockImplementation(async (id: string, range: string) => {
+      if (range.startsWith("'AllPulls'")) throw new Error('no access')
+      return read(id, range)
+    })
+    await store.save(api)
+    expect(store.status).toBe('error')
+    expect(api.batchUpdateValues).not.toHaveBeenCalled()
+    expect(store.remark).toBeNull()
+    expect(store.entry.names.length).toBe(1)
   })
 })

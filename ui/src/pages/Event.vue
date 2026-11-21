@@ -105,6 +105,7 @@ onMounted(() => store.load())
 
     <p v-if="store.error" role="alert" class="text-accent-ink py-3">{{ store.error }}</p>
     <p v-if="store.lastSaved" role="status" class="py-1">Saved to {{ store.lastSaved }}.</p>
+    <p v-if="store.remark" role="status" class="py-1">{{ store.remark }}</p>
 
     <div class="paper rule fixed inset-x-0 bottom-0 border-t px-4 py-3">
       <button
