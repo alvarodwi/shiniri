@@ -16,26 +16,24 @@ def test_unknown_part_with_cell_and_closest():
 
 
 def test_no_closest_when_nothing_is_near():
-    lines = names.sweep(DB, {"SpareBody": [["Date", "Target"], ["", ""], ["2023-03-09", "Zzzzzz"]]})
+    lines = names.sweep(DB, {"SpareBody": [["date", "target"], ["", ""], ["2023-03-09", "Zzzzzz"]]})
     assert lines[0] == "SpareBody!B3  Zzzzzz"
 
 
 def test_event_row_order_then_column_order():
-    tabs = {"Event": [["Date", "Rate-Up Name", "Rate-Up Type", "Resources Used", "", "Times", "Total \nSSR",
-                       "SSR Details"],
-                      ["", "", "", "Gems", "Tix"],
+    tabs = {"Event": [["date", "rateUpName", "rateUpType", "gems", "tix", "times", "totalSsr", "ssrDetails"],
                       ["2023-06-30", "Asuka Shikinami Langley", "Collab", "", "10", "10", "2",
                        "Asuka Shikinami Langley, Eve"]]}
     lines = names.sweep(DB, tabs)
-    assert [l.split("  ")[0] for l in lines[:3]] == ["Event!B3", "Event!H3", "Event!H3"]
+    assert [l.split("  ")[0] for l in lines[:3]] == ["Event!B2", "Event!H2", "Event!H2"]
     assert lines[-1] == "3 unknown names in 2 cells"
 
 
 def test_missing_header_goes_on():
-    tabs = {"Event": [["Date", "rateUpName", "SSR Details"], ["2023-06-30", "Nope", "Eve"]],
-            "Other": [["Date", "SSR Details"], ["2022-11-08", "Anis"]]}
+    tabs = {"Event": [["date", "Rate-Up Name", "ssrDetails"], ["2023-06-30", "Nope", "Eve"]],
+            "Other": [["date", "ssrDetails"], ["2022-11-08", "Anis"]]}
     lines = names.sweep(DB, tabs)
-    assert lines[0] == 'Event: no column "Rate-Up Name"'
+    assert lines[0] == 'Event: no column "rateUpName"'
     assert lines[1].startswith("Event!C2  Eve")
     assert lines[-1] == "1 unknown names in 1 cells"
 
@@ -59,7 +57,7 @@ class FakeApi:
 
 
 def test_report_reads_every_tab_and_keeps_going():
-    api = FakeApi({"'NikkeDatabase'": DB, "'Social'": [["Date", "Times", "Total SSR", "SSR Details"],
+    api = FakeApi({"'NikkeDatabase'": DB, "'Social'": [["date", "times", "totalSsr", "ssrDetails"],
                                                        ["2023-06-17", "1", "1", "Asuk"]]})
     lines = names.report(api)
     assert api.ranges == ["'NikkeDatabase'", "'Social'", "'Event'", "'Ordinary'", "'Molds'", "'SpareBody'",
@@ -74,7 +72,7 @@ def test_report_stops_when_database_unreadable():
 
 
 def test_closest_falls_back_to_leading_name():
-    lines = names.sweep(DB, {"SpareBody": [["Date", "Target"], ["2023-03-09", "Asuka Shikinami Langley"],
+    lines = names.sweep(DB, {"SpareBody": [["date", "target"], ["2023-03-09", "Asuka Shikinami Langley"],
                                            ["2023-03-10", "Rei Ayanami (Tentative Name)"]]})
     assert lines[:2] == ["SpareBody!B2  Asuka Shikinami Langley  (closest: Asuka)",
                          "SpareBody!B3  Rei Ayanami (Tentative Name)  (closest: Rei)"]

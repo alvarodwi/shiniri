@@ -16,12 +16,12 @@ from shiniri_cli.sheets import HttpSheets, SheetsError, column_letter, service_a
 CONFIG = Path(__file__).resolve().parents[1] / "config"
 DATABASE = "NikkeDatabase"
 COLUMNS = {  # tab -> name columns, by row-1 header text; dict order is report order
-    "Social": ("SSR Details",),
-    "Event": ("Rate-Up Name", "SSR Details"),
-    "Ordinary": ("SSR Details",),
+    "Social": ("ssrDetails",),
+    "Event": ("rateUpName", "ssrDetails"),
+    "Ordinary": ("ssrDetails",),
     "Molds": ("result",),
-    "SpareBody": ("Target",),
-    "Other": ("SSR Details",),
+    "SpareBody": ("target",),
+    "Other": ("ssrDetails",),
 }
 
 
