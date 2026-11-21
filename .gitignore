@@ -1,0 +1,5 @@
+# Shared across ui/ and cli/; each part keeps its own .gitignore
+.codegraph/
+.superpowers/
+.obsidian/
+.DS_Store

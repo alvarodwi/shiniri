@@ -1,0 +1,4 @@
+[build]
+  base = "ui"
+  command = "yarn build"
+  publish = "dist"

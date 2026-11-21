@@ -1,4 +1,4 @@
-# shiniri-cli
+# shiniri cli
 
 An interactive shell that fetches your NIKKE clear history from blablalink
 (campaign and tower lineups, plus the CDN reference files) and lets you search it.
@@ -19,6 +19,18 @@ Works the same on Windows, macOS and Linux, in any normal terminal.
 
 Windows only: Git Bash's default terminal (mintty) isn't a Windows console, so the prompt
 won't start there. Use PowerShell, cmd or Windows Terminal, or run it through `winpty`.
+
+## Homeserver install
+
+The homeserver needs only `cli/`, so clone the repo sparsely:
+
+```sh
+git clone --filter=blob:none --sparse https://github.com/alvarodwi/shiniri
+cd shiniri && git sparse-checkout set cli && git checkout develop
+cd cli
+```
+
+Update later with `git pull` from inside the clone.
 
 ## First run
 
@@ -100,7 +112,7 @@ replaces a stored file. The server only answers while you're in the union, so
 every :59 WIB. Once all 100 daily mission points are claimed, it appends one row of profile
 data (level, power, nikkes, currencies, progress, synchro, recycle room, lost relics) to the
 `Profile` tab of the Progression sheet. It writes that row and an `AuditLog` row in one
-request, the same way the shiniri web app does. If the daily isn't finished by the last check
+request, the same way the [shiniri web app](../ui/) does. If the daily isn't finished by the last check
 of the game day (02:59 WIB, before the 03:00 reset), the row is written anyway with
 `dailyDone` FALSE. `data/daily.json` holds today's progress and whether the row is written. It
 never goes to the sheet. A failed check is logged and retried the next hour.

@@ -1,6 +1,4 @@
-# Shiniri
-
-[![Netlify Status](https://api.netlify.com/api/v1/badges/2e6b2967-1726-4ca0-b930-69657f2deb55/deploy-status)](https://app.netlify.com/projects/shiniri/deploys)
+# shiniri ui
 
 Live at <https://shiniri.netlify.app/>.
 
@@ -29,6 +27,8 @@ in the browser is the only access control.
 
 ## Local development
 
+Run from `ui/`:
+
 ```sh
 cp .env.example .env.local   # fill in both values
 yarn install
@@ -52,13 +52,16 @@ Without it, every save is refused: a missing tab shows `Sheets API 400: Unable t
 
 ## Deploy (Netlify)
 
-1. Connect the private GitHub repo in Netlify.
-2. Production branch: `main`. Build command: `yarn build`. Publish directory: `dist`.
+1. Connect the GitHub repo in Netlify. Production branch: `main`.
+2. Build settings come from `../netlify.toml` (base `ui`, `yarn build`, publish `dist`). Leave the
+   build fields in the Netlify UI empty, so the file is the only source.
 3. Environment variables: `VITE_GOOGLE_CLIENT_ID`, and `VITE_JOURNAL_SHEET_ID` set to the **real**
    sheet.
 4. Add the Netlify URL to the OAuth client's JavaScript origins.
 
 ## Checks
+
+Run from `ui/`:
 
 ```sh
 yarn format && yarn lint && yarn check && yarn build && yarn test

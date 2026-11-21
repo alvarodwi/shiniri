@@ -421,7 +421,7 @@ def _interrupt(signum, frame):
 
 
 def run() -> None:
-    """`uv run shiniri-cli [watch]` entry point. Data lives in the repo root, two levels above src/shiniri_cli/."""
+    """`uv run shiniri-cli [watch]` entry point. Data lives in `cli/`, two levels above src/shiniri_cli/."""
     root = Path(__file__).resolve().parents[2]
     if sys.argv[1:] == ["watch"]:
         import signal
