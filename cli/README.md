@@ -155,6 +155,13 @@ Otherwise a test row dated today makes the real run think today is already writt
 icons listed in `tools/items.json` as webp files in `../ui/public/img/`. Commit what it writes. It needs `cwebp` on `PATH` (the `webp` package). Files that already exist are
 skipped, so delete one to refetch it. What else the CDN holds is in `../docs/cdn-map.md`.
 
+## Name sweep (dev machine only)
+
+`uv run python tools/names.py` lists every name in the gacha tabs (`Social`, `Event`, `Ordinary`,
+`Molds`, `SpareBody`, `Other`) that isn't a `name` in `NikkeDatabase`, one line per cell part, with
+the closest known name. It only reads. It sweeps `gacha_spreadsheet_id` from `config/sheets.json`;
+pass another spreadsheet id to sweep that one instead (e.g. prod). Fix the cells by hand and rerun.
+
 ## Where things live
 
 ```
@@ -167,7 +174,7 @@ data/raw/json/           what the server sent: the source of truth (union/ holds
 data/parsed/csv/         campaign_clears.csv, tower_clears.csv, lineups.csv (rebuilt from raw)
 data/exports/            one CSV per search, grouped into campaign/, tower/ and all/
 src/shiniri_cli/         the code: store, queries, fetch, cli
-tools/                   dev-only scripts (assets.py, items.json), never used by watch
+tools/                   dev-only scripts (assets.py, items.json, names.py), never used by watch
 ```
 
 `data/` and `config/cookie.txt` hold personal data and are never committed.
