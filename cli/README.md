@@ -145,6 +145,12 @@ One-time setup:
 Test against a copy of the sheet first. Then clear the test rows from `Profile` and `AuditLog`.
 Otherwise a test row dated today makes the real run think today is already written.
 
+## Image assets (dev machine only)
+
+`uv run python tools/assets.py` caches small Nikke icons (`si`, default skin) and the resource
+icons listed in `tools/items.json` as webp files in `../ui/public/img/`. Commit what it writes. It needs `cwebp` on `PATH` (the `webp` package). Files that already exist are
+skipped, so delete one to refetch it. What else the CDN holds is in `../docs/cdn-map.md`.
+
 ## Where things live
 
 ```
@@ -157,6 +163,7 @@ data/raw/json/           what the server sent: the source of truth (union/ holds
 data/parsed/csv/         campaign_clears.csv, tower_clears.csv, lineups.csv (rebuilt from raw)
 data/exports/            one CSV per search, grouped into campaign/, tower/ and all/
 src/shiniri_cli/         the code: store, queries, fetch, cli
+tools/                   dev-only scripts (assets.py, items.json), never used by watch
 ```
 
 `data/` and `config/cookie.txt` hold personal data and are never committed.
