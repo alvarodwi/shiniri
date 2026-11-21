@@ -123,6 +123,13 @@ export const OTHER_TAB: TabSpec = {
   ],
 }
 
+// One row per purchase; prices are numbers the sheet formats as currency. See services/spending.
+export const SPENDING_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
+  tab: 'Spending',
+  headers: ['purchaseDate', 'packageName', 'type', 'priceIdr', 'priceUsd', 'platform', 'notes'],
+}
+
 // Every save appends one row here, in the same write as its data.
 export const AUDIT_HEADERS = ['savedAt', 'form', 'ranges', 'rows'] as const
 

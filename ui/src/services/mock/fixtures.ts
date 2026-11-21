@@ -9,6 +9,7 @@ import {
   ROSTER_LOG_TAB,
   MOLDS_TAB,
   SPARE_BODY_TAB,
+  SPENDING_TAB,
   OTHER_TAB,
   ORDINARY_TAB,
   SOCIAL_TAB,
@@ -135,6 +136,19 @@ export const MOCK_SHEETS = sheets([
   tab(OTHER_TAB, [
     ['2026-04-23', 'Welfare Unit', "'3.5 Anniv", '', '', 1, 1, "'Avistar", ''],
     ['2026-01-05', 'Guaranteed SSR', "'Step Up 2026", '', 6600, 31, 2, "'Yan, Grave", ''],
+  ]),
+  tab(SPENDING_TAB, [
+    ['2026-10-08', "'T.T.S Tetra Entertainment Pack V.1", 'Music Pack', 89000, 4.99, 'Apple', ''],
+    [
+      '2026-10-30',
+      "'30-day supply",
+      'Monthly Pass',
+      79000,
+      4.99,
+      'RazerGold',
+      "'from midas buy again",
+    ],
+    ['2026-11-08', "'Isabel Event Pass (November)", 'Event Pass', 314333, 19.99, 'RazerGold', ''],
   ]),
   tab(SOCIAL_TAB, [
     ['2026-11-04', 10, 1, "'Rumani", ''],

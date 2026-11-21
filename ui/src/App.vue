@@ -18,6 +18,7 @@ const links = [
   { to: '/molds', label: 'Molds' },
   { to: '/sparebody', label: 'SpareBody' },
   { to: '/other', label: 'Other' },
+  { to: '/spending', label: 'Spending' },
   { to: '/gear', label: 'Gear' },
   { to: '/level', label: 'Level' },
   { to: '/social', label: 'Social' },

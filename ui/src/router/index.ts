@@ -12,6 +12,7 @@ import Social from '@/pages/Social.vue'
 import SoloRaid from '@/pages/SoloRaid.vue'
 import SpareBodyPage from '@/pages/SpareBody.vue'
 import Special from '@/pages/Special.vue'
+import SpendingPage from '@/pages/Spending.vue'
 
 export const router = createRouter({
   history: createWebHashHistory(),
@@ -23,6 +24,7 @@ export const router = createRouter({
     { path: '/molds', component: MoldsPage },
     { path: '/sparebody', component: SpareBodyPage },
     { path: '/other', component: OtherPage },
+    { path: '/spending', component: SpendingPage },
     { path: '/gear', component: Gear },
     { path: '/level', component: Level },
     { path: '/social', component: Social },
