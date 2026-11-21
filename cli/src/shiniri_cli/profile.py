@@ -193,7 +193,7 @@ async def refresh_reference(store: Store) -> str:
 def _check(store: Store, now: datetime, log: Callable[[str], None]) -> str:
     log(asyncio.run(refresh_reference(store)))  # first: profile, clears and union all read these files
     # Every file is re-read each check, so a cookie ambil refreshed or a fixed config is picked up.
-    from . import nikke_sheet
+    from . import nikke_sheet, roster_sheet
     from .clear_sheet import sync_clears  # clear_sheet imports WIB from here
     from .union_sheet import sync_union
     cookies = load_cookie(store)
@@ -216,10 +216,20 @@ def _check(store: Store, now: datetime, log: Callable[[str], None]) -> str:
                 return await check_once(store, now, client, cookies["game_openid"], write, clears=sheet_sync)
         text = asyncio.run(go())  # after the daily write, so a slow gacha step cannot cross the 03:00 reset
         if gacha_id := ids.get("gacha_spreadsheet_id"):  # never raises: a failure is its own line
-            log(nikke_sheet.sync_nikke_database(store, HttpSheets(gacha_id, token, http),
-                                                timestamp=wib_timestamp(now)))
+            gacha = HttpSheets(gacha_id, token, http)
+            log(nikke_sheet.sync_nikke_database(store, gacha, timestamp=wib_timestamp(now)))
+
+            async def roster() -> str:
+                async with make_client(cookies) as client:
+                    return await roster_sheet.sync_roster_log(client, cookies["game_openid"], gacha,
+                                                              day=game_day(now), timestamp=wib_timestamp(now))
+            try:
+                log(asyncio.run(roster()))
+            except Exception as e:  # client setup or teardown; sync_roster_log itself never raises
+                log(f"RosterLog: {type(e).__name__}: {e}")
         else:
             log("NikkeDatabase: no gacha_spreadsheet_id")
+            log("RosterLog: no gacha_spreadsheet_id")
         return text
 
 

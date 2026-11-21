@@ -251,12 +251,13 @@ def test_check_joins_clears_and_union(store, monkeypatch):
     now = datetime(2026, 11, 20, 12, 59, tzinfo=WIB)
     lines = []
     assert profile._check(store, now, lines.append) == "Campaign +0 · Tower +0 · Union +1 · Roster +1"
-    assert lines == ["sync: raid_list changed", "Campaign: wrote", "NikkeDatabase: no gacha_spreadsheet_id"]
+    assert lines == ["sync: raid_list changed", "Campaign: wrote", "NikkeDatabase: no gacha_spreadsheet_id",
+                     "RosterLog: no gacha_spreadsheet_id"]
     assert seen == {"api": "sheets", "now": now.timestamp()}
 
 
-def _check_with_gacha(store, monkeypatch, fake_nikke):
-    from shiniri_cli import clear_sheet, nikke_sheet, profile, union_sheet
+def _check_with_gacha(store, monkeypatch, fake_nikke, fake_roster):
+    from shiniri_cli import clear_sheet, nikke_sheet, profile, roster_sheet, union_sheet
 
     store.config_dir.mkdir(parents=True, exist_ok=True)
     (store.config_dir / "sheets.json").write_text(
@@ -284,6 +285,10 @@ def _check_with_gacha(store, monkeypatch, fake_nikke):
     monkeypatch.setattr(union_sheet, "sync_union", fake_union)
     monkeypatch.setattr(profile, "sync_reference", fake_sync)
     monkeypatch.setattr(nikke_sheet, "sync_nikke_database", lambda store_, api, *, timestamp: fake_nikke(api))
+
+    async def roster(client, openid, api, *, day, timestamp):
+        return fake_roster(openid, api, day, timestamp)
+    monkeypatch.setattr(roster_sheet, "sync_roster_log", roster)
     lines = []
     text = profile._check(store, datetime(2026, 11, 20, 12, 59, tzinfo=WIB), lines.append)
     return text, lines, apis
@@ -295,9 +300,27 @@ def test_check_syncs_nikke_database(store, monkeypatch):
     def fake_nikke(api):
         seen.append(api)
         return "NikkeDatabase +2"
-    text, lines, apis = _check_with_gacha(store, monkeypatch, fake_nikke)
-    assert seen == ["sheets:g"] and lines[-1] == "NikkeDatabase +2"
+    text, lines, apis = _check_with_gacha(store, monkeypatch, fake_nikke, lambda *a: "RosterLog +0")
+    assert seen == ["sheets:g"] and lines[-2] == "NikkeDatabase +2"
     assert apis == {"clears": "sheets:x", "union": "sheets:x"} and text == "Campaign +0 · Union +1"
+
+
+def test_check_logs_roster_after_nikke_database(store, monkeypatch):
+    seen = []
+
+    def fake_roster(*args):
+        seen.append(args)
+        return "RosterLog +2"
+    text, lines, _ = _check_with_gacha(store, monkeypatch, lambda api: "NikkeDatabase +2", fake_roster)
+    assert lines[-2:] == ["NikkeDatabase +2", "RosterLog +2"]
+    assert seen == [("me", "sheets:g", "2026-11-20", "2026-11-20 12:59:00")]
+    assert text == "Campaign +0 · Union +1"
+
+
+def test_roster_failure_leaves_the_rest(store, monkeypatch):
+    text, lines, _ = _check_with_gacha(store, monkeypatch, lambda api: "NikkeDatabase +2",
+                                       lambda *a: "RosterLog: boom")
+    assert lines[-2:] == ["NikkeDatabase +2", "RosterLog: boom"] and text == "Campaign +0 · Union +1"
 
 
 def test_refresh_reference_line(store, monkeypatch):
@@ -319,3 +342,10 @@ def test_refresh_reference_never_raises(store):  # tmp store has no config/sourc
 def test_missing_stage_list_noted(store):
     (store.raw_dir / "stage_list.json").unlink()
     assert run_check(store, NOON, 100, make_write([])).endswith("wrote 'Profile'!A5:AU5 (stage_list missing)")
+
+
+def test_roster_exception_is_a_line_not_a_crash(store, monkeypatch):
+    def boom(*a):
+        raise RuntimeError("client died")
+    text, lines, _ = _check_with_gacha(store, monkeypatch, lambda api: "NikkeDatabase +2", boom)
+    assert lines[-1] == "RosterLog: RuntimeError: client died" and text == "Campaign +0 · Union +1"

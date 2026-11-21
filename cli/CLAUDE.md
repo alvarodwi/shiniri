@@ -13,9 +13,10 @@ The sheet contract and development flow are in `../CLAUDE.md`. Paths here are re
 
 - The writer is `write_rows` in `src/shiniri_cli/sheets.py`, a port of
   `../ui/src/services/sheets/tabWriter.ts`. Each tab writer keys on column A (date, stage id,
-  season, `nameCode`).
+  season, `nameCode`). `RosterLog` is the exception: it keys on `nameCode` plus `copies` (column A is
+  always the date), so it appends when a count changes.
 - `tools/` holds dev-only scripts run from the owner's machine (`tools/assets.py` fills
-  `../ui/public/img/`). They are not part of the `shiniri_cli` package and `watch` never imports
+  `../ui/public/img/`; `tools/cdn.py` prints CDN URLs for asset paths). They are not part of the `shiniri_cli` package and `watch` never imports
   them.
 
 ## Checks
