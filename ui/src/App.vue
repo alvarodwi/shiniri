@@ -15,6 +15,7 @@ const links = [
   { to: '/anomaly', label: 'Anomaly' },
   { to: '/gear', label: 'Gear' },
   { to: '/level', label: 'Level' },
+  { to: '/social', label: 'Social' },
   { to: '/solo-raid', label: 'Solo Raid' },
   { to: '/special', label: 'Special' },
   { to: '/log', label: 'Log' },

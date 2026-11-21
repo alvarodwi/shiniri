@@ -61,3 +61,13 @@ export function nikkeIcon(resourceId: string): string | null {
     ? `${import.meta.env.BASE_URL}img/nikke/si/c${id.padStart(3, '0')}.webp`
     : null
 }
+
+// Name search for the picker: names starting with the query first, then the rest in sheet order.
+// A blank query matches nothing, so the picker shows no list until the owner types.
+export function searchNikkes(nikkes: Nikke[], query: string, limit = 8): Nikke[] {
+  const q = query.trim().toLowerCase()
+  if (!q) return []
+  const hits = nikkes.filter((n) => n.name.toLowerCase().includes(q))
+  const starts = hits.filter((n) => n.name.toLowerCase().startsWith(q))
+  return [...starts, ...hits.filter((n) => !starts.includes(n))].slice(0, limit)
+}

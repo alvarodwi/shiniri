@@ -3,6 +3,7 @@ import {
   FURNACE_TAB,
   LEVEL_TAB,
   NIKKE_DATABASE_TAB,
+  SOCIAL_TAB,
   SOLO_RAID_TAB,
   SPREADSHEETS,
   T9MANU_TAB,
@@ -94,6 +95,11 @@ export const MOCK_SHEETS = sheets([
       '',
     ],
     [5004, 'New Nikke', 'SSR', 'MISSILIS', 'Defender', 'Step2', 'Water', 'MG', 999, ''],
+  ]),
+  tab(SOCIAL_TAB, [
+    ['2026-11-04', 10, 1, "'Rumani", ''],
+    ['2026-11-13', 20, 0, '', ''],
+    ['2026-11-17', 20, 0, '', "'let's make a habit of 20 pull every tuesday"],
   ]),
   ...SPREADSHEETS.map((s) => tab(s.audit, AUDIT_ROWS[s.name])),
 ])

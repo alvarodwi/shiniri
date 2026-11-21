@@ -61,6 +61,13 @@ export const NIKKE_DATABASE_TAB: TabSpec = {
   ],
 }
 
+// totalSsr is the count of the names in ssrDetails; see services/social/socialRows.ts.
+export const SOCIAL_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
+  tab: 'Social',
+  headers: ['date', 'times', 'totalSsr', 'ssrDetails', 'notes'],
+}
+
 // Every save appends one row here, in the same write as its data.
 export const AUDIT_HEADERS = ['savedAt', 'form', 'ranges', 'rows'] as const
 

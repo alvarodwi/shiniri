@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { nikkeIcon, readNikkes, toNikkes } from './nikkeDatabase'
+import { nikkeIcon, readNikkes, searchNikkes, toNikkes } from './nikkeDatabase'
+import type { Nikke } from './nikkeDatabase'
 
 import { NIKKE_DATABASE_TAB } from '@/config/sheets'
 import { MOCK_SHEETS } from '@/services/mock/fixtures'
@@ -78,5 +79,29 @@ describe('nikkeIcon', () => {
     expect(nikkeIcon('')).toBeNull()
     expect(nikkeIcon(' ')).toBeNull()
     expect(nikkeIcon('abc')).toBeNull()
+  })
+})
+
+describe('searchNikkes', () => {
+  const nikke = (name: string): Nikke => ({ ...toNikkes([['1', name]])[0] })
+  const list = ['Biscuit', 'Soline: Frost Ticket', 'Frima', 'Admi', 'Maiden'].map(nikke)
+  const names = (q: string, limit?: number) => searchNikkes(list, q, limit).map((n) => n.name)
+
+  it('matches mid-string, ignoring case and surrounding spaces', () => {
+    expect(names('frost')).toEqual(['Soline: Frost Ticket'])
+    expect(names('  BIS ')).toEqual(['Biscuit'])
+  })
+
+  it('returns nothing for a blank query', () => {
+    expect(names('')).toEqual([])
+    expect(names('   ')).toEqual([])
+  })
+
+  it('caps the results at the limit', () => {
+    expect(names('i', 2)).toHaveLength(2)
+  })
+
+  it('lists names starting with the query before mid-string matches', () => {
+    expect(names('ma')).toEqual(['Maiden', 'Frima'])
   })
 })
