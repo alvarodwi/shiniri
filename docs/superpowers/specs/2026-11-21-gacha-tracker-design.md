@@ -23,6 +23,8 @@ only the owner's own tracking.
   headers (`Resources Used` over `Gems`/`Tix` becomes `gems`, `tix`), on both sheets.
 - Several rows share a date (Social in the morning, Event twice later). Gacha rows are never
   deduped by date.
+- `NikkeDatabase` `name` cells may be renamed by hand (collab full names), and `releaseDate` is
+  filled by hand. The cli keys on `nameCode`, so renames are never re-appended.
 - Tabs the owner keeps by hand, untouched by shiniri: `Stats`, `AcquisitionLog`, `NikkeRoster`
   (to be replaced by `NikkeDatabase`), `AllPulls`, `DupeTracker` (likely deleted), `Overcored`,
   `Spending`, `CostumeGallery`, and the `*Csv` / `Molds23` tabs.
@@ -33,9 +35,8 @@ only the owner's own tracking.
    `2026-11-21-nikke-database-cli-design.md`.
 2. **cli: name sweep.** A read-only report of every name in the gacha tabs' result columns that
    isn't a `name` in `NikkeDatabase`. The owner fixes rows by hand.
-3. **cli tool: release dates.** A `tools/` script (like `tools/assets.py`) that fetches release
-   dates from a source the owner is still looking for and prints TSV for the rows with a blank
-   `releaseDate`. The owner pastes it; nothing writes existing rows.
+3. **Release dates and collab aliases, by hand on the sheet.** No script. Spec:
+   `2026-11-21-collab-aliases-design.md`.
 4. **ui: gacha sheet wiring.** A second entry in `SPREADSHEETS` with its own `AuditLog` and env var.
    The pages read `NikkeDatabase` for name pickers and `ui/public/img/nikke/si/` icons (by
    `resourceId`).

@@ -48,9 +48,9 @@ Columns, found by their row-1 header text (verbatim, as both sheets have them to
 ## Known findings (test copy, 2026-11-21)
 
 About 15 unknown cells, nearly all collab full names (`Asuka Shikinami Langley`,
-`Rei Ayanami (Tentative Name)`, `Little Mermaid (Siren)`, `E.H`). `Eve` and `Belora: Pumpkin Witch`
-are not in `nikke_list_en.json` at all, so renaming can't fix them; they stay in the report until the
-source has them.
+`Rei Ayanami (Tentative Name)`, `Little Mermaid (Siren)`, `E.H`). The source has `EVE` (the sweep is
+case-sensitive) and `Belorta: Pumpkin Witch` (the sheet has the typo `Belora`). Collab names are
+resolved by renaming `NikkeDatabase` cells by hand; see `2026-11-21-collab-aliases-design.md`.
 
 ## Builder notes
 
