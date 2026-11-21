@@ -4,6 +4,7 @@ import { SOCIAL_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import { readNikkes } from '@/services/nikke/nikkeDatabase'
 import type { Nikke } from '@/services/nikke/nikkeDatabase'
+import { ssrPool } from '@/services/nikke/nikkePool'
 import { writeTabsAtEnd } from '@/services/sheets/tabWriter'
 import { toRow } from '@/services/social/socialRows'
 import { sheetsApi } from '@/stores/authStore'
@@ -25,11 +26,7 @@ export const useSocialStore = defineStore('social', {
     row: (state) => toRow(state.entry),
     // totalSsr counts SSRs only. Abnormal (collab, event only) and Pilgrim (event and ordinary only)
     // never come out of a social pull.
-    ssrNikkes: (state) =>
-      state.nikkes.filter(
-        (n) =>
-          n.rarity === 'SSR' && !['abnormal', 'pilgrim'].includes(n.manufacturer.toLowerCase()),
-      ),
+    ssrNikkes: (state) => ssrPool(state.nikkes, { pilgrim: false, abnormal: false }),
     canSave(): boolean {
       return (
         this.row !== null &&

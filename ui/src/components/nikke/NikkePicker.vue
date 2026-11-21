@@ -5,8 +5,15 @@ import { nikkeIcon, searchNikkes } from '@/services/nikke/nikkeDatabase'
 import type { Nikke } from '@/services/nikke/nikkeDatabase'
 
 // Names come only from the list, never free text, so rows always match NikkeDatabase. The same name
-// can be picked again (a Nikke can drop twice in one session).
-const props = defineProps<{ nikkes: Nikke[]; modelValue: string[] }>()
+// can be picked again (a Nikke can drop twice in one session). `single` makes a pick replace the
+// value, for a field that holds one name. `pinned` shows a one-tap chip for a likely pick; it is
+// ignored in single mode.
+const props = defineProps<{
+  nikkes: Nikke[]
+  modelValue: string[]
+  single?: boolean
+  pinned?: string
+}>()
 const emit = defineEmits<{ 'update:modelValue': [names: string[]] }>()
 
 const query = ref('')
@@ -15,7 +22,7 @@ const results = computed(() => searchNikkes(props.nikkes, query.value))
 const broken = ref(new Set<string>())
 
 function pick(name: string) {
-  emit('update:modelValue', [...props.modelValue, name])
+  emit('update:modelValue', props.single ? [name] : [...props.modelValue, name])
   query.value = ''
 }
 
@@ -37,6 +44,15 @@ const icon = (n: Nikke) => (broken.value.has(n.resourceId) ? null : nikkeIcon(n.
 
 <template>
   <div class="flex flex-col gap-2 text-sm">
+    <button
+      v-if="pinned && !single"
+      type="button"
+      class="focus press rule-ink paper min-h-11 self-start border px-3"
+      @click="pick(pinned)"
+    >
+      + {{ pinned }}
+    </button>
+
     <label class="flex flex-col gap-1">
       Search Nikke
       <input

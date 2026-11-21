@@ -13,6 +13,7 @@ const MockBanner = __MOCK__
   : null
 const links = [
   { to: '/anomaly', label: 'Anomaly' },
+  { to: '/event', label: 'Event' },
   { to: '/gear', label: 'Gear' },
   { to: '/level', label: 'Level' },
   { to: '/social', label: 'Social' },

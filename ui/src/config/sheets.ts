@@ -68,6 +68,23 @@ export const SOCIAL_TAB: TabSpec = {
   headers: ['date', 'times', 'totalSsr', 'ssrDetails', 'notes'],
 }
 
+// times is tix + gems / 300 and totalSsr is the count of ssrDetails; see services/event/eventRows.ts.
+export const EVENT_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
+  tab: 'Event',
+  headers: [
+    'date',
+    'rateUpName',
+    'rateUpType',
+    'gems',
+    'tix',
+    'times',
+    'totalSsr',
+    'ssrDetails',
+    'notes',
+  ],
+}
+
 // Every save appends one row here, in the same write as its data.
 export const AUDIT_HEADERS = ['savedAt', 'form', 'ranges', 'rows'] as const
 

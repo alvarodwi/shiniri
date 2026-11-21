@@ -1,5 +1,6 @@
 import {
   ANOMALY_TAB,
+  EVENT_TAB,
   FURNACE_TAB,
   LEVEL_TAB,
   NIKKE_DATABASE_TAB,
@@ -95,6 +96,10 @@ export const MOCK_SHEETS = sheets([
       '',
     ],
     [5004, 'New Nikke', 'SSR', 'MISSILIS', 'Defender', 'Step2', 'Water', 'MG', 999, ''],
+  ]),
+  tab(EVENT_TAB, [
+    ['2026-11-10', "'Rumani", 'Regular', 1500, 3, 8, 1, "'Rumani", ''],
+    ['2026-11-14', '', 'Summer Limited', 0, 10, 10, 0, '', "'free banner"],
   ]),
   tab(SOCIAL_TAB, [
     ['2026-11-04', 10, 1, "'Rumani", ''],
