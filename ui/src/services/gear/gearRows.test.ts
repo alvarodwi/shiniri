@@ -33,13 +33,13 @@ describe('t9ManuRow', () => {
 })
 
 describe('gearCode', () => {
-  it('writes manufacturer-classType-slotType', () => {
+  it('writes manufacturer-class-slot', () => {
     expect(gearCode(abnSupHelmet)).toBe('Abnormal-Supporter-Helmet')
   })
 })
 
 describe('furnaceRow', () => {
-  it('maps to Date | Target | Sacrifice 1 | Sacrifice 2 | Result', () => {
+  it('maps to date | target | sacrifice1 | sacrifice2 | result', () => {
     expect(furnaceRow(DATE, furnaceCard())).toEqual([
       DATE,
       'Pilgrim',

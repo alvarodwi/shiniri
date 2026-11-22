@@ -14,7 +14,7 @@ function fakeApi(levels: string[]) {
     "'AuditLog'!A1:D1": [['savedAt', 'form', 'ranges', 'rows']],
     "'AuditLog'!A:A": [['savedAt']],
     "'LevelLog'!A1:D1": [[...LEVEL_TAB.headers]],
-    [COL_A]: [['newSynchroLevel'], ...levels.map((l) => [l])],
+    [COL_A]: [['synchroLevel'], ...levels.map((l) => [l])],
     // 45968 is 2025-11-07 as a sheet serial; every fake row shares it
     ...Object.fromEntries(levels.map((_, i) => [`'LevelLog'!B${i + 2}`, [['45968']]])),
   }
@@ -99,7 +99,7 @@ describe('levelStore', () => {
     const { store, api } = setup(['210'])
     await store.load(api)
     store.target = 225
-    api.values[COL_A] = [['newSynchroLevel'], ['210'], ['225']]
+    api.values[COL_A] = [['synchroLevel'], ['210'], ['225']]
     api.values["'LevelLog'!B3"] = [['45968']]
     await store.save(api)
     expect(api.batchUpdateValues).not.toHaveBeenCalled()

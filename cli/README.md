@@ -158,7 +158,7 @@ skipped, so delete one to refetch it. What else the CDN holds is in `../docs/cdn
 ## Name sweep (dev machine only)
 
 `uv run python tools/names.py` lists every name in the gacha tabs (`Social`, `Event`, `Ordinary`,
-`Molds`, `SpareBody`, `Other`) that isn't a `name` in `NikkeDatabase`, one line per cell part, with
+`Mold`, `Exchange`, `Extra`) that isn't a `nikke` in `NikkeDatabase`, one line per cell part, with
 the closest known name. It only reads. It sweeps `gacha_spreadsheet_id` from `config/sheets.json`;
 pass another spreadsheet id to sweep that one instead (e.g. prod). Fix the cells by hand and rerun.
 

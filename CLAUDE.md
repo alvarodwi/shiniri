@@ -29,7 +29,7 @@ purpose (TypeScript vs Python), and that's expected.
 - Never hardcode row numbers. The sheet is live data and grows daily.
 - The owner edits the sheet by hand: new tabs, header rows, and fixes to logged rows. Neither part
   ever creates tabs or edits rows.
-- Sheet strings (tab names, headers, `source`/`sourceType` values, slot names) must match the sheet
+- Sheet strings (tab names, headers, `source` values, slot names) must match the sheet
   verbatim. Ask for the exact text when unsure, never guess.
 - Headers of tabs either part writes to are lowerCamelCase with no spaces (`bossElement`,
   `damage`). The owner renames old headers by hand, on both the real sheet and the copy.

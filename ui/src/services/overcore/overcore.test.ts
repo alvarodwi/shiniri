@@ -123,7 +123,7 @@ describe('overcore', () => {
   })
 
   it('remark: the source level line, every overcore named, Pilgrim line added', () => {
-    // A Pilgrim from a Perfect Mold keeps the mold line (level 5), never SpareBody's "bought" line.
+    // A Pilgrim from a Perfect Mold keeps the mold line (level 5), never Exchange's "bought" line.
     const r = remark([{ name: 'Noah', copy: 12 }], 'Mold', 'Pilgrim Perfect Mold', nikkes, () => 0)
     expect(r).toBe(`${OVERCORE_LINES[5][0].replace('{who}', 'Noah C8')} ${PILGRIM_LINE}`)
     expect(

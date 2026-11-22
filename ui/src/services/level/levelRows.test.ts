@@ -4,20 +4,20 @@ import { lastLevel, levelSteps, toRows } from './levelRows'
 
 describe('lastLevel', () => {
   it('reads the last level and its sheet row, skipping trailing blanks', () => {
-    expect(lastLevel(['newSynchroLevel', '200', '205', '210', '', ' '])).toEqual({
+    expect(lastLevel(['synchroLevel', '200', '205', '210', '', ' '])).toEqual({
       level: 210,
       row: 4,
     })
   })
 
   it('refuses a last row that is not a number, since the next save lands below it', () => {
-    expect(() => lastLevel(['newSynchroLevel', '210', '#REF!'])).toThrow(
+    expect(() => lastLevel(['synchroLevel', '210', '#REF!'])).toThrow(
       "LevelLog row 3 isn't a level: #REF!",
     )
   })
 
   it('is null for a header-only tab', () => {
-    expect(lastLevel(['newSynchroLevel'])).toBeNull()
+    expect(lastLevel(['synchroLevel'])).toBeNull()
   })
 })
 
