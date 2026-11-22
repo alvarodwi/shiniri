@@ -76,7 +76,7 @@ export const useMoldsStore = defineStore('molds', {
       try {
         const entry = this.entry
         const oc = await checkOvercores(api, {
-          from: 'Molds',
+          from: 'Mold',
           detail: entry.moldType,
           date: entry.date,
           names: entry.names,
@@ -88,7 +88,7 @@ export const useMoldsStore = defineStore('molds', {
             { tab: MOLD_TAB, rows: [row] },
             ...(oc.rows.length ? [{ tab: OVERCORE_TAB, rows: oc.rows }] : []),
           ],
-          'Molds',
+          'Mold',
         )
         this.remark = oc.remark
         // Clear the form before reloading, so a failed reload can't leave the row to be saved twice.

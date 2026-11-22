@@ -101,7 +101,7 @@ describe('spareBodyStore', () => {
       ],
     })
     expect(data).toHaveLength(2)
-    expect(data[1].rows[0][1]).toBe('SpareBody')
+    expect(data[1].rows[0][1]).toBe('Exchange')
     expect(store.entry.target).toBe('')
     expect(store.entry.copies).toBe('1')
     expect(store.status).toBe('saved')
@@ -125,9 +125,10 @@ describe('spareBodyStore', () => {
       `'AuditLog'`,
     ])
     expect(data[1].rows).toEqual([
-      ['2026-11-21', 'SpareBody', "'Asuka", 'Abnormal', ''],
-      ['2026-11-21', 'SpareBody', "'Asuka", 'Abnormal', ''],
+      ['2026-11-21', 'Exchange', "'Asuka", 'Abnormal', ''],
+      ['2026-11-21', 'Exchange', "'Asuka", 'Abnormal', ''],
     ])
+    expect(data[2].rows[0][1]).toBe('Exchange')
     expect(store.remark).toMatch(/C9/)
     expect(data[1].rows).toHaveLength(2)
     expect(store.status).toBe('saved')

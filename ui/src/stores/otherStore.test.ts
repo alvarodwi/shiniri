@@ -95,7 +95,7 @@ describe('otherStore', () => {
     const row = ['2026-11-21', 'Welfare Unit', "'3.5 Anniv", '', '', 1, 1, "'Asuka", '']
     expect(data[0]).toEqual({ range: "'Extra'!A3:I4", rows: [row, row] })
     expect(data).toHaveLength(2)
-    expect(data[1].rows[0][1]).toBe('Other')
+    expect(data[1].rows[0][1]).toBe('Extra')
     expect(store.entry.sourceType).toBe('')
     expect(store.status).toBe('saved')
     expect(store.lastSaved).toBe("'Extra'!A3:I4")
@@ -113,9 +113,10 @@ describe('otherStore', () => {
     const [, data] = api.batchUpdateValues.mock.calls[0]
     expect(data.map((d) => d.range.split('!')[0])).toEqual([`'Extra'`, `'Overcore'`, `'AuditLog'`])
     expect(data[1].rows).toEqual([
-      ['2026-11-21', 'Other', "'Modernia", 'Pilgrim', ''],
-      ['2026-11-21', 'Other', "'Modernia", 'Pilgrim', ''],
+      ['2026-11-21', 'Extra', "'Modernia", 'Pilgrim', ''],
+      ['2026-11-21', 'Extra', "'Modernia", 'Pilgrim', ''],
     ])
+    expect(data[2].rows[0][1]).toBe('Extra')
     expect(store.remark).toMatch(/C8/)
     expect(store.status).toBe('saved')
   })

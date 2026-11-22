@@ -26,7 +26,7 @@ const pulls = [
   AP_H,
   ['2026-11-20', 'Rapi', 'Event', 'FALSE', '', 'FALSE'],
   ['2026-11-24', 'Rapi', 'Event', 'FALSE', '11', 'FALSE'],
-  ['2026-11-24', 'Liter', 'Molds', '', '', ''],
+  ['2026-11-24', 'Liter', 'Mold', '', '', ''],
   ['x'],
 ]
 const nikke = (name: string, manufacturer: string): Nikke => ({
@@ -45,15 +45,24 @@ const nikkes = [nikke('Rapi', 'ELYSION'), nikke('Noah', 'PILGRIM')]
 
 describe('overcore', () => {
   it('painLevel follows the owner order', () => {
-    expect(painLevel('Other', '')).toBe(1)
+    expect(painLevel('Extra', '')).toBe(1)
     expect(painLevel('Social', '')).toBe(1)
     expect(painLevel('Ordinary', '')).toBe(2)
-    expect(painLevel('Molds', 'HQ Mold')).toBe(2)
+    expect(painLevel('Mold', 'HQ Mold')).toBe(2)
     expect(painLevel('Event', '')).toBe(3)
-    expect(painLevel('Molds', 'Tetra Mold')).toBe(4)
-    expect(painLevel('Molds', 'HQ Perfect Mold')).toBe(5)
-    expect(painLevel('SpareBody', 'Union Chip')).toBe(6)
-    expect(painLevel('SpareBody', 'Gold Mileage')).toBe(7)
+    expect(painLevel('Mold', 'Tetra Mold')).toBe(4)
+    expect(painLevel('Mold', 'HQ Perfect Mold')).toBe(5)
+    expect(painLevel('Exchange', 'Union Chip')).toBe(6)
+    expect(painLevel('Exchange', 'Gold Mileage')).toBe(7)
+  })
+
+  it('keeps pain levels under the new source names', () => {
+    expect(painLevel('Mold', 'Pilgrim Perfect Mold')).toBe(5)
+    expect(painLevel('Mold', 'Pilgrim Mold')).toBe(4)
+    expect(painLevel('Mold', 'Yellow Mold')).toBe(2)
+    expect(painLevel('Exchange', 'Gold Mileage')).toBe(7)
+    expect(painLevel('Exchange', 'Union Chip')).toBe(6)
+    expect(painLevel('Extra', '')).toBe(1)
   })
 
   it('copyStarts uses the last AllPulls copy, else the baseline, else 0', () => {
@@ -103,19 +112,19 @@ describe('overcore', () => {
           { name: 'Rapi', copy: 12 },
           { name: 'Ghost', copy: 12 },
         ],
-        'SpareBody',
+        'Exchange',
         '2026-11-26',
         nikkes,
       ),
     ).toEqual([
-      ['2026-11-26', 'SpareBody', "'Rapi", 'Elysion', ''],
-      ['2026-11-26', 'SpareBody', "'Ghost", '', ''],
+      ['2026-11-26', 'Exchange', "'Rapi", 'Elysion', ''],
+      ['2026-11-26', 'Exchange', "'Ghost", '', ''],
     ])
   })
 
   it('remark: the source level line, every overcore named, Pilgrim line added', () => {
     // A Pilgrim from a Perfect Mold keeps the mold line (level 5), never SpareBody's "bought" line.
-    const r = remark([{ name: 'Noah', copy: 12 }], 'Molds', 'Pilgrim Perfect Mold', nikkes, () => 0)
+    const r = remark([{ name: 'Noah', copy: 12 }], 'Mold', 'Pilgrim Perfect Mold', nikkes, () => 0)
     expect(r).toBe(`${OVERCORE_LINES[5][0].replace('{who}', 'Noah C8')} ${PILGRIM_LINE}`)
     expect(
       remark(
@@ -124,7 +133,7 @@ describe('overcore', () => {
           { name: 'Rapi', copy: 13 },
           { name: 'Noah', copy: 12 },
         ],
-        'SpareBody',
+        'Exchange',
         'Gold Mileage',
         nikkes,
         () => 0,
@@ -132,7 +141,7 @@ describe('overcore', () => {
     ).toBe(
       `${OVERCORE_LINES[7][0].replace('{who}', 'Rapi C8, Rapi C9 and Noah C8')} ${PILGRIM_LINE}`,
     )
-    expect(remark([], 'Other', '', nikkes)).toBeNull()
+    expect(remark([], 'Extra', '', nikkes)).toBeNull()
   })
 
   it('remark: unknown Nikke gets no Pilgrim line', () => {

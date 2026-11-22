@@ -89,7 +89,7 @@ describe('moldsStore', () => {
       range: "'Mold'!A3:F3",
       rows: [['2026-11-21', 'Yellow Mold', 5, 1, "'Elysion", '']],
     })
-    expect(data[1].rows[0][1]).toBe('Molds')
+    expect(data[1].rows[0][1]).toBe('Mold')
     expect(store.entry.names).toEqual([])
     expect(store.entry.moldType).toBe('')
     expect(store.status).toBe('saved')
@@ -108,7 +108,8 @@ describe('moldsStore', () => {
     await store.save(api)
     const [, data] = api.batchUpdateValues.mock.calls[0]
     expect(data.map((d) => d.range.split('!')[0])).toEqual([`'Mold'`, `'Overcore'`, `'AuditLog'`])
-    expect(data[1].rows).toEqual([['2026-11-21', 'Molds', "'Modernia", 'Pilgrim', '']])
+    expect(data[1].rows).toEqual([['2026-11-21', 'Mold', "'Modernia", 'Pilgrim', '']])
+    expect(data[2].rows[0][1]).toBe('Mold')
     expect(store.remark).toMatch(/C8/)
     expect(store.remark).toMatch(/And she's a Pilgrim\.$/)
     expect(store.status).toBe('saved')

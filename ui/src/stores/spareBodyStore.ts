@@ -75,7 +75,7 @@ export const useSpareBodyStore = defineStore('spareBody', {
       try {
         const entry = this.entry
         const oc = await checkOvercores(api, {
-          from: 'SpareBody',
+          from: 'Exchange',
           detail: entry.source,
           date: entry.date,
           names: Array(parseCopies(entry.copies) ?? 0).fill(entry.target),
@@ -87,7 +87,7 @@ export const useSpareBodyStore = defineStore('spareBody', {
             { tab: EXCHANGE_TAB, rows },
             ...(oc.rows.length ? [{ tab: OVERCORE_TAB, rows: oc.rows }] : []),
           ],
-          'SpareBody',
+          'Exchange',
         )
         this.remark = oc.remark
         // Clear the form before reloading, so a failed reload can't leave the rows to be saved twice.

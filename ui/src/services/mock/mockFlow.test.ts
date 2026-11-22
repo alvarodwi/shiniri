@@ -67,7 +67,7 @@ describe('mock sheet with the real stores', () => {
     Object.assign(store.entry, { target: 'Rapi', copies: '1' })
     await store.save(api)
     expect(store.status).toBe('saved')
-    expect(added()).toEqual([[gameDay(), 'SpareBody', "'Rapi", 'Elysion', '']])
+    expect(added()).toEqual([[gameDay(), 'Exchange', "'Rapi", 'Elysion', '']])
     expect(store.remark).toContain('Rapi C8')
   })
 
@@ -80,7 +80,7 @@ describe('mock sheet with the real stores', () => {
     Object.assign(store.entry, { amount: '1', names: ['Noah'] })
     await store.save(api)
     expect(store.status).toBe('saved')
-    expect(added()).toEqual([[gameDay(), 'Molds', "'Noah", 'Pilgrim', '']])
+    expect(added()).toEqual([[gameDay(), 'Mold', "'Noah", 'Pilgrim', '']])
     expect(store.remark).toMatch(/Noah C8.*And she's a Pilgrim\.$/)
   })
 })

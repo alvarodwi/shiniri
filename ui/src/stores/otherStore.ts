@@ -88,7 +88,7 @@ export const useOtherStore = defineStore('other', {
       try {
         const entry = this.entry
         const oc = await checkOvercores(api, {
-          from: 'Other',
+          from: 'Extra',
           detail: '',
           date: entry.date,
           // Welfare rows repeat one name once per copy; only Guaranteed SSR lists several names in one row.
@@ -101,7 +101,7 @@ export const useOtherStore = defineStore('other', {
             { tab: EXTRA_TAB, rows },
             ...(oc.rows.length ? [{ tab: OVERCORE_TAB, rows: oc.rows }] : []),
           ],
-          'Other',
+          'Extra',
         )
         this.remark = oc.remark
         // Clear the form before reloading, so a failed reload can't leave the rows to be saved twice.

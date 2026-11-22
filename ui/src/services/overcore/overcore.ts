@@ -7,28 +7,28 @@ import type { Nikke } from '@/services/nikke/nikkeDatabase'
 import { checkHeaders } from '@/services/sheets/tabWriter'
 import type { Cell } from '@/types/sheet'
 
-export type OvercoreSource = 'Social' | 'Event' | 'Ordinary' | 'Molds' | 'SpareBody' | 'Other'
+export type OvercoreSource = 'Social' | 'Event' | 'Ordinary' | 'Mold' | 'Exchange' | 'Extra'
 export type Overcore = { name: string; copy: number }
 
 // Copy 12 and up is past C7.
 const OVERCORE_FROM = 12
 
-// `detail` is the mold type for Molds and the spare source for SpareBody; ignored otherwise.
+// `detail` is the mold type for Mold and the spare source for Exchange; ignored otherwise.
 export function painLevel(from: OvercoreSource, detail: string): number {
   switch (from) {
-    case 'Other':
+    case 'Extra':
     case 'Social':
       return 1
     case 'Ordinary':
       return 2
     case 'Event':
       return 3
-    case 'Molds':
+    case 'Mold':
       if (detail.includes('Perfect')) return 5
       return ['Pilgrim Mold', 'Missilis Mold', 'Elysion Mold', 'Tetra Mold'].includes(detail)
         ? 4
         : 2
-    case 'SpareBody':
+    case 'Exchange':
       return detail === 'Gold Mileage' ? 7 : 6
   }
 }
@@ -51,7 +51,7 @@ export function copyStarts(
     const name = String(r[1] ?? '').trim()
     if (!name) continue
     const copy = String(r[4] ?? '').trim()
-    // An error cell must fail the save, not silently skip an Overcored row.
+    // An error cell must fail the save, not silently skip an Overcore row.
     if (copy !== '' && Number.isNaN(Number(copy)))
       throw new Error(`AllPulls copy shows ${copy} for ${name}`)
     lastCopy.set(name, copy === '' ? null : Number(copy))
