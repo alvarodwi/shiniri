@@ -98,7 +98,7 @@ describe('anomalyStore', () => {
     ])
   })
 
-  it('writes gear drops to T9Manu in the same write', async () => {
+  it('writes gear drops to Gear in the same write', async () => {
     const { api, store } = await loaded(['date'])
     fillModules(store)
     // Fallback defaults make every run Kraken 9; runs 1-3 become gear bosses.

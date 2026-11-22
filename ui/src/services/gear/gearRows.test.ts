@@ -21,7 +21,7 @@ const furnaceCard = (): GearCard => ({
 })
 
 describe('t9ManuRow', () => {
-  it('maps to date | sourceType | classType | manufacturer | slotType', () => {
+  it('maps to date | source | class | manufacturer | slot', () => {
     expect(
       t9ManuRow(DATE, 'Manufacturer Arms', {
         manufacturer: 'Tetra',
@@ -80,7 +80,7 @@ describe('rowsFor', () => {
     expect(furnace).toHaveLength(2)
   })
 
-  it('writes arms and boxes to T9Manu only', () => {
+  it('writes arms and boxes to Gear only', () => {
     const card = { ...newCard(), ...abnSupHelmet }
     expect(rowsFor(DATE, 'arms', [card])).toEqual({
       t9Manu: [[DATE, 'Manufacturer Arms', 'Supporter', 'Abnormal', 'Helmet']],

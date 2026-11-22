@@ -112,7 +112,7 @@ export const useAnomalyStore = defineStore('anomaly', {
         const gearRows = this.activeRuns
           .map((run) => anomalyGearRow(this.date, run))
           .filter((r) => r !== null)
-        // Gear drops go to T9Manu in the same write, so the two tabs never disagree.
+        // Gear drops go to Gear in the same write, so the two tabs never disagree.
         const targets: WriteTarget[] = [{ tab: ANOMALY_TAB, rows }]
         if (gearRows.length) targets.push({ tab: GEAR_TAB, rows: gearRows })
         const { updatedRanges } = await writeTabsAtEnd(api, targets, 'Anomaly')

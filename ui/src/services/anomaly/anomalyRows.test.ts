@@ -162,7 +162,7 @@ describe('anomalyGearRow', () => {
     gear: { classType: 'Attacker', manufacturer: 'Tetra' },
   } as AnomalyRun
 
-  it('maps a gear drop to a T9Manu row with the drop type as slot', () => {
+  it('maps a gear drop to a Gear row with the drop type as slot', () => {
     expect(anomalyGearRow('2026-11-19', ultra)).toEqual([
       '2026-11-19',
       'Anomaly Interception',

@@ -1,6 +1,6 @@
 import { ALL_PULLS_TAB, OVERCORE_TAB, ROSTER_LOG_TAB } from '@/config/sheets'
 
-// Fake-sheet values for the tabs checkOvercores reads and the Overcored tab it may write.
+// Fake-sheet values for the tabs checkOvercores reads and the Overcore tab it may write.
 // Nothing is baselined, so a save makes no overcore unless the test adds a RosterLog row.
 export const overcoreValues = (): Record<string, string[][]> => ({
   "'AllPulls'!A1:F": [[...ALL_PULLS_TAB.headers]],

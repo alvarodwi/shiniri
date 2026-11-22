@@ -117,7 +117,7 @@ describe('eventStore', () => {
     expect(store.lastSaved).toBe("'Event'!A3:I3")
   })
 
-  it('writes the Overcored row in the same batch and sets a remark', async () => {
+  it('writes the Overcore row in the same batch and sets a remark', async () => {
     const store = useEventStore()
     const api = fakeApi()
     api.values["'RosterLog'!A1:D"].push(baseline('Biscuit'))

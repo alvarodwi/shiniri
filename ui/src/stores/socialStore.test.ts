@@ -142,7 +142,7 @@ describe('socialStore', () => {
     expect(store.canSave).toBe(false)
   })
 
-  it('writes the Overcored row in the same batch and sets a remark', async () => {
+  it('writes the Overcore row in the same batch and sets a remark', async () => {
     const store = useSocialStore()
     const api = fakeApi()
     api.values["'RosterLog'!A1:D"].push(baseline('Biscuit'))

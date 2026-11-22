@@ -108,7 +108,7 @@ describe('spareBodyStore', () => {
     expect(store.lastSaved).toBe("'Exchange'!A3:D4")
   })
 
-  it('writes the Overcored row in the same batch and sets a remark', async () => {
+  it('writes the Overcore row in the same batch and sets a remark', async () => {
     const store = useSpareBodyStore()
     const api = fakeApi()
     api.values["'RosterLog'!A1:D"].push(baseline('Asuka'))

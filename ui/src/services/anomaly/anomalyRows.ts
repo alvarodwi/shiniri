@@ -27,7 +27,7 @@ export function toRow(date: string, run: AnomalyRun): Cell[] {
   ]
 }
 
-// The T9Manu row for a run's gear drop, or null when the run has no gear.
+// The Gear row for a run's gear drop, or null when the run has no gear.
 export const anomalyGearRow = (date: string, run: AnomalyRun): Cell[] | null =>
   needsGear(run) && run.gear
     ? [date, ANOMALY_SOURCE, run.gear.classType, run.gear.manufacturer, DROP_TYPE[run.boss]]

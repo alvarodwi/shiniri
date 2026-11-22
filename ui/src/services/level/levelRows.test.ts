@@ -12,7 +12,7 @@ describe('lastLevel', () => {
 
   it('refuses a last row that is not a number, since the next save lands below it', () => {
     expect(() => lastLevel(['newSynchroLevel', '210', '#REF!'])).toThrow(
-      "LevelLogs row 3 isn't a level: #REF!",
+      "LevelLog row 3 isn't a level: #REF!",
     )
   })
 

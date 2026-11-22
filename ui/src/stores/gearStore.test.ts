@@ -39,7 +39,7 @@ function setup() {
 beforeEach(() => setActivePinia(createPinia()))
 
 describe('gearStore', () => {
-  it('saves an arms opening as one T9Manu row per item', async () => {
+  it('saves an arms opening as one Gear row per item', async () => {
     const { store, api } = setup()
     store.setCount(3)
     store.activeCards.forEach((_, i) => store.setCard(i, pick))
@@ -51,7 +51,7 @@ describe('gearStore', () => {
     expect(data[0].rows[0]).toEqual([DATE, 'Manufacturer Arms', 'Attacker', 'Tetra', 'Gloves'])
   })
 
-  it('saves furnace attempts to T9Manu and Furnace in one write', async () => {
+  it('saves furnace attempts to Gear and Furnace in one write', async () => {
     const { store, api } = setup()
     store.setSource('furnace')
     store.setCard(0, { target: 'Pilgrim', sacrifices: [sac, sac] })

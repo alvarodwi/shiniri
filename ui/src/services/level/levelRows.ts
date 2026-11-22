@@ -9,7 +9,7 @@ export function lastLevel(colA: string[]): { level: number; row: number } | null
   while (i >= 1 && !colA[i].trim()) i--
   if (i < 1) return null
   const v = colA[i].trim()
-  if (!Number.isFinite(Number(v))) throw new Error(`LevelLogs row ${i + 1} isn't a level: ${v}`)
+  if (!Number.isFinite(Number(v))) throw new Error(`LevelLog row ${i + 1} isn't a level: ${v}`)
   return { level: Number(v), row: i + 1 }
 }
 

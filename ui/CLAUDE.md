@@ -59,9 +59,9 @@ dashboard), label every input, and hide sheet links on small screens.
   `vite.config.ts`); builds never contain it. A new form adds its tab to
   `MOCK_SHEETS` in `src/services/mock/fixtures.ts`.
 - Overcore scenarios (the mock AllPulls and RosterLog put Rapi and Noah at copy 11):
-  1. `#/sparebody`: source Gold Mileage, target Rapi, copies 1, Save. Expect the "Saved to ..." line
+  1. `#/exchange`: source Gold Mileage, target Rapi, copies 1, Save. Expect the "Saved to ..." line
      plus a remark containing `Rapi C8`.
-  2. `#/molds`: Pilgrim Perfect Mold, Amount opened 1, pick Noah, Save session. Expect a remark containing
+  2. `#/mold`: Pilgrim Perfect Mold, Amount opened 1, pick Noah, Save session. Expect a remark containing
      `Noah C8` and ending `And she's a Pilgrim.`
   3. The mock AllPulls is static, so repeats show C8 again; reload to reset.
 - Headless check without a browser tool:

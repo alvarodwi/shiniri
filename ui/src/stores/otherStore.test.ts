@@ -101,7 +101,7 @@ describe('otherStore', () => {
     expect(store.lastSaved).toBe("'Extra'!A3:I4")
   })
 
-  it('writes the Overcored row in the same batch and sets a remark', async () => {
+  it('writes the Overcore row in the same batch and sets a remark', async () => {
     const store = useOtherStore()
     const api = fakeApi()
     api.values["'RosterLog'!A1:D"].push(baseline('Modernia'))

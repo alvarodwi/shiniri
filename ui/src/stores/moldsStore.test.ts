@@ -96,7 +96,7 @@ describe('moldsStore', () => {
     expect(store.lastSaved).toBe("'Mold'!A3:F3")
   })
 
-  it('writes the Overcored row in the same batch and sets a remark', async () => {
+  it('writes the Overcore row in the same batch and sets a remark', async () => {
     const store = useMoldsStore()
     const api = fakeApi()
     api.values["'RosterLog'!A1:D"].push(baseline('Modernia'))

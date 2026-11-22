@@ -8,7 +8,7 @@ export type Slot = (typeof SLOTS)[number]
 
 export type Gear = { classType: ClassType; manufacturer: Manufacturer }
 
-// T9Manu `sourceType` values, verbatim: the stats tabs group by these strings.
+// Gear `source` values, verbatim: the stats tabs group by these strings.
 export const ANOMALY_SOURCE = 'Anomaly Interception'
 export const GEAR_SOURCES = {
   arms: 'Manufacturer Arms',

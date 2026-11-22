@@ -6,7 +6,7 @@ import { FREE_PULLS, GUARANTEED, OTHER_TYPES } from '@/types/other'
 import type { OtherEntry } from '@/types/other'
 import type { Cell } from '@/types/sheet'
 
-// Abnormal comes only from collab banners and gold mileage, never from Other's sources.
+// Abnormal comes only from collab banners and gold mileage, never from Extra's sources.
 export const otherPool = (nikkes: Nikke[]): Nikke[] =>
   ssrPool(nikkes, { pilgrim: true, abnormal: false })
 

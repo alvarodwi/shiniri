@@ -18,7 +18,7 @@ export function isCardComplete(card: GearCard, source: GearSource): boolean {
   return card.manufacturer === card.target && card.sacrifices.every(isItemComplete)
 }
 
-// Columns A-E of T9Manu. Expects a complete item.
+// Columns A-E of Gear. Expects a complete item.
 export const t9ManuRow = (date: string, sourceType: string, item: GearItem): Cell[] => [
   date,
   sourceType,

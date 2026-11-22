@@ -9,7 +9,7 @@ import { readColumnA, writeTabsAtEnd } from '@/services/sheets/tabWriter'
 import { sheetsApi } from '@/stores/authStore'
 import { gameDay } from '@/utils/gameDay'
 
-// The last level and its achievedAt as ISO text, read unformatted so the display format can't matter.
+// The last level and its date as ISO text, read unformatted so the display format can't matter.
 async function readLast(api: SheetsApi) {
   const entry = lastLevel(await readColumnA(api, LEVEL_TAB))
   if (!entry) return { level: null, date: null }
