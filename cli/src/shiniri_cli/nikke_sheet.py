@@ -5,8 +5,18 @@ from .store import Store
 
 TAB = "NikkeDatabase"
 FORM = "cli-nikke-database"
-HEADERS = ("nameCode", "name", "rarity", "manufacturer", "class", "burst", "element", "weapon", "resourceId",
-           "releaseDate")
+HEADERS = (
+    "nameCode",
+    "name",
+    "rarity",
+    "manufacturer",
+    "class",
+    "burst",
+    "element",
+    "weapon",
+    "resourceId",
+    "releaseDate",
+)
 
 
 def _int(v) -> bool:
@@ -20,17 +30,31 @@ def nikke_rows(nikkes: list) -> tuple[list[list], list[str]]:
     for i, n in enumerate(nikkes):
         n = n if isinstance(n, dict) else {}
         name = (n.get("name_localkey") or {}).get("name")
-        if not _int(n.get("name_code")) or not isinstance(name, str) or not name.strip():
+        if (
+            not _int(n.get("name_code"))
+            or not isinstance(name, str)
+            or not name.strip()
+        ):
             notes.append(f"entry {i}")
         elif n["name_code"] not in seen:
             seen.add(n["name_code"])
             kept.append(n)
     kept.sort(key=lambda n: (0, n["order"]) if _int(n.get("order")) else (1, 0))
-    rows = [[n["name_code"], n["name_localkey"]["name"], n.get("original_rare", ""), n.get("corporation", ""),
-             n.get("class", ""), n.get("use_burst_skill", ""),
-             ((n.get("element_id") or {}).get("element") or {}).get("element", ""),
-             ((n.get("shot_id") or {}).get("element") or {}).get("weapon_type", ""),
-             n.get("resource_id", ""), ""] for n in kept]
+    rows = [
+        [
+            n["name_code"],
+            n["name_localkey"]["name"],
+            n.get("original_rare", ""),
+            n.get("corporation", ""),
+            n.get("class", ""),
+            n.get("use_burst_skill", ""),
+            ((n.get("element_id") or {}).get("element") or {}).get("element", ""),
+            ((n.get("shot_id") or {}).get("element") or {}).get("weapon_type", ""),
+            n.get("resource_id", ""),
+            "",
+        ]
+        for n in kept
+    ]
     return rows, notes
 
 
@@ -42,7 +66,9 @@ def sync_nikke_database(store: Store, api: SheetsApi, *, timestamp: str) -> str:
         rows = [r for r in rows if r[0] not in have]
         if rows:
             write_rows(api, TAB, HEADERS, rows, form=FORM, timestamp=timestamp)
-        return f"{TAB} +{len(rows)}" + (f" (skipped {', '.join(notes)})" if notes else "")
+        return f"{TAB} +{len(rows)}" + (
+            f" (skipped {', '.join(notes)})" if notes else ""
+        )
     except SheetsError as e:
         return f"{TAB}: {e}"
     except Exception as e:

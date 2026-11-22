@@ -11,7 +11,12 @@ from pathlib import Path
 
 import httpx
 
-from shiniri_cli.sheets import HttpSheets, SheetsError, column_letter, service_account_token
+from shiniri_cli.sheets import (
+    HttpSheets,
+    SheetsError,
+    column_letter,
+    service_account_token,
+)
 
 CONFIG = Path(__file__).resolve().parents[1] / "config"
 DATABASE = "NikkeDatabase"
@@ -50,15 +55,29 @@ def sweep(database: list[list], tabs: dict[str, list[list]]) -> list[str]:
                 lines.append(f'{tab}: no column "{h}"')
         for r, row in enumerate(values[1:], start=2):
             for c in cols:
-                bad = [p for p in (s.strip() for s in re.split(r"[,\n]", _cell(row, c))) if p and p not in codes]
+                bad = [
+                    p
+                    for p in (s.strip() for s in re.split(r"[,\n]", _cell(row, c)))
+                    if p and p not in codes
+                ]
                 cells += bool(bad)
                 unknown += len(bad)
                 for p in bad:
-                    near = difflib.get_close_matches(p, known, n=1) or sorted(
-                        (k for k in known if p.startswith(k + " ")), key=len, reverse=True)[:1]
+                    near = (
+                        difflib.get_close_matches(p, known, n=1)
+                        or sorted(
+                            (k for k in known if p.startswith(k + " ")),
+                            key=len,
+                            reverse=True,
+                        )[:1]
+                    )
                     hint = f"  (closest: {near[0]})" if near else ""
                     lines.append(f"{tab}!{column_letter(c + 1)}{r}  {p}{hint}")
-    lines += [f"{DATABASE}: duplicate name {n} ({', '.join(c)})" for n, c in codes.items() if len(c) > 1]
+    lines += [
+        f"{DATABASE}: duplicate name {n} ({', '.join(c)})"
+        for n, c in codes.items()
+        if len(c) > 1
+    ]
     return lines + [f"{unknown} unknown names in {cells} cells"]
 
 
@@ -79,13 +98,22 @@ def report(api) -> list[str]:
 def main(argv: list[str] | None = None) -> int:
     args = sys.argv[1:] if argv is None else argv
     try:
-        sheet_id = args[0] if args else json.loads((CONFIG / "sheets.json").read_text(encoding="utf-8"))[
-            "gacha_spreadsheet_id"]
-    except (OSError, ValueError, KeyError):
+        sheet_id = (
+            args[0]
+            if args
+            else json.loads((CONFIG / "sheets.json").read_text(encoding="utf-8"))[
+                "gacha_spreadsheet_id"
+            ]
+        )
+    except OSError, ValueError, KeyError:
         print("no gacha_spreadsheet_id in config/sheets.json; pass a spreadsheet id")
         return 1
     with httpx.Client() as http:
-        lines = report(HttpSheets(sheet_id, service_account_token(CONFIG / "service-account.json"), http))
+        lines = report(
+            HttpSheets(
+                sheet_id, service_account_token(CONFIG / "service-account.json"), http
+            )
+        )
     print("\n".join(lines))
     return 0
 

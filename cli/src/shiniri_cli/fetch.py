@@ -4,7 +4,7 @@ import asyncio
 import hashlib
 import json
 import random
-from typing import Callable, Collection
+from collections.abc import Callable, Collection
 
 import httpx
 
@@ -17,8 +17,10 @@ URLS = {
     "campaign": "https://api.blablalink.com/api/game/proxy/Game/GetMainQuestClearLineup",
     "tower": "https://api.blablalink.com/api/game/proxy/Game/GetCampaignStageCharacterInfo",
 }
-USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-              "Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0")
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0"
+)
 HEADERS = {
     "accept": "application/json, text/plain, */*",
     "accept-language": "en-US,en;q=0.9",
@@ -28,12 +30,20 @@ HEADERS = {
     "user-agent": USER_AGENT,
     "x-channel-type": "2",
     "x-language": "en",
-    "x-common-params": json.dumps({
-        "game_id": "16", "area_id": "global", "source": "pc_web", "intl_game_id": "29080",
-        "language": "en", "env": "prod", "data_statistics_scene": "outer",
-        "data_statistics_page_id": "https://www.blablalink.com/shiftyspad",
-        "data_statistics_client_type": "pc_web", "data_statistics_lang": "en",
-    }),
+    "x-common-params": json.dumps(
+        {
+            "game_id": "16",
+            "area_id": "global",
+            "source": "pc_web",
+            "intl_game_id": "29080",
+            "language": "en",
+            "env": "prod",
+            "data_statistics_scene": "outer",
+            "data_statistics_page_id": "https://www.blablalink.com/shiftyspad",
+            "data_statistics_client_type": "pc_web",
+            "data_statistics_lang": "en",
+        }
+    ),
 }
 CDN_HEADERS = {"Referer": "https://www.blablalink.com/", "User-Agent": USER_AGENT}
 CDN_HOST = "https://sg-tools-cdn.blablalink.com/"
@@ -53,7 +63,7 @@ class AuthError(Exception):
 def parse_cookie(header: str) -> dict[str, str]:
     header = header.strip()
     if header.lower().startswith("cookie:"):
-        header = header[len("cookie:"):]
+        header = header[len("cookie:") :]
     cookies = {}
     for part in header.split(";"):
         if "=" in part:
@@ -101,8 +111,12 @@ async def api_call(client: httpx.AsyncClient, name: str, body: dict) -> dict:
 
 
 def campaign_targets(levels: list[dict], stored: set[int]) -> list[dict]:
-    eligible = [s for s in levels if s.get("chapter_mod") in ("Normal", "Hard")
-                and not (s.get("chapter_mod") == "Normal" and s.get("chapter_id") in (1, 2))]
+    eligible = [
+        s
+        for s in levels
+        if s.get("chapter_mod") in ("Normal", "Hard")
+        and not (s.get("chapter_mod") == "Normal" and s.get("chapter_id") in (1, 2))
+    ]
     chapters: dict[tuple, list[dict]] = {}
     for s in eligible:
         chapters.setdefault((s.get("chapter_mod"), s.get("chapter_id")), []).append(s)
@@ -111,7 +125,7 @@ def campaign_targets(levels: list[dict], stored: set[int]) -> list[dict]:
         idx = [i for i, s in enumerate(stages) if s["id"] in stored]
         if idx:
             # quick-cleared stages before a stored clear have no lineup to fetch
-            gaps.update(s["id"] for s in stages[:max(idx)])
+            gaps.update(s["id"] for s in stages[: max(idx)])
     return [s for s in eligible if s["id"] not in stored and s["id"] not in gaps]
 
 
@@ -120,13 +134,19 @@ def tower_targets(levels: list[dict], stored: set[int]) -> dict[str, list[dict]]
     for s in levels:
         if s["stage_id"] not in stored:
             out.setdefault(str(s.get("tower_type", "")).lower(), []).append(s)
-    return {t: sorted(stages, key=lambda s: s.get("floor", 0)) for t, stages in out.items()}
+    return {
+        t: sorted(stages, key=lambda s: s.get("floor", 0)) for t, stages in out.items()
+    }
 
 
-async def fetch_lineup(client: httpx.AsyncClient, url: str, stage_id: int) -> tuple[str, dict | None]:
+async def fetch_lineup(
+    client: httpx.AsyncClient, url: str, stage_id: int
+) -> tuple[str, dict | None]:
     for _ in range(3):
         try:
-            resp = await client.post(url, json={"stage_id": stage_id, "area_id": AREA_ID}, timeout=12.0)
+            resp = await client.post(
+                url, json={"stage_id": stage_id, "area_id": AREA_ID}, timeout=12.0
+            )
         except httpx.HTTPError:
             await asyncio.sleep(1.5)
             continue
@@ -146,13 +166,19 @@ async def fetch_lineup(client: httpx.AsyncClient, url: str, stage_id: int) -> tu
     return "failed", None
 
 
-async def fetch_clears(store: Store, source: str, client: httpx.AsyncClient,
-                       on_progress: Callable[[str, int, int], None] = lambda *a: None,
-                       delay: tuple[float, float] = (1.0, 2.0)) -> int:
+async def fetch_clears(
+    store: Store,
+    source: str,
+    client: httpx.AsyncClient,
+    on_progress: Callable[[str, int, int], None] = lambda *a: None,
+    delay: tuple[float, float] = (1.0, 2.0),
+) -> int:
     clears = store.load_clears(source)
     stored = {int(k) for k in clears}
     if source == "campaign":
-        groups = {"campaign": campaign_targets(store.load_raw("stage_list", []), stored)}
+        groups = {
+            "campaign": campaign_targets(store.load_raw("stage_list", []), stored)
+        }
         stop_early = False
     else:
         groups = tower_targets(store.load_raw("tower_list", []), stored)
@@ -166,7 +192,9 @@ async def fetch_clears(store: Store, source: str, client: httpx.AsyncClient,
             on_progress(label, done, total)
             if status == "ok":
                 clears[str(s[id_key])] = data
-                store.save_clears(source, clears)  # save each clear so an interrupted run keeps its work
+                store.save_clears(
+                    source, clears
+                )  # save each clear so an interrupted run keeps its work
                 new += 1
             elif status == "uncleared" and stop_early:
                 done += len(stages) - stages.index(s) - 1
@@ -188,17 +216,22 @@ def cdn_url(path: str) -> str:
     path = path.lstrip("/")
     *folders, name = path.split("/")
     segs = []
-    for p in PRIMES[:len(folders)]:
+    for p in PRIMES[: len(folders)]:
         r = (_djb2(path, p) % p + p) % p
         segs.append(f"{chr(97 + r // 26 % 26)}{chr(97 + r % 26)}-{r % 99:02d}")
     ext = name.partition(".")[2]
-    return CDN_HOST + "/".join(segs + [f"{hashlib.md5(path.encode()).hexdigest()}.{ext}"])
+    return CDN_HOST + "/".join(
+        segs + [f"{hashlib.md5(path.encode()).hexdigest()}.{ext}"]
+    )
 
 
-async def sync_reference(store: Store, client: httpx.AsyncClient,
-                         names: Collection[str] | None = None) -> dict[str, str]:
+async def sync_reference(
+    store: Store, client: httpx.AsyncClient, names: Collection[str] | None = None
+) -> dict[str, str]:
     """Re-download the reference files; `names` limits it to those (default: all of sources.json)."""
-    sources = json.loads((store.config_dir / "sources.json").read_text(encoding="utf-8"))
+    sources = json.loads(
+        (store.config_dir / "sources.json").read_text(encoding="utf-8")
+    )
     out = {}
     for name, path in sources.items():
         if names is not None and name not in names:
@@ -208,7 +241,11 @@ async def sync_reference(store: Store, client: httpx.AsyncClient,
             resp.raise_for_status()
             fresh = resp.json()
         except (httpx.HTTPError, ValueError) as e:
-            hint = " (site may have changed its URL scheme)" if isinstance(e, httpx.HTTPStatusError) else ""
+            hint = (
+                " (site may have changed its URL scheme)"
+                if isinstance(e, httpx.HTTPStatusError)
+                else ""
+            )
             out[name] = f"failed: {type(e).__name__}{hint}"
             continue
         try:

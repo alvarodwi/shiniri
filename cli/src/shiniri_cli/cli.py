@@ -22,33 +22,72 @@ from .union import CODES, UnionError, build_union, fetch_union, write_union_pars
 from .union_queries import QueryError, Result
 
 COMMANDS: dict[str, tuple[str, str, list[str]]] = {
-    "union": ("union [cmd]", "union raid mode — help union lists its commands", ["union", "union s45", "union missed s44"]),
+    "union": (
+        "union [cmd]",
+        "union raid mode — help union lists its commands",
+        ["union", "union s45", "union missed s44"],
+    ),
     "sync": ("sync", "re-download CDN reference files", ["sync"]),
     "cookie": ("cookie", "paste your Cookie header", ["cookie"]),
-    "help": ("help [group] [cmd]", "list commands, or show a group or one command in detail", ["help", "help union", "help union hits"]),
+    "help": (
+        "help [group] [cmd]",
+        "list commands, or show a group or one command in detail",
+        ["help", "help union", "help union hits"],
+    ),
     "quit": ("quit", "leave", ["quit"]),
 }
 UNION_COMMANDS: dict[str, tuple[str, str, list[str]]] = {
     "fetch": ("fetch", "download seasons not stored yet (needs cookie)", ["fetch"]),
     "live": ("live", "re-download the running season", ["live"]),
     "season": ("sN | season [sN]", "season recap", ["s45", "season"]),
-    "hits": ("hits [sN] [normal|hard] [lv<n>] [d<n>] [boss] [member]",
-             "every hit, filtered, biggest first · quote names with spaces, @name for a name like a filter",
-             ["hits hard hsta", "hits s45 d2 alpha", 'hits "two words"', "hits @hard"]),
-    "missed": ("missed [sN]", "members under 3 hits on the hard-mode day", ["missed", "mi s44"]),
+    "hits": (
+        "hits [sN] [normal|hard] [lv<n>] [d<n>] [boss] [member]",
+        "every hit, filtered, biggest first · quote names with spaces, @name for a name like a filter",
+        ["hits hard hsta", "hits s45 d2 alpha", 'hits "two words"', "hits @hard"],
+    ),
+    "missed": (
+        "missed [sN]",
+        "members under 3 hits on the hard-mode day",
+        ["missed", "mi s44"],
+    ),
     "normal": ("normal [sN]", "who hit normal mode", ["normal s45"]),
-    "top": ("top [sN|all] [member]", "most-used Nikkes in hits", ["top", "top all", "top s45 alpha"]),
-    "member": ("member [name]", "one member across seasons, with tendencies (no name = you)", ["member", "member alpha"]),
-    "members": ("members", "roster history: first/last season, arrivals and departures", ["members"]),
-    "growth": ("growth [name [+ name]]", "per season damage; with names, next to the union median",
-               ["growth", "growth me + alpha"]),
-    "boss": ("boss <code>", "one boss across seasons (HSTA PSID ZEUS DMTR ANMI)", ["boss hsta"]),
-    "help": ("help [cmd]", "list union commands, or show one in detail", ["help", "help hits"]),
+    "top": (
+        "top [sN|all] [member]",
+        "most-used Nikkes in hits",
+        ["top", "top all", "top s45 alpha"],
+    ),
+    "member": (
+        "member [name]",
+        "one member across seasons, with tendencies (no name = you)",
+        ["member", "member alpha"],
+    ),
+    "members": (
+        "members",
+        "roster history: first/last season, arrivals and departures",
+        ["members"],
+    ),
+    "growth": (
+        "growth [name [+ name]]",
+        "per season damage; with names, next to the union median",
+        ["growth", "growth me + alpha"],
+    ),
+    "boss": (
+        "boss <code>",
+        "one boss across seasons (HSTA PSID ZEUS DMTR ANMI)",
+        ["boss hsta"],
+    ),
+    "help": (
+        "help [cmd]",
+        "list union commands, or show one in detail",
+        ["help", "help hits"],
+    ),
     "back": ("back", "return to the main shell", ["back"]),
 }
 UNION_FOOTER = "sN alone shows that season's recap · no season = live, else latest · ! rebuilds an export"
 MAIN_FOOTER = "a group name alone enters it · add a command for a one-off (union s45) · any unique prefix works"
-GROUPS: dict[str, tuple[dict, str, str]] = {  # name -> (commands, help footer, handler method prefix)
+GROUPS: dict[
+    str, tuple[dict, str, str]
+] = {  # name -> (commands, help footer, handler method prefix)
     "union": (UNION_COMMANDS, UNION_FOOTER, "u_"),
 }
 
@@ -72,7 +111,11 @@ def parse_command(line: str, commands: dict = COMMANDS) -> Command:
     else:
         hits = [c for c in commands if c.startswith(word)] if word else []
         if len(hits) != 1:
-            raise QueryError(f"'{word}' could be: {', '.join(hits)}" if hits else f"unknown command '{word}' — try help")
+            raise QueryError(
+                f"'{word}' could be: {', '.join(hits)}"
+                if hits
+                else f"unknown command '{word}' — try help"
+            )
         name = hits[0]
     if name in ("nikke", "growth"):
         args = [a.strip() for a in rest.split("+") if a.strip()]
@@ -99,8 +142,10 @@ class PrefixCompleter(NestedCompleter):
         if first and first not in self.options:
             hits = [k for k in self.options if k.startswith(first.lower())]
             if len(hits) == 1:
-                text = hits[0] + text[len(first):]
-                document = Document(text, len(text))  # completions are relative to the cursor, so this is safe
+                text = hits[0] + text[len(first) :]
+                document = Document(
+                    text, len(text)
+                )  # completions are relative to the cursor, so this is safe
         yield from super().get_completions(document, complete_event)
 
 
@@ -113,8 +158,13 @@ class App:
         self._load_union()
         union_csv = store.parsed_dir / "union_hits.csv"
         # watch refreshes the season files and the name / season lists in the background
-        sources = [*(store.raw_dir / "union").glob("*.json"),
-                   *(store.raw_dir / f"{n}.json" for n in ("nikke_list_en", "character_id_map", "raid_list"))]
+        sources = [
+            *(store.raw_dir / "union").glob("*.json"),
+            *(
+                store.raw_dir / f"{n}.json"
+                for n in ("nikke_list_en", "character_id_map", "raid_list")
+            ),
+        ]
         union_times = [f.stat().st_mtime for f in sources if f.exists()]
         if not union_csv.exists():
             write_union_parsed(store, self.union)
@@ -126,7 +176,7 @@ class App:
     def _load_union(self) -> None:
         try:
             me = load_cookie(self.store).get("game_openid")
-        except (FileNotFoundError, ValueError):
+        except FileNotFoundError, ValueError:
             me = None
         self.union = build_union(self.store, me, time.time())
 
@@ -135,19 +185,30 @@ class App:
         names = sorted(set(self.union.names.values()))
         codes = {c.lower() for c in CODES}
         union = {
-            **{name: None for name in UNION_COMMANDS}, **{s: None for s in seasons},
+            **{name: None for name in UNION_COMMANDS},
+            **{s: None for s in seasons},
             "hits": seasons | codes | {"normal", "hard"} | set(names),
             "member": WordCompleter(names, ignore_case=True, sentence=True),
             "growth": WordCompleter(names, ignore_case=True, sentence=True),
-            "top": seasons | {"all"}, "missed": seasons, "normal": seasons, "season": seasons,
-            "boss": codes, "help": set(UNION_COMMANDS),
+            "top": seasons | {"all"},
+            "missed": seasons,
+            "normal": seasons,
+            "season": seasons,
+            "boss": codes,
+            "help": set(UNION_COMMANDS),
         }
         groups = {"union": union}
-        self._group_completers = {g: PrefixCompleter.from_nested_dict(d) for g, d in groups.items()}
-        return PrefixCompleter.from_nested_dict({
-            **{name: None for name in COMMANDS}, **groups,
-            "help": {g: set(cmds) for g, (cmds, _, _) in GROUPS.items()} | {c: None for c in COMMANDS if c not in GROUPS},
-        })
+        self._group_completers = {
+            g: PrefixCompleter.from_nested_dict(d) for g, d in groups.items()
+        }
+        return PrefixCompleter.from_nested_dict(
+            {
+                **{name: None for name in COMMANDS},
+                **groups,
+                "help": {g: set(cmds) for g, (cmds, _, _) in GROUPS.items()}
+                | {c: None for c in COMMANDS if c not in GROUPS},
+            }
+        )
 
     def completer(self):
         return self._group_completers.get(self.mode, self._completer)
@@ -164,7 +225,9 @@ class App:
         write_union_parsed(self.store, self.union)
         self.store.wipe_exports(scopes)
         self._completer = self._build_completer()
-        self.out.print(f"[dim]rebuilt parsed csv · cleared exports: {', '.join(sorted(scopes))}[/]")
+        self.out.print(
+            f"[dim]rebuilt parsed csv · cleared exports: {', '.join(sorted(scopes))}[/]"
+        )
 
     def status(self) -> str:
         return f"synced {self.store.state().get('sync', 'never')}"
@@ -192,7 +255,9 @@ class App:
         except (QueryError, ValueError) as e:
             self.out.print(f"[red]{e}[/]")
         except OSError as e:
-            self.out.print(f"[red]can't use {e.filename or 'a file'} — is it open in Excel? ({e.strerror or e})[/]")
+            self.out.print(
+                f"[red]can't use {e.filename or 'a file'} — is it open in Excel? ({e.strerror or e})[/]"
+            )
         except KeyboardInterrupt:
             self.out.print("[yellow]cancelled[/]")
         except Exception as e:
@@ -208,7 +273,9 @@ class App:
             self.store.write_export(path, result)
         self.render(result)
         rel = path.relative_to(self.store.root)
-        self.out.print(f"[dim]{'cached · !' + name + ' to rebuild · ' if cached else ''}{rel}[/]")
+        self.out.print(
+            f"[dim]{'cached · !' + name + ' to rebuild · ' if cached else ''}{rel}[/]"
+        )
 
     def render(self, result: Result) -> None:
         if not result.rows and result.summary:
@@ -273,18 +340,34 @@ class App:
         u, a, name = self.union, cmd.args, cmd.name
         if not u.seasons:
             raise QueryError("no union data yet — run sync, then union fetch")
-        season_arg = a[0] if a and re.fullmatch(r"s\d+", a[0].lower()) and name != "member" else None
+        season_arg = (
+            a[0]
+            if a and re.fullmatch(r"s\d+", a[0].lower()) and name != "member"
+            else None
+        )
         rest = a[1:] if season_arg else a
         if name in ("season", "missed", "normal") and rest:
             raise QueryError("usage: " + UNION_COMMANDS[name][0])
-        if name == "hits":  # members as openids: export names keep only [a-z0-9], so CJK names would collide
-            rest = [self._member(f[1:]) if f.startswith("@") else f.lower() if uq.is_filter(f) else self._member(f)
-                    for f in rest]
+        if (
+            name == "hits"
+        ):  # members as openids: export names keep only [a-z0-9], so CJK names would collide
+            rest = [
+                self._member(f[1:])
+                if f.startswith("@")
+                else f.lower()
+                if uq.is_filter(f)
+                else self._member(f)
+                for f in rest
+            ]
         if name in ("season", "missed", "normal", "hits"):
             n = uq.pick_season(u, season_arg)
             key = [f"s{n}", *rest]
-            run = {"season": lambda: uq.recap(u, n), "missed": lambda: uq.missed(u, n),
-                   "normal": lambda: uq.normal(u, n), "hits": lambda: uq.hits(u, n, rest)}[name]
+            run = {
+                "season": lambda: uq.recap(u, n),
+                "missed": lambda: uq.missed(u, n),
+                "normal": lambda: uq.normal(u, n),
+                "hits": lambda: uq.hits(u, n, rest),
+            }[name]
         elif name == "top":
             everything = bool(rest) and rest[0].lower() == "all"
             rest = rest[1:] if everything else rest
@@ -298,7 +381,9 @@ class App:
             elif u.me:
                 who = u.me
             else:
-                raise QueryError("no cookie saved, so I don't know which member is you — give a name")
+                raise QueryError(
+                    "no cookie saved, so I don't know which member is you — give a name"
+                )
             key = [who]
             run = lambda: uq.member(u, who)
         elif name == "members":
@@ -312,7 +397,9 @@ class App:
             key, run = a, lambda: uq.boss(u, a[0])
         self._show("union", name, key, cmd.force, run)
 
-    u_season = u_hits = u_missed = u_normal = u_top = u_member = u_members = u_growth = u_boss = union_search
+    u_season = u_hits = u_missed = u_normal = u_top = u_member = u_members = (
+        u_growth
+    ) = u_boss = union_search
 
     def u_fetch(self, cmd: Command) -> None:
         self._union_fetch(live_only=False)
@@ -331,6 +418,7 @@ class App:
         async def run():
             async with make_client(cookies) as client:
                 return await fetch_union(self.store, client, time.time(), live_only)
+
         results, interrupted = {}, False
         try:
             with self.out.status("fetching union seasons…"):
@@ -356,6 +444,7 @@ class App:
 
     def do_cookie(self, cmd: Command) -> None:
         from prompt_toolkit import prompt
+
         header = prompt("paste the Cookie header: ", is_password=True)
         save_cookie(self.store, header)
         self.out.print("[green]cookie saved to config/cookie.txt[/]")
@@ -364,6 +453,7 @@ class App:
         async def run():
             async with httpx.AsyncClient() as client:
                 return await sync_reference(self.store, client)
+
         results = asyncio.run(run())
         if any(not s.startswith("failed") for s in results.values()):
             self.store.mark("sync")
@@ -373,9 +463,12 @@ class App:
         changed = {n for n, s in results.items() if s == "changed"}
         self.refresh(synced=changed)
 
+
 def fetch_colour(status: str) -> str:
     """`union fetch` status colour: every "kept …" variant is a success, not a failure."""
-    return "green" if status == "saved" else "dim" if status.startswith("kept") else "red"
+    return (
+        "green" if status == "saved" else "dim" if status.startswith("kept") else "red"
+    )
 
 
 def utf8(stream):
@@ -397,8 +490,11 @@ def main(root: Path) -> None:
     app = App(store, console)
     history = root / "data" / ".history"
     history.parent.mkdir(parents=True, exist_ok=True)
-    session = PromptSession(history=FileHistory(str(history)), completer=DynamicCompleter(app.completer),
-                            bottom_toolbar=lambda: app.status())
+    session = PromptSession(
+        history=FileHistory(str(history)),
+        completer=DynamicCompleter(app.completer),
+        bottom_toolbar=lambda: app.status(),
+    )
     console.print("[bold magenta]shiniri-cli[/]  " + app.status())
     app.do_help(Command("help", [], False))
     while True:
@@ -427,7 +523,10 @@ def run() -> None:
         import signal
 
         from . import profile
-        signal.signal(signal.SIGTERM, _interrupt)  # stop.sh sends SIGTERM; make it log "stopped" like Ctrl+C
+
+        signal.signal(
+            signal.SIGTERM, _interrupt
+        )  # stop.sh sends SIGTERM; make it log "stopped" like Ctrl+C
         profile.watch(Store(root))
     else:
         main(root)

@@ -4,8 +4,17 @@ import json
 import httpx
 import pytest
 
-from shiniri_cli.fetch import (ROLEDATA_PATH, AuthError, campaign_targets, cdn_url, fetch_clears,
-                              load_cookie, parse_cookie, save_cookie, sync_reference)
+from shiniri_cli.fetch import (
+    ROLEDATA_PATH,
+    AuthError,
+    campaign_targets,
+    cdn_url,
+    fetch_clears,
+    load_cookie,
+    parse_cookie,
+    save_cookie,
+    sync_reference,
+)
 
 KNOWN = {
     "character/en/nikke_list_en_v2.json": "yl-57/hd-03/1bf030193826e243c2e195f951a4be00.json",
@@ -28,17 +37,27 @@ def test_cdn_url_keeps_multi_dot_extension():
 
 def test_cdn_url_no_extension_matches_js():
     import hashlib
+
     assert cdn_url("a/noext").endswith("/" + hashlib.md5(b"a/noext").hexdigest() + ".")
 
 
 def test_roledata_template():
     assert cdn_url(ROLEDATA_PATH.format(resource_id=511)).endswith(
-        "oz-20/72fa6824d2d0e69adc7aace692678372.json")
+        "oz-20/72fa6824d2d0e69adc7aace692678372.json"
+    )
 
 
 def ok(sid_list):
-    return httpx.Response(200, json={"code": 0, "data": {"cleared_at": "1", "list": [
-        {"slot": 1, "tid": 433004, "lv": 1, "combat": 1}]}})
+    return httpx.Response(
+        200,
+        json={
+            "code": 0,
+            "data": {
+                "cleared_at": "1",
+                "list": [{"slot": 1, "tid": 433004, "lv": 1, "combat": 1}],
+            },
+        },
+    )
 
 
 def test_parse_cookie():
@@ -94,7 +113,9 @@ def test_auth_error_keeps_earlier_clears(store):
         sid = json.loads(req.content)["stage_id"]
         if sid == 50002:
             return ok(sid)
-        return httpx.Response(200, json={"code": 300001, "msg": "game not login", "data": None})
+        return httpx.Response(
+            200, json={"code": 300001, "msg": "game not login", "data": None}
+        )
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     with pytest.raises(AuthError):
@@ -104,8 +125,16 @@ def test_auth_error_keeps_earlier_clears(store):
 
 def test_sync_reference(store):
     store.config_dir.mkdir(parents=True, exist_ok=True)
-    (store.config_dir / "sources.json").write_text(json.dumps(
-        {"nikke": "n/n.json", "tower_list": "t/t.json", "slow": "s/s.json", "html": "h/h.json"}))
+    (store.config_dir / "sources.json").write_text(
+        json.dumps(
+            {
+                "nikke": "n/n.json",
+                "tower_list": "t/t.json",
+                "slow": "s/s.json",
+                "html": "h/h.json",
+            }
+        )
+    )
     old_tower = store.load_raw("tower_list")
 
     def handler(req):
@@ -120,31 +149,55 @@ def test_sync_reference(store):
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     res = asyncio.run(sync_reference(store, client))
     assert res["nikke"] == "changed"
-    assert res["tower_list"] == "failed: HTTPStatusError (site may have changed its URL scheme)"
+    assert (
+        res["tower_list"]
+        == "failed: HTTPStatusError (site may have changed its URL scheme)"
+    )
     assert res["slow"] == "failed: ConnectTimeout"
     assert res["html"] == "failed: JSONDecodeError"
     assert store.load_raw("tower_list") == old_tower
-    assert asyncio.run(sync_reference(store, httpx.AsyncClient(transport=httpx.MockTransport(handler))))["nikke"] == "unchanged"
+    assert (
+        asyncio.run(
+            sync_reference(
+                store, httpx.AsyncClient(transport=httpx.MockTransport(handler))
+            )
+        )["nikke"]
+        == "unchanged"
+    )
 
 
 def test_sync_reference_only_named(store):
     store.config_dir.mkdir(parents=True, exist_ok=True)
-    (store.config_dir / "sources.json").write_text(json.dumps({"nikke": "n/n.json", "raid_list": "r/r.json"}))
+    (store.config_dir / "sources.json").write_text(
+        json.dumps({"nikke": "n/n.json", "raid_list": "r/r.json"})
+    )
     urls = []
 
     def handler(req):
         urls.append(str(req.url))
         return httpx.Response(200, json=[{"id": 1000047}])
 
-    res = asyncio.run(sync_reference(store, httpx.AsyncClient(transport=httpx.MockTransport(handler)),
-                                     names=("raid_list",)))
+    res = asyncio.run(
+        sync_reference(
+            store,
+            httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+            names=("raid_list",),
+        )
+    )
     assert res == {"raid_list": "changed"} and urls == [cdn_url("r/r.json")]
 
 
 def test_sync_reference_repairs_corrupt_file_and_keeps_going(store):
     store.config_dir.mkdir(parents=True, exist_ok=True)
-    (store.config_dir / "sources.json").write_text(json.dumps({"nikke_list_en": "n/n.json", "raid_list": "r/r.json"}))
+    (store.config_dir / "sources.json").write_text(
+        json.dumps({"nikke_list_en": "n/n.json", "raid_list": "r/r.json"})
+    )
     (store.raw_dir / "nikke_list_en.json").write_text("{nope", encoding="utf-8")
-    client = httpx.AsyncClient(transport=httpx.MockTransport(lambda req: httpx.Response(200, json=[{"id": 1}])))
-    assert asyncio.run(sync_reference(store, client)) == {"nikke_list_en": "changed", "raid_list": "changed"}
+    client = httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda req: httpx.Response(200, json=[{"id": 1}]))
+    )
+    assert asyncio.run(sync_reference(store, client)) == {
+        "nikke_list_en": "changed",
+        "raid_list": "changed",
+    }
     assert store.load_raw("nikke_list_en") == [{"id": 1}]

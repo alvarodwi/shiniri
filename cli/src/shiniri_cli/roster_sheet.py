@@ -22,7 +22,7 @@ def _whole(v) -> int | None:
     try:
         f = float(v)
         return int(f) if f.is_integer() else None
-    except (TypeError, ValueError, OverflowError):
+    except TypeError, ValueError, OverflowError:
         return None  # something typed by hand
 
 
@@ -47,15 +47,22 @@ def database_names(values: list[list]) -> dict[int, str]:
     return out
 
 
-def roster_rows(characters: list, names: dict[int, str], logged: dict[int, int],
-                day: str) -> tuple[list[list], list[str]]:
+def roster_rows(
+    characters: list, names: dict[int, str], logged: dict[int, int], day: str
+) -> tuple[list[list], list[str]]:
     """Rows [day, nameCode, name, copies] sorted by nameCode, only where copies differs from `logged`, the
     first of a repeated name_code winning, plus a note per skipped entry (invalid, or not in `names`)."""
     found, notes = {}, []
     for i, c in enumerate(characters):
         c = c if isinstance(c, dict) else {}
         code, grade, core = c.get("name_code"), c.get("grade"), c.get("core")
-        if not (_int(code) and _int(grade) and 0 <= grade <= 3 and _int(core) and 0 <= core <= 7):
+        if not (
+            _int(code)
+            and _int(grade)
+            and 0 <= grade <= 3
+            and _int(core)
+            and 0 <= core <= 7
+        ):
             notes.append(f"entry {i}")
         elif code in found:
             continue
@@ -64,28 +71,43 @@ def roster_rows(characters: list, names: dict[int, str], logged: dict[int, int],
             notes.append(f"{code} not in NikkeDatabase")
         else:
             found[code] = 1 + grade + core
-    rows = [[day, code, names[code], copies] for code, copies in sorted(found.items())
-            if copies is not None and copies != logged.get(code)]
+    rows = [
+        [day, code, names[code], copies]
+        for code, copies in sorted(found.items())
+        if copies is not None and copies != logged.get(code)
+    ]
     return rows, notes
 
 
-async def sync_roster_log(client: httpx.AsyncClient, openid: str, api: SheetsApi, *, day: str,
-                          timestamp: str) -> str:
+async def sync_roster_log(
+    client: httpx.AsyncClient, openid: str, api: SheetsApi, *, day: str, timestamp: str
+) -> str:
     """Append the Nikkes whose copy count changed in one block; the log line. Never raises."""
     try:
-        resp = await api_call(client, "GetUserCharacters", {"intl_open_id": openid, "nikke_area_id": AREA_ID})
+        resp = await api_call(
+            client,
+            "GetUserCharacters",
+            {"intl_open_id": openid, "nikke_area_id": AREA_ID},
+        )
         if resp.get("code") != 0:
-            raise SheetsError(f"code {resp.get('code')}" + (f": {resp['msg']}" if resp.get("msg") else ""))
+            raise SheetsError(
+                f"code {resp.get('code')}"
+                + (f": {resp['msg']}" if resp.get("msg") else "")
+            )
         characters = (resp.get("data") or {}).get("characters")
         if not characters or not isinstance(characters, list):
             raise SheetsError("no characters")
-        _checked(api, TAB, HEADERS)  # a renamed header shows up even on a run that writes nothing
+        _checked(
+            api, TAB, HEADERS
+        )  # a renamed header shows up even on a run that writes nothing
         names = database_names(api.get_values("'NikkeDatabase'!A:B", unformatted=True))
         logged = logged_copies(api.get_values(f"'{TAB}'!A:D", unformatted=True))
         rows, notes = roster_rows(characters, names, logged, day)
         if rows:
             write_rows(api, TAB, HEADERS, rows, form=FORM, timestamp=timestamp)
-        return f"{TAB} +{len(rows)}" + (f" (skipped {', '.join(notes)})" if notes else "")
+        return f"{TAB} +{len(rows)}" + (
+            f" (skipped {', '.join(notes)})" if notes else ""
+        )
     except SheetsError as e:
         return f"{TAB}: {e}"
     except Exception as e:

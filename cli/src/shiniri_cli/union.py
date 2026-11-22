@@ -9,12 +9,26 @@ import httpx
 from .fetch import AREA_ID, api_call
 from .store import Store, write_csv
 
-ELEMENTS = {"100001": "Fire", "200001": "Water", "300001": "Wind", "400001": "Electronic", "500001": "Iron"}
-WEAK_TO = {"Fire": "Water", "Water": "Electronic", "Electronic": "Iron", "Iron": "Wind", "Wind": "Fire"}
+ELEMENTS = {
+    "100001": "Fire",
+    "200001": "Water",
+    "300001": "Wind",
+    "400001": "Electronic",
+    "500001": "Iron",
+}
+WEAK_TO = {
+    "Fire": "Water",
+    "Water": "Electronic",
+    "Electronic": "Iron",
+    "Iron": "Wind",
+    "Wind": "Fire",
+}
 CODES = ("HSTA", "PSID", "ZEUS", "DMTR", "ANMI")
 MODES = {1: "normal", 2: "hard"}
 FINAL_GRACE = 3600
-SIZE_TRUST = 7 * 86400  # the guild card and roster are today's; past this they say nothing about that season
+SIZE_TRUST = (
+    7 * 86400
+)  # the guild card and roster are today's; past this they say nothing about that season
 
 
 class UnionError(Exception):
@@ -49,15 +63,29 @@ def _season_files(store: Store) -> list[tuple[int, dict]]:
 
 def build_union(store: Store, me: str | None, now: float) -> UnionData:
     nikke = store.nikke_lookup()
-    raid_list = {season_number(s["id"]): s for s in store.load_raw("raid_list", []) if "id" in s}
-    live = next((n for n, s in raid_list.items() if s.get("start_ts", 0) <= now <= s.get("end_ts", 0)), None)
+    raid_list = {
+        season_number(s["id"]): s for s in store.load_raw("raid_list", []) if "id" in s
+    }
+    live = next(
+        (
+            n
+            for n, s in raid_list.items()
+            if s.get("start_ts", 0) <= now <= s.get("end_ts", 0)
+        ),
+        None,
+    )
     seasons, hits, names = {}, [], {}
     for n, raw in _season_files(store):
         meta = raid_list.get(n, {})
-        seasons[n] = {"id": n + 1000000, "start_ts": meta.get("start_ts"), "end_ts": meta.get("end_ts"),
-                      "fetched_ts": raw.get("fetched_ts"),
-                      "guild": raw.get("guild") or {}, "level": raw.get("level") or {},
-                      "members": raw.get("members")}
+        seasons[n] = {
+            "id": n + 1000000,
+            "start_ts": meta.get("start_ts"),
+            "end_ts": meta.get("end_ts"),
+            "fetched_ts": raw.get("fetched_ts"),
+            "guild": raw.get("guild") or {},
+            "level": raw.get("level") or {},
+            "members": raw.get("members"),
+        }
         for h in (raw.get("raid") or {}).get("participate_data") or []:
             mode = MODES.get(h.get("difficulty"))
             if not mode:
@@ -65,20 +93,44 @@ def build_union(store: Store, me: str | None, now: float) -> UnionData:
             boss = (h.get("name_localvalues") or {}).get("en", "")
             squad = []
             for u in sorted(h.get("squad") or [], key=lambda u: u.get("slot", 0)):
-                squad.append({"slot": u.get("slot"), "tid": u.get("tid"), **nikke(u.get("tid")),
-                              "level": u.get("lv"), "cp": u.get("combat") or 0})
-            names[h["openid"]] = h.get("nickname") or h["openid"]  # season order: the newest name wins
-            hits.append({"season": n, "day": h.get("day", 0) + 1, "mode": mode, "level": h.get("level"),
-                         "step": h.get("step"), "boss": boss, "code": boss_code(boss),
-                         "boss_element": ELEMENTS.get(str((h.get("element_id") or [""])[0])),
-                         "openid": h["openid"], "nickname": h.get("nickname") or h["openid"], "damage": int(h.get("total_damage") or 0),
-                         "final": bool(h.get("is_final_hit")), "squad": squad})
+                squad.append(
+                    {
+                        "slot": u.get("slot"),
+                        "tid": u.get("tid"),
+                        **nikke(u.get("tid")),
+                        "level": u.get("lv"),
+                        "cp": u.get("combat") or 0,
+                    }
+                )
+            names[h["openid"]] = (
+                h.get("nickname") or h["openid"]
+            )  # season order: the newest name wins
+            hits.append(
+                {
+                    "season": n,
+                    "day": h.get("day", 0) + 1,
+                    "mode": mode,
+                    "level": h.get("level"),
+                    "step": h.get("step"),
+                    "boss": boss,
+                    "code": boss_code(boss),
+                    "boss_element": ELEMENTS.get(str((h.get("element_id") or [""])[0])),
+                    "openid": h["openid"],
+                    "nickname": h.get("nickname") or h["openid"],
+                    "damage": int(h.get("total_damage") or 0),
+                    "final": bool(h.get("is_final_hit")),
+                    "squad": squad,
+                }
+            )
     return UnionData(seasons, hits, names, me, live if live in seasons else None)
 
 
 def is_final(stored: dict | None, season: dict) -> bool:
     # an hour past the end, so the server's ~5 minute lag has caught up before the season locks
-    return bool(stored) and stored.get("fetched_ts", 0) > season.get("end_ts", 0) + FINAL_GRACE
+    return (
+        bool(stored)
+        and stored.get("fetched_ts", 0) > season.get("end_ts", 0) + FINAL_GRACE
+    )
 
 
 def _ok(resp: dict) -> bool:
@@ -87,17 +139,33 @@ def _ok(resp: dict) -> bool:
 
 async def _members(client: httpx.AsyncClient, guild_id: str) -> list[dict] | None:
     """The union's current members, or None when the answer isn't a usable one."""
-    resp = await api_call(client, "GetGuildMembers", {"guild_id": guild_id, "nikke_area_id": str(AREA_ID)})
+    resp = await api_call(
+        client, "GetGuildMembers", {"guild_id": guild_id, "nikke_area_id": str(AREA_ID)}
+    )
     items = resp["data"].get("items") if _ok(resp) else None
-    kept = [m for m in items if isinstance(m, dict) and m.get("member_id")] if isinstance(items, list) else []
+    kept = (
+        [m for m in items if isinstance(m, dict) and m.get("member_id")]
+        if isinstance(items, list)
+        else []
+    )
     return kept or None
 
 
-async def fetch_union(store: Store, client: httpx.AsyncClient, now: float, live_only: bool = False,
-                      delay: tuple[float, float] = (0.5, 1.0), results: dict | None = None) -> dict[int, str]:
+async def fetch_union(
+    store: Store,
+    client: httpx.AsyncClient,
+    now: float,
+    live_only: bool = False,
+    delay: tuple[float, float] = (0.5, 1.0),
+    results: dict | None = None,
+) -> dict[int, str]:
     """Season number -> status. Pass `results` to keep the statuses of seasons done before an error."""
     guild = await api_call(client, "GetMyGuildInfo", {"ignore_toast": True})
-    card = (guild.get("data") or {}).get("card") if isinstance(guild.get("data"), dict) else None
+    card = (
+        (guild.get("data") or {}).get("card")
+        if isinstance(guild.get("data"), dict)
+        else None
+    )
     if guild.get("code") == -1:  # api_call's transport failure, not a server answer
         raise UnionError(f"can't reach blablalink ({guild.get('msg')})")
     if guild.get("code") != 0 or not card:
@@ -111,33 +179,54 @@ async def fetch_union(store: Store, client: httpx.AsyncClient, now: float, live_
             continue
         n, sid = season_number(season["id"]), str(season["id"])
         stored = store.load_raw(f"union/{sid}")
-        other = stored and str((stored.get("guild") or {}).get("guild_id")) != str(card["guild_id"])
+        other = stored and str((stored.get("guild") or {}).get("guild_id")) != str(
+            card["guild_id"]
+        )
         if is_final(stored, season):
             out[n] = "kept"
             if not other and (newest is None or n > newest[0]):
                 newest = (n, sid, stored, season)
             continue
         if other:
-            out[n] = "kept (other union)"  # a past union's season can't be fetched again
+            out[n] = (
+                "kept (other union)"  # a past union's season can't be fetched again
+            )
             continue
         body = {"area_id": AREA_ID, "guild_id": str(card["guild_id"]), "season_id": sid}
         level = await api_call(client, "GetUnionRaidLevelDataOfGuildSeason", body)
-        raid = await api_call(client, "GetUnionRaidDataOfGuildSeason", body) if _ok(level) else level
+        raid = (
+            await api_call(client, "GetUnionRaidDataOfGuildSeason", body)
+            if _ok(level)
+            else level
+        )
         old_hits = len(((stored or {}).get("raid") or {}).get("participate_data") or [])
         new_hits = len(raid["data"].get("participate_data") or []) if _ok(raid) else 0
         if _ok(level) and _ok(raid) and new_hits < old_hits:
             out[n] = f"failed: fewer hits than stored ({old_hits} → {new_hits})"
         elif _ok(level) and _ok(raid):
-            fresh = {"guild": card, "level": level["data"], "raid": raid["data"], "fetched_ts": int(now)}
-            members = await _members(client, str(card["guild_id"])) or (stored or {}).get("members")
-            store.save_raw(f"union/{sid}", {**fresh, "members": members} if members else fresh)
+            fresh = {
+                "guild": card,
+                "level": level["data"],
+                "raid": raid["data"],
+                "fetched_ts": int(now),
+            }
+            members = await _members(client, str(card["guild_id"])) or (
+                stored or {}
+            ).get("members")
+            store.save_raw(
+                f"union/{sid}", {**fresh, "members": members} if members else fresh
+            )
             out[n] = "saved"
         else:
             out[n] = f"failed: {raid.get('msg') or level.get('msg') or 'no data'}"
         await asyncio.sleep(random.uniform(*delay))
     # locked before rosters were stored: today's roster still describes the season that just ended,
     # never an older one
-    if newest and "members" not in newest[2] and now <= newest[3].get("end_ts", 0) + SIZE_TRUST:
+    if (
+        newest
+        and "members" not in newest[2]
+        and now <= newest[3].get("end_ts", 0) + SIZE_TRUST
+    ):
         n, sid, stored, _ = newest
         members = await _members(client, str(card["guild_id"]))
         if members:
@@ -147,11 +236,39 @@ async def fetch_union(store: Store, client: httpx.AsyncClient, now: float, live_
 
 
 def write_union_parsed(store: Store, u: UnionData) -> None:
-    header = ["season", "day", "mode", "level", "step", "code", "boss", "member", "damage", "final",
-              "slot1", "slot2", "slot3", "slot4", "slot5"]
+    header = [
+        "season",
+        "day",
+        "mode",
+        "level",
+        "step",
+        "code",
+        "boss",
+        "member",
+        "damage",
+        "final",
+        "slot1",
+        "slot2",
+        "slot3",
+        "slot4",
+        "slot5",
+    ]
     rows = []
     for h in u.hits:
         slots = {s["slot"]: s["name"] for s in h["squad"]}
-        rows.append([h["season"], h["day"], h["mode"], h["level"], h["step"], h["code"], h["boss"],
-                     u.names[h["openid"]], h["damage"], h["final"], *(slots.get(i, "") for i in range(1, 6))])
+        rows.append(
+            [
+                h["season"],
+                h["day"],
+                h["mode"],
+                h["level"],
+                h["step"],
+                h["code"],
+                h["boss"],
+                u.names[h["openid"]],
+                h["damage"],
+                h["final"],
+                *(slots.get(i, "") for i in range(1, 6)),
+            ]
+        )
     write_csv(store.parsed_dir / "union_hits.csv", header, rows)
