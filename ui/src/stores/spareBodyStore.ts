@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-import { OVERCORED_TAB, SPARE_BODY_TAB } from '@/config/sheets'
+import { OVERCORE_TAB, EXCHANGE_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import { readNikkes } from '@/services/nikke/nikkeDatabase'
 import type { Nikke } from '@/services/nikke/nikkeDatabase'
@@ -84,8 +84,8 @@ export const useSpareBodyStore = defineStore('spareBody', {
         const { updatedRanges } = await writeTabsAtEnd(
           api,
           [
-            { tab: SPARE_BODY_TAB, rows },
-            ...(oc.rows.length ? [{ tab: OVERCORED_TAB, rows: oc.rows }] : []),
+            { tab: EXCHANGE_TAB, rows },
+            ...(oc.rows.length ? [{ tab: OVERCORE_TAB, rows: oc.rows }] : []),
           ],
           'SpareBody',
         )

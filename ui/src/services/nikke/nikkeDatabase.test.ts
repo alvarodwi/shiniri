@@ -58,7 +58,7 @@ describe('readNikkes', () => {
   })
 
   it('rejects a renamed header', async () => {
-    const renamed = headers.map((h) => (h === 'name' ? 'Name' : h))
+    const renamed = headers.map((h) => (h === 'nikke' ? 'Nikke' : h))
     const api = createMockSheetsApi({ [id]: { [tab]: [renamed, ['5001', 'Rapi']] } })
     await expect(readNikkes(api)).rejects.toBeInstanceOf(HeaderMismatchError)
   })

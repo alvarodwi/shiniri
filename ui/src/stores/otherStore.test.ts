@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useOtherStore } from './otherStore'
 import { baseline, overcoreValues } from './overcoreTestData'
 
-import { NIKKE_DATABASE_TAB, OTHER_TAB } from '@/config/sheets'
+import { NIKKE_DATABASE_TAB, EXTRA_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 
 const DB = "'NikkeDatabase'!A1:J"
@@ -26,8 +26,8 @@ function fakeApi() {
     "'AuditLog'!A1:D1": [['savedAt', 'form', 'ranges', 'rows']],
     "'AuditLog'!A:A": [['savedAt']],
     ...overcoreValues(),
-    "'Other'!A1:I1": [[...OTHER_TAB.headers]],
-    "'Other'!A:A": [['date'], ['2026-11-17']],
+    "'Extra'!A1:I1": [[...EXTRA_TAB.headers]],
+    "'Extra'!A:A": [['date'], ['2026-11-17']],
     [DB]: [
       [...NIKKE_DATABASE_TAB.headers],
       dbRow('5001', 'Modernia', 'Pilgrim'),
@@ -93,12 +93,12 @@ describe('otherStore', () => {
     await store.save(api)
     const [, data] = api.batchUpdateValues.mock.calls[0]
     const row = ['2026-11-21', 'Welfare Unit', "'3.5 Anniv", '', '', 1, 1, "'Asuka", '']
-    expect(data[0]).toEqual({ range: "'Other'!A3:I4", rows: [row, row] })
+    expect(data[0]).toEqual({ range: "'Extra'!A3:I4", rows: [row, row] })
     expect(data).toHaveLength(2)
     expect(data[1].rows[0][1]).toBe('Other')
     expect(store.entry.sourceType).toBe('')
     expect(store.status).toBe('saved')
-    expect(store.lastSaved).toBe("'Other'!A3:I4")
+    expect(store.lastSaved).toBe("'Extra'!A3:I4")
   })
 
   it('writes the Overcored row in the same batch and sets a remark', async () => {
@@ -111,7 +111,7 @@ describe('otherStore', () => {
     Object.assign(store.entry, { sourceInfo: '3.5 Anniv', names: ['Modernia'], copies: '2' })
     await store.save(api)
     const [, data] = api.batchUpdateValues.mock.calls[0]
-    expect(data.map((d) => d.range.split('!')[0])).toEqual([`'Other'`, `'Overcored'`, `'AuditLog'`])
+    expect(data.map((d) => d.range.split('!')[0])).toEqual([`'Extra'`, `'Overcore'`, `'AuditLog'`])
     expect(data[1].rows).toEqual([
       ['2026-11-21', 'Other', "'Modernia", 'Pilgrim', ''],
       ['2026-11-21', 'Other', "'Modernia", 'Pilgrim', ''],

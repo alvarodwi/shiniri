@@ -9,7 +9,7 @@ import {
   LEVEL_TAB,
   SOLO_RAID_TAB,
   SPREADSHEETS,
-  T9MANU_TAB,
+  GEAR_TAB,
 } from '@/config/sheets'
 
 const grid = () => ({
@@ -124,7 +124,7 @@ describe('same-named tabs in two spreadsheets', () => {
 
 describe('MOCK_SHEETS', () => {
   it('seeds every tab the app writes with its real headers and some rows', () => {
-    const specs = [ANOMALY_TAB, T9MANU_TAB, FURNACE_TAB, LEVEL_TAB, SOLO_RAID_TAB]
+    const specs = [ANOMALY_TAB, GEAR_TAB, FURNACE_TAB, LEVEL_TAB, SOLO_RAID_TAB]
     for (const spec of [...specs, ...SPREADSHEETS.map((s) => s.audit)]) {
       const tab = MOCK_SHEETS[spec.spreadsheetId]?.[spec.tab]
       expect(tab?.[0], spec.tab).toEqual([...spec.headers])

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-import { OVERCORED_TAB, OTHER_TAB } from '@/config/sheets'
+import { OVERCORE_TAB, EXTRA_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import { readNikkes } from '@/services/nikke/nikkeDatabase'
 import type { Nikke } from '@/services/nikke/nikkeDatabase'
@@ -98,8 +98,8 @@ export const useOtherStore = defineStore('other', {
         const { updatedRanges } = await writeTabsAtEnd(
           api,
           [
-            { tab: OTHER_TAB, rows },
-            ...(oc.rows.length ? [{ tab: OVERCORED_TAB, rows: oc.rows }] : []),
+            { tab: EXTRA_TAB, rows },
+            ...(oc.rows.length ? [{ tab: OVERCORE_TAB, rows: oc.rows }] : []),
           ],
           'Other',
         )

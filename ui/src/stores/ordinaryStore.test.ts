@@ -114,7 +114,7 @@ describe('ordinaryStore', () => {
     const [, data] = api.batchUpdateValues.mock.calls[0]
     expect(data.map((d) => d.range.split('!')[0])).toEqual([
       `'Ordinary'`,
-      `'Overcored'`,
+      `'Overcore'`,
       `'AuditLog'`,
     ])
     expect(data[1].rows).toEqual([['2026-11-21', 'Ordinary', "'Elysion", 'Elysion', '']])

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useGearStore } from './gearStore'
 
-import { FURNACE_TAB, T9MANU_TAB } from '@/config/sheets'
+import { FURNACE_TAB, GEAR_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import type { GearItem } from '@/types/gear'
 
@@ -13,10 +13,10 @@ function fakeApi() {
   const values: Record<string, string[][]> = {
     "'AuditLog'!A1:D1": [['savedAt', 'form', 'ranges', 'rows']],
     "'AuditLog'!A:A": [['savedAt']],
-    "'T9Manu'!A1:E1": [[...T9MANU_TAB.headers]],
-    "'T9Manu'!A:A": [['date'], ['x']],
+    "'Gear'!A1:E1": [[...GEAR_TAB.headers]],
+    "'Gear'!A:A": [['date'], ['x']],
     "'Furnace'!A1:E1": [[...FURNACE_TAB.headers]],
-    "'Furnace'!A:A": [['Date'], ['x'], ['x']],
+    "'Furnace'!A:A": [['date'], ['x'], ['x']],
   }
   return {
     getValues: vi.fn(async (_id: string, range: string) => values[range] ?? []),
@@ -47,7 +47,7 @@ describe('gearStore', () => {
     await store.save(api)
     expect(api.batchUpdateValues).toHaveBeenCalledOnce()
     const data = api.batchUpdateValues.mock.calls[0][1]
-    expect(data.map((d) => d.range)).toEqual(["'T9Manu'!A3:E5", "'AuditLog'!A2:D2"])
+    expect(data.map((d) => d.range)).toEqual(["'Gear'!A3:E5", "'AuditLog'!A2:D2"])
     expect(data[0].rows[0]).toEqual([DATE, 'Manufacturer Arms', 'Attacker', 'Tetra', 'Gloves'])
   })
 
@@ -59,7 +59,7 @@ describe('gearStore', () => {
     await store.save(api)
     const data = api.batchUpdateValues.mock.calls[0][1]
     expect(data.map((d) => d.range)).toEqual([
-      "'T9Manu'!A3:E3",
+      "'Gear'!A3:E3",
       "'Furnace'!A4:E4",
       "'AuditLog'!A2:D2",
     ])
@@ -82,7 +82,7 @@ describe('gearStore', () => {
     expect(store.source).toBe('box')
     expect(store.count).toBe(1)
     expect(store.cards.every((c) => c.classType === null)).toBe(true)
-    expect(store.lastSaved).toEqual([{ updatedRange: "'T9Manu'!A3:E4", count: 2 }])
+    expect(store.lastSaved).toEqual([{ updatedRange: "'Gear'!A3:E4", count: 2 }])
   })
 
   it('saves only the active cards and shows blanks when the count grows again', async () => {

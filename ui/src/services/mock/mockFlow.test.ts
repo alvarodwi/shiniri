@@ -25,7 +25,7 @@ describe('mock sheet with the real stores', () => {
     await level.save(api)
     expect(level.status).toBe('saved')
     expect(level.last).toBe(790)
-    expect(level.lastSaved).toEqual({ updatedRange: "'LevelLogs'!A7:D8", count: 2 })
+    expect(level.lastSaved).toEqual({ updatedRange: "'LevelLog'!A7:D8", count: 2 })
 
     const log = useLogStore()
     await log.load(api)
@@ -54,7 +54,7 @@ describe('mock sheet with the real stores', () => {
     const spy = vi.spyOn(api, 'batchUpdateValues')
     return () =>
       spy.mock.calls.flatMap(([, data]) =>
-        data.filter((d) => d.range.startsWith("'Overcored'")).flatMap((d) => d.rows),
+        data.filter((d) => d.range.startsWith("'Overcore'")).flatMap((d) => d.rows),
       )
   }
 

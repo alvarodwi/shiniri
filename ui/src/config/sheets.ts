@@ -5,42 +5,32 @@ export const ANOMALY_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
   tab: 'Anomaly',
   // column I holds the optional note and has no header
-  headers: [
-    'date',
-    'bossName',
-    'stage',
-    'dropped',
-    'modules',
-    'gearClass',
-    'gearManu',
-    'dropType',
-    '',
-  ],
+  headers: ['date', 'boss', 'stage', 'dropped', 'modules', 'class', 'manufacturer', 'dropType', ''],
 }
 
-export const T9MANU_TAB: TabSpec = {
+export const GEAR_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
-  tab: 'T9Manu',
-  headers: ['date', 'sourceType', 'classType', 'manufacturer', 'slotType'],
+  tab: 'Gear',
+  headers: ['date', 'source', 'class', 'manufacturer', 'slot'],
 }
 
 // daysElapsed holds a formula the app writes per row; see services/level/levelRows.ts.
 export const LEVEL_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
-  tab: 'LevelLogs',
-  headers: ['newSynchroLevel', 'achievedAt', 'daysElapsed', 'note'],
+  tab: 'LevelLog',
+  headers: ['synchroLevel', 'date', 'daysElapsed', 'notes'],
 }
 
 export const SOLO_RAID_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
   tab: 'SoloRaid',
-  headers: ['season', 'month', 'boss', 'weakness', 'totalDmg', 'rank', 'comments'],
+  headers: ['season', 'month', 'boss', 'weakness', 'damage', 'rank', 'notes'],
 }
 
 export const FURNACE_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
   tab: 'Furnace',
-  headers: ['Date', 'Target', 'Sacrifice 1', 'Sacrifice 2', 'Result'],
+  headers: ['date', 'target', 'sacrifice1', 'sacrifice2', 'result'],
 }
 
 // Read-only here: the cli writes it.
@@ -49,7 +39,7 @@ export const NIKKE_DATABASE_TAB: TabSpec = {
   tab: 'NikkeDatabase',
   headers: [
     'nameCode',
-    'name',
+    'nikke',
     'rarity',
     'manufacturer',
     'class',
@@ -65,10 +55,10 @@ export const NIKKE_DATABASE_TAB: TabSpec = {
 export const SOCIAL_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
   tab: 'Social',
-  headers: ['date', 'times', 'totalSsr', 'ssrDetails', 'notes'],
+  headers: ['date', 'pulls', 'totalSsr', 'ssrDetails', 'notes'],
 }
 
-// times is tix + gems / 300 and totalSsr is the count of ssrDetails; see services/event/eventRows.ts.
+// pulls is tickets + gems / 300 and totalSsr is the count of ssrDetails; see services/event/eventRows.ts.
 export const EVENT_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
   tab: 'Event',
@@ -77,46 +67,46 @@ export const EVENT_TAB: TabSpec = {
     'rateUpName',
     'rateUpType',
     'gems',
-    'tix',
-    'times',
+    'tickets',
+    'pulls',
     'totalSsr',
     'ssrDetails',
     'notes',
   ],
 }
 
-// times is tix + gems / 300 and totalSsr is the count of ssrDetails; see services/ordinary/ordinaryRows.ts.
+// pulls is tickets + gems / 300 and totalSsr is the count of ssrDetails; see services/ordinary/ordinaryRows.ts.
 export const ORDINARY_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
   tab: 'Ordinary',
-  headers: ['date', 'gems', 'tix', 'times', 'totalSsr', 'ssrDetails', 'notes'],
+  headers: ['date', 'gems', 'tickets', 'pulls', 'totalSsr', 'ssrDetails', 'notes'],
 }
 
-// ssr is the count of result; see services/molds/moldRows.ts.
-export const MOLDS_TAB: TabSpec = {
+// totalSsr is the count of ssrDetails; see services/molds/moldRows.ts.
+export const MOLD_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
-  tab: 'Molds',
-  headers: ['date', 'moldType', 'amount', 'ssr', 'result', 'notes'],
+  tab: 'Mold',
+  headers: ['date', 'moldType', 'pulls', 'totalSsr', 'ssrDetails', 'notes'],
 }
 
 // One row per copy; see services/spareBody/spareBodyRows.ts.
-export const SPARE_BODY_TAB: TabSpec = {
+export const EXCHANGE_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
-  tab: 'SpareBody',
-  headers: ['date', 'target', 'source', 'notes'],
+  tab: 'Exchange',
+  headers: ['date', 'nikke', 'source', 'notes'],
 }
 
 // totalSsr is the count of ssrDetails; see services/other/otherRows.ts.
-export const OTHER_TAB: TabSpec = {
+export const EXTRA_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
-  tab: 'Other',
+  tab: 'Extra',
   headers: [
     'date',
-    'sourceType',
-    'sourceInfo',
+    'source',
+    'sourceDetail',
     'rateUpName',
     'gems',
-    'times',
+    'pulls',
     'totalSsr',
     'ssrDetails',
     'notes',
@@ -127,7 +117,7 @@ export const OTHER_TAB: TabSpec = {
 export const SPENDING_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
   tab: 'Spending',
-  headers: ['purchaseDate', 'packageName', 'type', 'priceIdr', 'priceUsd', 'platform', 'notes'],
+  headers: ['date', 'packageName', 'type', 'priceIdr', 'priceUsd', 'platform', 'notes'],
 }
 
 // Every save appends one row here, in the same write as its data.
@@ -158,19 +148,19 @@ export const SPREADSHEETS: Spreadsheet[] = [
 export const ALL_PULLS_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
   tab: 'AllPulls',
-  headers: ['date', 'ssr', 'source', 'spook', 'copy', 'isOvercore'],
+  headers: ['date', 'nikke', 'source', 'spook', 'copy', 'isOvercore'],
 }
 
 // Read-only here: the cli writes it.
 export const ROSTER_LOG_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
   tab: 'RosterLog',
-  headers: ['date', 'nameCode', 'name', 'copies'],
+  headers: ['date', 'nameCode', 'nikke', 'copies'],
 }
 
 // One row per Nikke copy past C7; notes stays blank, the owner fills it by hand.
-export const OVERCORED_TAB: TabSpec = {
+export const OVERCORE_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
-  tab: 'Overcored',
-  headers: ['date', 'from', 'ssr', 'manufacturer', 'notes'],
+  tab: 'Overcore',
+  headers: ['date', 'source', 'nikke', 'manufacturer', 'notes'],
 }

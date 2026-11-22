@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { useAnomalyStore } from './anomalyStore'
 
-import { ANOMALY_TAB, T9MANU_TAB } from '@/config/sheets'
+import { ANOMALY_TAB, GEAR_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 
 const HEADER = "'Anomaly'!A1:I1"
@@ -17,8 +17,8 @@ function fakeApi(colA: string[], lastRow: string[]) {
     [COL_A]: colA.map((v) => [v]),
     "'AuditLog'!A1:D1": [['savedAt', 'form', 'ranges', 'rows']],
     "'AuditLog'!A:A": [['savedAt']],
-    "'T9Manu'!A1:E1": [[...T9MANU_TAB.headers]],
-    "'T9Manu'!A:A": [['date'], ['x']],
+    "'Gear'!A1:E1": [[...GEAR_TAB.headers]],
+    "'Gear'!A:A": [['date'], ['x']],
   }
   const api = {
     values,
@@ -94,7 +94,7 @@ describe('anomalyStore', () => {
     expect(store.status).toBe('saved')
     expect(store.lastSaved).toEqual([
       { updatedRange: "'Anomaly'!A3:I7", count: 5 },
-      { updatedRange: "'T9Manu'!A3:E7", count: 5 },
+      { updatedRange: "'Gear'!A3:E7", count: 5 },
     ])
   })
 
@@ -110,7 +110,7 @@ describe('anomalyStore', () => {
     expect(api.batchUpdateValues).toHaveBeenCalledOnce()
     const [anomaly, t9] = api.batchUpdateValues.mock.calls[0][1]
     expect(anomaly.rows).toHaveLength(5)
-    expect(t9.range).toBe("'T9Manu'!A3:E4")
+    expect(t9.range).toBe("'Gear'!A3:E4")
     expect(t9.rows).toEqual([
       [DATE, 'Anomaly Interception', 'Defender', 'Elysion', 'Helmet'],
       [DATE, 'Anomaly Interception', 'Defender', 'Elysion', 'Gloves'],

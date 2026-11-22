@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { baseline, overcoreValues } from './overcoreTestData'
 import { useSpareBodyStore } from './spareBodyStore'
 
-import { NIKKE_DATABASE_TAB, SPARE_BODY_TAB } from '@/config/sheets'
+import { NIKKE_DATABASE_TAB, EXCHANGE_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 
 const DB = "'NikkeDatabase'!A1:J"
@@ -26,8 +26,8 @@ function fakeApi() {
     "'AuditLog'!A1:D1": [['savedAt', 'form', 'ranges', 'rows']],
     "'AuditLog'!A:A": [['savedAt']],
     ...overcoreValues(),
-    "'SpareBody'!A1:D1": [[...SPARE_BODY_TAB.headers]],
-    "'SpareBody'!A:A": [['date'], ['2026-11-17']],
+    "'Exchange'!A1:D1": [[...EXCHANGE_TAB.headers]],
+    "'Exchange'!A:A": [['date'], ['2026-11-17']],
     [DB]: [
       [...NIKKE_DATABASE_TAB.headers],
       dbRow('5001', 'Modernia', 'Pilgrim'),
@@ -94,7 +94,7 @@ describe('spareBodyStore', () => {
     await store.save(api)
     const [, data] = api.batchUpdateValues.mock.calls[0]
     expect(data[0]).toEqual({
-      range: "'SpareBody'!A3:D4",
+      range: "'Exchange'!A3:D4",
       rows: [
         ['2026-11-21', "'Asuka", 'Gold Mileage', ''],
         ['2026-11-21', "'Asuka", 'Gold Mileage', ''],
@@ -105,7 +105,7 @@ describe('spareBodyStore', () => {
     expect(store.entry.target).toBe('')
     expect(store.entry.copies).toBe('1')
     expect(store.status).toBe('saved')
-    expect(store.lastSaved).toBe("'SpareBody'!A3:D4")
+    expect(store.lastSaved).toBe("'Exchange'!A3:D4")
   })
 
   it('writes the Overcored row in the same batch and sets a remark', async () => {
@@ -120,8 +120,8 @@ describe('spareBodyStore', () => {
     await store.save(api)
     const [, data] = api.batchUpdateValues.mock.calls[0]
     expect(data.map((d) => d.range.split('!')[0])).toEqual([
-      `'SpareBody'`,
-      `'Overcored'`,
+      `'Exchange'`,
+      `'Overcore'`,
       `'AuditLog'`,
     ])
     expect(data[1].rows).toEqual([

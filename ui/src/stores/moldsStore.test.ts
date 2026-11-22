@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useMoldsStore } from './moldsStore'
 import { baseline, overcoreValues } from './overcoreTestData'
 
-import { NIKKE_DATABASE_TAB, MOLDS_TAB } from '@/config/sheets'
+import { NIKKE_DATABASE_TAB, MOLD_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 
 const DB = "'NikkeDatabase'!A1:J"
@@ -26,8 +26,8 @@ function fakeApi() {
     "'AuditLog'!A1:D1": [['savedAt', 'form', 'ranges', 'rows']],
     "'AuditLog'!A:A": [['savedAt']],
     ...overcoreValues(),
-    "'Molds'!A1:F1": [[...MOLDS_TAB.headers]],
-    "'Molds'!A:A": [['date'], ['2026-11-17']],
+    "'Mold'!A1:F1": [[...MOLD_TAB.headers]],
+    "'Mold'!A:A": [['date'], ['2026-11-17']],
     [DB]: [
       [...NIKKE_DATABASE_TAB.headers],
       dbRow('5001', 'Elysion', 'ELYSION'),
@@ -86,14 +86,14 @@ describe('moldsStore', () => {
     await store.save(api)
     const [, data] = api.batchUpdateValues.mock.calls[0]
     expect(data[0]).toEqual({
-      range: "'Molds'!A3:F3",
+      range: "'Mold'!A3:F3",
       rows: [['2026-11-21', 'Yellow Mold', 5, 1, "'Elysion", '']],
     })
     expect(data[1].rows[0][1]).toBe('Molds')
     expect(store.entry.names).toEqual([])
     expect(store.entry.moldType).toBe('')
     expect(store.status).toBe('saved')
-    expect(store.lastSaved).toBe("'Molds'!A3:F3")
+    expect(store.lastSaved).toBe("'Mold'!A3:F3")
   })
 
   it('writes the Overcored row in the same batch and sets a remark', async () => {
@@ -107,7 +107,7 @@ describe('moldsStore', () => {
     store.entry.names = ['Modernia']
     await store.save(api)
     const [, data] = api.batchUpdateValues.mock.calls[0]
-    expect(data.map((d) => d.range.split('!')[0])).toEqual([`'Molds'`, `'Overcored'`, `'AuditLog'`])
+    expect(data.map((d) => d.range.split('!')[0])).toEqual([`'Mold'`, `'Overcore'`, `'AuditLog'`])
     expect(data[1].rows).toEqual([['2026-11-21', 'Molds', "'Modernia", 'Pilgrim', '']])
     expect(store.remark).toMatch(/C8/)
     expect(store.remark).toMatch(/And she's a Pilgrim\.$/)

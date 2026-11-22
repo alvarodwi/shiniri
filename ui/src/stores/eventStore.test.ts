@@ -130,7 +130,7 @@ describe('eventStore', () => {
     store.add('Biscuit')
     await store.save(api)
     const [, data] = api.batchUpdateValues.mock.calls[0]
-    expect(data.map((d) => d.range.split('!')[0])).toEqual([`'Event'`, `'Overcored'`, `'AuditLog'`])
+    expect(data.map((d) => d.range.split('!')[0])).toEqual([`'Event'`, `'Overcore'`, `'AuditLog'`])
     expect(data[1].rows).toEqual([['2026-11-21', 'Event', "'Biscuit", 'Tetra', '']])
     expect(store.remark).toMatch(/C8/)
     expect(store.status).toBe('saved')

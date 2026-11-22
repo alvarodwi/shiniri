@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-import { OVERCORED_TAB, EVENT_TAB } from '@/config/sheets'
+import { OVERCORE_TAB, EVENT_TAB } from '@/config/sheets'
 import { toRow } from '@/services/event/eventRows'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import { readNikkes } from '@/services/nikke/nikkeDatabase'
@@ -106,7 +106,7 @@ export const useEventStore = defineStore('event', {
           api,
           [
             { tab: EVENT_TAB, rows: [row] },
-            ...(oc.rows.length ? [{ tab: OVERCORED_TAB, rows: oc.rows }] : []),
+            ...(oc.rows.length ? [{ tab: OVERCORE_TAB, rows: oc.rows }] : []),
           ],
           'Event',
         )

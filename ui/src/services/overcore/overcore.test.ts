@@ -14,8 +14,8 @@ import type { SheetsApi } from '@/services/google/sheetsApi'
 import type { Nikke } from '@/services/nikke/nikkeDatabase'
 import { HeaderMismatchError } from '@/services/sheets/tabWriter'
 
-const AP_H = ['date', 'ssr', 'source', 'spook', 'copy', 'isOvercore']
-const RL_H = ['date', 'nameCode', 'name', 'copies']
+const AP_H = ['date', 'nikke', 'source', 'spook', 'copy', 'isOvercore']
+const RL_H = ['date', 'nameCode', 'nikke', 'copies']
 const roster = [
   RL_H,
   ['2026-11-21', '5001', 'Rapi', '10'],
@@ -154,7 +154,7 @@ describe('overcore', () => {
     }) as unknown as SheetsApi
 
   it('checkOvercores throws on an AllPulls header mismatch', async () => {
-    const api = fakeApi({ "'AllPulls'!A1:F": [['date', 'ssr']], "'RosterLog'!A1:D": roster })
+    const api = fakeApi({ "'AllPulls'!A1:F": [['date', 'nikke']], "'RosterLog'!A1:D": roster })
     await expect(checkOvercores(api, input)).rejects.toThrow(HeaderMismatchError)
     await expect(checkOvercores(api, input)).rejects.toThrow(/^AllPulls: /)
   })

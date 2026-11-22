@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-import { OVERCORED_TAB, MOLDS_TAB } from '@/config/sheets'
+import { OVERCORE_TAB, MOLD_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import { moldPool, toRow } from '@/services/molds/moldRows'
 import { readNikkes } from '@/services/nikke/nikkeDatabase'
@@ -85,8 +85,8 @@ export const useMoldsStore = defineStore('molds', {
         const { updatedRanges } = await writeTabsAtEnd(
           api,
           [
-            { tab: MOLDS_TAB, rows: [row] },
-            ...(oc.rows.length ? [{ tab: OVERCORED_TAB, rows: oc.rows }] : []),
+            { tab: MOLD_TAB, rows: [row] },
+            ...(oc.rows.length ? [{ tab: OVERCORE_TAB, rows: oc.rows }] : []),
           ],
           'Molds',
         )

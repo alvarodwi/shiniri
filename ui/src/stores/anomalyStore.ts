@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 
 import { ANOMALY_RUNS } from '@/config/limits'
-import { ANOMALY_TAB, T9MANU_TAB } from '@/config/sheets'
+import { ANOMALY_TAB, GEAR_TAB } from '@/config/sheets'
 import {
   anomalyGearRow,
   applyToRun,
@@ -114,7 +114,7 @@ export const useAnomalyStore = defineStore('anomaly', {
           .filter((r) => r !== null)
         // Gear drops go to T9Manu in the same write, so the two tabs never disagree.
         const targets: WriteTarget[] = [{ tab: ANOMALY_TAB, rows }]
-        if (gearRows.length) targets.push({ tab: T9MANU_TAB, rows: gearRows })
+        if (gearRows.length) targets.push({ tab: GEAR_TAB, rows: gearRows })
         const { updatedRanges } = await writeTabsAtEnd(api, targets, 'Anomaly')
         // Clear the form before reloading, so a failed reload can't leave saved runs to resave.
         const last = this.activeRuns[this.activeRuns.length - 1]

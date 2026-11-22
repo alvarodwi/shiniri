@@ -5,17 +5,17 @@ import {
   FURNACE_TAB,
   LEVEL_TAB,
   NIKKE_DATABASE_TAB,
-  OVERCORED_TAB,
+  OVERCORE_TAB,
   ROSTER_LOG_TAB,
-  MOLDS_TAB,
-  SPARE_BODY_TAB,
+  MOLD_TAB,
+  EXCHANGE_TAB,
   SPENDING_TAB,
-  OTHER_TAB,
+  EXTRA_TAB,
   ORDINARY_TAB,
   SOCIAL_TAB,
   SOLO_RAID_TAB,
   SPREADSHEETS,
-  T9MANU_TAB,
+  GEAR_TAB,
 } from '@/config/sheets'
 import type { TabSpec } from '@/config/sheets'
 import type { Cell } from '@/types/sheet'
@@ -56,7 +56,7 @@ export const MOCK_SHEETS = sheets([
     ['2026-11-18', 'Mirror Container', 8, false, 1, '', '', 'Gloves', ''],
     ['2026-11-18', 'Harvester', 9, true, 0, 'Defender', 'Elysion', 'Boots', 'first clear'],
   ]),
-  tab(T9MANU_TAB, [
+  tab(GEAR_TAB, [
     ['2026-11-16', 'Manufacturer Arms', 'Supporter', 'Missilis', 'Torso'],
     ['2026-11-17', 'Anomaly Interception', 'Attacker', 'Tetra', 'Helmet'],
     ['2026-11-18', 'Anomaly Interception', 'Defender', 'Elysion', 'Boots'],
@@ -116,7 +116,7 @@ export const MOCK_SHEETS = sheets([
     ['2026-10-20', 'Rapi', 'Event', false, '', false],
     ['2026-11-02', 'Rapi', 'Event', false, 11, false],
   ]),
-  tab(OVERCORED_TAB, [['2025-05-01', 'Event Banner', 'Noah', 'Pilgrim', 'pilgrim core 8 pain']]),
+  tab(OVERCORE_TAB, [['2025-05-01', 'Event Banner', 'Noah', 'Pilgrim', 'pilgrim core 8 pain']]),
   tab(EVENT_TAB, [
     ['2026-11-10', "'Rumani", 'Regular', 1500, 3, 8, 1, "'Rumani", ''],
     ['2026-11-14', '', 'Summer Limited', 0, 10, 10, 0, '', "'free banner"],
@@ -125,15 +125,15 @@ export const MOCK_SHEETS = sheets([
     ['2026-11-05', 0, 60, 60, 2, "'Alice, Maxwell", ''],
     ['2026-11-12', 0, 40, 40, 0, '', "'shafted"],
   ]),
-  tab(MOLDS_TAB, [
+  tab(MOLD_TAB, [
     ['2026-11-06', 'Yellow Mold', 5, 2, "'Maiden, Folkwang", ''],
     ['2026-11-13', 'Purple Mold', 3, 0, '', ''],
   ]),
-  tab(SPARE_BODY_TAB, [
+  tab(EXCHANGE_TAB, [
     ['2026-11-18', "'Marian: Queen", 'Gold Mileage', ''],
     ['2026-07-23', "'Flora", 'Silver Mileage', ''],
   ]),
-  tab(OTHER_TAB, [
+  tab(EXTRA_TAB, [
     ['2026-04-23', 'Welfare Unit', "'3.5 Anniv", '', '', 1, 1, "'Avistar", ''],
     ['2026-01-05', 'Guaranteed SSR', "'Step Up 2026", '', 6600, 31, 2, "'Yan, Grave", ''],
   ]),

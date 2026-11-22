@@ -7,16 +7,16 @@ import { LEVEL_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 
 const DATE = '2026-11-19'
-const COL_A = "'LevelLogs'!A:A"
+const COL_A = "'LevelLog'!A:A"
 
 function fakeApi(levels: string[]) {
   const values: Record<string, string[][]> = {
     "'AuditLog'!A1:D1": [['savedAt', 'form', 'ranges', 'rows']],
     "'AuditLog'!A:A": [['savedAt']],
-    "'LevelLogs'!A1:D1": [[...LEVEL_TAB.headers]],
+    "'LevelLog'!A1:D1": [[...LEVEL_TAB.headers]],
     [COL_A]: [['newSynchroLevel'], ...levels.map((l) => [l])],
     // 45968 is 2025-11-07 as a sheet serial; every fake row shares it
-    ...Object.fromEntries(levels.map((_, i) => [`'LevelLogs'!B${i + 2}`, [['45968']]])),
+    ...Object.fromEntries(levels.map((_, i) => [`'LevelLog'!B${i + 2}`, [['45968']]])),
   }
   return {
     values,
@@ -82,17 +82,17 @@ describe('levelStore', () => {
     expect(api.batchUpdateValues).toHaveBeenCalledOnce()
     const [level, audit] = api.batchUpdateValues.mock.calls[0][1]
     expect(level).toEqual({
-      range: "'LevelLogs'!A4:D6",
+      range: "'LevelLog'!A4:D6",
       rows: [
         [215, DATE, '=IF(B5="","",B5-B4)', ''],
         [220, DATE, '=IF(B6="","",B6-B5)', ''],
         [225, DATE, '=IF(B7="","",B7-B6)', "'jump"],
       ],
     })
-    expect(audit.rows[0].slice(1)).toEqual(['Level', "''LevelLogs'!A4:D6", 3])
+    expect(audit.rows[0].slice(1)).toEqual(['Level', "''LevelLog'!A4:D6", 3])
     expect(store.status).toBe('saved')
     expect(store.note).toBe('')
-    expect(store.lastSaved).toEqual({ updatedRange: "'LevelLogs'!A4:D6", count: 3 })
+    expect(store.lastSaved).toEqual({ updatedRange: "'LevelLog'!A4:D6", count: 3 })
   })
 
   it('re-reads the last level at save time and refuses a level already logged', async () => {
@@ -100,7 +100,7 @@ describe('levelStore', () => {
     await store.load(api)
     store.target = 225
     api.values[COL_A] = [['newSynchroLevel'], ['210'], ['225']]
-    api.values["'LevelLogs'!B3"] = [['45968']]
+    api.values["'LevelLog'!B3"] = [['45968']]
     await store.save(api)
     expect(api.batchUpdateValues).not.toHaveBeenCalled()
     expect(store.status).toBe('error')

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-import { OVERCORED_TAB, SOCIAL_TAB } from '@/config/sheets'
+import { OVERCORE_TAB, SOCIAL_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import { readNikkes } from '@/services/nikke/nikkeDatabase'
 import type { Nikke } from '@/services/nikke/nikkeDatabase'
@@ -85,7 +85,7 @@ export const useSocialStore = defineStore('social', {
           api,
           [
             { tab: SOCIAL_TAB, rows: [row] },
-            ...(oc.rows.length ? [{ tab: OVERCORED_TAB, rows: oc.rows }] : []),
+            ...(oc.rows.length ? [{ tab: OVERCORE_TAB, rows: oc.rows }] : []),
           ],
           'Social',
         )

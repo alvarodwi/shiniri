@@ -14,7 +14,7 @@ function fakeApi(history: unknown[][] = []) {
     "'AuditLog'!A1:D1": [['savedAt', 'form', 'ranges', 'rows']],
     "'AuditLog'!A:A": [['savedAt']],
     "'Spending'!A1:G1": [[...SPENDING_TAB.headers]],
-    "'Spending'!A:A": [['purchaseDate'], ...history.map((r) => [r[0]])],
+    "'Spending'!A:A": [['date'], ...history.map((r) => [r[0]])],
     [HISTORY]: [[...SPENDING_TAB.headers], ...history],
     [DB]: [
       [...NIKKE_DATABASE_TAB.headers],
@@ -50,11 +50,11 @@ describe('spendingStore', () => {
   it('fails the load on a renamed header', async () => {
     const api = fakeApi()
     api.getValues.mockImplementation(async (_id, range) =>
-      range === HISTORY ? [['date', 'packageName']] : [],
+      range === HISTORY ? [['Date', 'packageName']] : [],
     )
     const store = useSpendingStore()
     expect(await store.load(api)).toBe(false)
-    expect(store.error).toMatch(/purchaseDate/)
+    expect(store.error).toMatch(/date/)
   })
 
   it('fills the monthly pass from the last one', async () => {

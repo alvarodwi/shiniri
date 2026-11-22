@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 
 import { GEAR_MAX_ITEMS } from '@/config/limits'
-import { FURNACE_TAB, T9MANU_TAB } from '@/config/sheets'
+import { FURNACE_TAB, GEAR_TAB } from '@/config/sheets'
 import { isCardComplete, newCard, rowsFor } from '@/services/gear/gearRows'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import { writeTabsAtEnd } from '@/services/sheets/tabWriter'
@@ -56,7 +56,7 @@ export const useGearStore = defineStore('gear', {
       this.lastSaved = []
       try {
         const { t9Manu, furnace } = rowsFor(this.date, this.source, this.activeCards)
-        const targets: WriteTarget[] = [{ tab: T9MANU_TAB, rows: t9Manu }]
+        const targets: WriteTarget[] = [{ tab: GEAR_TAB, rows: t9Manu }]
         if (furnace.length) targets.push({ tab: FURNACE_TAB, rows: furnace })
         const { updatedRanges } = await writeTabsAtEnd(api, targets, 'Gear')
         this.lastSaved = targets.map((t, i) => ({
