@@ -3,7 +3,7 @@ import names
 from shiniri_cli.sheets import SheetsError
 
 DB = [
-    ["nameCode", "name"],
+    ["nameCode", "nikke"],
     ["5118", "Asuka"],
     ["5069", "Rei"],
     ["5119", "Rei"],
@@ -14,23 +14,23 @@ DB = [
 
 def test_unknown_part_with_cell_and_closest():
     tabs = {
-        "Molds": [
-            ["date", "moldType", "amount", "ssr", "result"],
+        "Mold": [
+            ["date", "moldType", "pulls", "totalSsr", "ssrDetails"],
             ["2023-06-30", "Yellow Mold", "5", "2", "Anis, Crwn\nAsuka"],
             ["2023-07-01", "Purple Mold", "3", "0", ""],
             ["2023-07-02", "Purple Mold", "3", "0"],
         ]
     }  # ragged: trailing blank dropped
     lines = names.sweep(DB, tabs)
-    assert lines[0] == "Molds!E2  Crwn  (closest: Crown)"
+    assert lines[0] == "Mold!E2  Crwn  (closest: Crown)"
     assert lines[-1] == "1 unknown names in 1 cells"
 
 
 def test_no_closest_when_nothing_is_near():
     lines = names.sweep(
-        DB, {"SpareBody": [["date", "target"], ["", ""], ["2023-03-09", "Zzzzzz"]]}
+        DB, {"Exchange": [["date", "nikke"], ["", ""], ["2023-03-09", "Zzzzzz"]]}
     )
-    assert lines[0] == "SpareBody!B3  Zzzzzz"
+    assert lines[0] == "Exchange!B3  Zzzzzz"
 
 
 def test_event_row_order_then_column_order():
@@ -41,8 +41,8 @@ def test_event_row_order_then_column_order():
                 "rateUpName",
                 "rateUpType",
                 "gems",
-                "tix",
-                "times",
+                "tickets",
+                "pulls",
                 "totalSsr",
                 "ssrDetails",
             ],
@@ -69,7 +69,7 @@ def test_missing_header_goes_on():
             ["date", "Rate-Up Name", "ssrDetails"],
             ["2023-06-30", "Nope", "Eve"],
         ],
-        "Other": [["date", "rateUpName", "ssrDetails"], ["2022-11-08", "", "Anis"]],
+        "Extra": [["date", "rateUpName", "ssrDetails"], ["2022-11-08", "", "Anis"]],
     }
     lines = names.sweep(DB, tabs)
     assert lines[0] == 'Event: no column "rateUpName"'
@@ -77,17 +77,17 @@ def test_missing_header_goes_on():
     assert lines[-1] == "1 unknown names in 1 cells"
 
 
-def test_other_rate_up_name_is_swept():
+def test_extra_rate_up_name_is_swept():
     lines = names.sweep(
         DB,
         {
-            "Other": [
+            "Extra": [
                 ["date", "rateUpName", "ssrDetails"],
                 ["2026-11-05", "Scarlt", "Anis"],
             ]
         },
     )
-    assert lines[0].startswith("Other!B2  Scarlt")
+    assert lines[0].startswith("Extra!B2  Scarlt")
 
 
 def test_duplicate_database_names():
@@ -116,7 +116,7 @@ def test_report_reads_every_tab_and_keeps_going():
         {
             "'NikkeDatabase'": DB,
             "'Social'": [
-                ["date", "times", "totalSsr", "ssrDetails"],
+                ["date", "pulls", "totalSsr", "ssrDetails"],
                 ["2023-06-17", "1", "1", "Asuk"],
             ],
         }
@@ -127,9 +127,9 @@ def test_report_reads_every_tab_and_keeps_going():
         "'Social'",
         "'Event'",
         "'Ordinary'",
-        "'Molds'",
-        "'SpareBody'",
-        "'Other'",
+        "'Mold'",
+        "'Exchange'",
+        "'Extra'",
     ]
     assert "Social!D2  Asuk  (closest: Asuka)" in lines
     assert "Event: Sheets API 400: Unable to parse range" in lines
@@ -146,14 +146,14 @@ def test_closest_falls_back_to_leading_name():
     lines = names.sweep(
         DB,
         {
-            "SpareBody": [
-                ["date", "target"],
+            "Exchange": [
+                ["date", "nikke"],
                 ["2023-03-09", "Asuka Shikinami Langley"],
                 ["2023-03-10", "Rei Ayanami (Tentative Name)"],
             ]
         },
     )
     assert lines[:2] == [
-        "SpareBody!B2  Asuka Shikinami Langley  (closest: Asuka)",
-        "SpareBody!B3  Rei Ayanami (Tentative Name)  (closest: Rei)",
+        "Exchange!B2  Asuka Shikinami Langley  (closest: Asuka)",
+        "Exchange!B3  Rei Ayanami (Tentative Name)  (closest: Rei)",
     ]

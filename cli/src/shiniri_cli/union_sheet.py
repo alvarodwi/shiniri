@@ -1,4 +1,4 @@
-"""Union and Roster tabs: each locked season written once, one block per season, keyed on column A."""
+"""UnionRaid and UnionRoster tabs: each locked season written once, one block per season, keyed on column A."""
 
 from collections.abc import Callable
 
@@ -9,7 +9,7 @@ from .sheets import SheetsApi, SheetsError, column_a, int_ids, write_rows
 from .store import Store, unknown_nikkes
 from .union import UnionData, build_union, fetch_union, is_final
 
-TABS = {"union": "Union", "roster": "Roster"}
+TABS = {"union": "UnionRaid", "roster": "UnionRoster"}
 FORM = "cli-union"
 HEADERS = {
     "union": (

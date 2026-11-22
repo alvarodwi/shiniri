@@ -13,7 +13,7 @@ TABS = {"campaign": "Campaign", "tower": "Tower"}
 FORM = "cli-clears"
 _TAIL = (
     "stageName",
-    "dateCleared",
+    "date",
     "recommendedCp",
     "teamCp",
     "synchroLevel",

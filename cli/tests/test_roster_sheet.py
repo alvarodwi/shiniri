@@ -17,7 +17,7 @@ AUDIT = {
     "'AuditLog'!A:A": [["savedAt"]],
 }
 DB = {
-    "'NikkeDatabase'!A:B": [["nameCode", "name"], [1023, "B"], [5075, "A"], [5136, "C"]]
+    "'NikkeDatabase'!A:B": [["nameCode", "nikke"], [1023, "B"], [5075, "A"], [5136, "C"]]
 }
 
 
@@ -83,7 +83,7 @@ def test_repeated_name_code_first_wins():
 
 def test_logged_copies_last_row_wins_and_junk_skipped():
     values = [
-        ["date", "nameCode", "name", "copies"],
+        ["date", "nameCode", "nikke", "copies"],
         [46000, 1, "A", 4],
         [],
         ["x", "typo", "A", 2],
@@ -106,7 +106,7 @@ def test_logged_copies_rejects_fractions_and_bools():
 
 def test_database_names_skips_junk():
     assert database_names(
-        [["nameCode", "name"], [5001, "Rapi"], ["", "x"], [5002, ""], ["5003", "Anis"]]
+        [["nameCode", "nikke"], [5001, "Rapi"], ["", "x"], [5002, ""], ["5003", "Anis"]]
     ) == {5001: "Rapi", 5003: "Anis"}
 
 
@@ -188,7 +188,7 @@ def test_sync_auth_error():
 def test_sync_header_mismatch():
     line, api = _failing(
         _answer(*ROSTER),
-        {"'RosterLog'!A1:D1": [["date", "x", "name", "copies"]], "'RosterLog'!A:D": []},
+        {"'RosterLog'!A1:D1": [["date", "x", "nikke", "copies"]], "'RosterLog'!A:D": []},
     )
     assert line.startswith("RosterLog: ") and api.batches == []
 
@@ -213,7 +213,7 @@ def test_sync_header_mismatch_even_when_nothing_changed():
     line, api = _sync(
         _answer(*ROSTER),
         {
-            "'RosterLog'!A1:D1": [["date", "x", "name", "copies"]],
+            "'RosterLog'!A1:D1": [["date", "x", "nikke", "copies"]],
             "'RosterLog'!A:A": [["date"]],
             "'RosterLog'!A:D": full,
         },

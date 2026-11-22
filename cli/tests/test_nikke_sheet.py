@@ -121,3 +121,7 @@ def test_sync_header_mismatch_is_the_line(store):
         line.startswith("NikkeDatabase: NikkeDatabase headers changed")
         and api.batches == []
     )
+
+
+def test_headers_name_the_nikke_column():
+    assert HEADERS[:2] == ("nameCode", "nikke")

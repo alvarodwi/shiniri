@@ -7,7 +7,7 @@ TAB = "NikkeDatabase"
 FORM = "cli-nikke-database"
 HEADERS = (
     "nameCode",
-    "name",
+    "nikke",
     "rarity",
     "manufacturer",
     "class",

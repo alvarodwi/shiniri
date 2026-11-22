@@ -138,10 +138,18 @@ def test_first_run_backfills_every_locked_season(u):
         api, "union", {n: union_rows(u, n) for n in locked(u)}, timestamp="ts"
     ) == (2, 0)
     assert [b[0][0] for b in api.batches] == [
-        "'Union'!A2:P10",
-        "'Union'!A2:P12",
+        "'UnionRaid'!A2:P10",
+        "'UnionRaid'!A2:P12",
     ]  # fake sheet never fills
-    assert api.batches[0][1][1][0][1:] == ["cli-union", "''Union'!A2:P10", 9]
+    assert api.batches[0][1][1][0][1:] == ["cli-union", "''UnionRaid'!A2:P10", 9]
+    assert [set(e) for e in api.ensured] == [{"UnionRaid", "AuditLog"}] * 2
+
+
+def test_roster_writes_to_the_union_roster_tab(u):
+    api = FakeSheets({**AUDIT, **sheet("roster", [["season"]])})
+    append_seasons(api, "roster", {46: roster_rows(u, 46)}, timestamp="ts")
+    assert api.batches[0][0][0].startswith("'UnionRoster'!")
+    assert [set(e) for e in api.ensured] == [{"UnionRoster", "AuditLog"}]
 
 
 def test_existing_seasons_any_form(u):
@@ -185,8 +193,8 @@ def test_one_tab_error_keeps_the_other(union_store, monkeypatch):
         }
     )
     text = asyncio.run(sync_union(union_store, None, api, timestamp="ts", now=99999))
-    assert text.startswith("Union: Union headers changed") and text.endswith(
-        " · Roster +2"
+    assert text.startswith("UnionRaid: UnionRaid headers changed") and text.endswith(
+        " · UnionRoster +2"
     )
 
 
@@ -196,7 +204,7 @@ def test_fetch_error_still_writes_stored(union_store, monkeypatch):
         {**AUDIT, **sheet("union", [["season"]]), **sheet("roster", [["season"]])}
     )
     text = asyncio.run(sync_union(union_store, None, api, timestamp="ts", now=99999))
-    assert text == "Union +2 (fetch: ConnectError) · Roster +2 (fetch: ConnectError)"
+    assert text == "UnionRaid +2 (fetch: ConnectError) · UnionRoster +2 (fetch: ConnectError)"
 
 
 def test_season_missing_from_raid_list_is_not_locked(union_store):
@@ -217,8 +225,8 @@ def test_seasons_written_are_logged(u):
         log=lines.append,
     )
     assert lines == [
-        "Union: wrote season 45, 9 rows, 'Union'!A2:P10",
-        "Union: wrote season 46, 11 rows, 'Union'!A2:P12",
+        "UnionRaid: wrote season 45, 9 rows, 'UnionRaid'!A2:P10",
+        "UnionRaid: wrote season 46, 11 rows, 'UnionRaid'!A2:P12",
     ]  # fake sheet never fills
 
 
@@ -242,8 +250,8 @@ def test_unknown_nikke_holds_only_that_season(union_store):
         log=lines.append,
     ) == (1, 1)
     assert lines == [
-        "Union: held season 45, 1 unknown NIKKE (NIKKE_999999)",
-        "Union: wrote season 46, 11 rows, 'Union'!A2:P12",
+        "UnionRaid: held season 45, 1 unknown NIKKE (NIKKE_999999)",
+        "UnionRaid: wrote season 46, 11 rows, 'UnionRaid'!A2:P12",
     ]
 
 
@@ -269,4 +277,4 @@ def test_held_count_in_summary(union_store, monkeypatch):
         {**AUDIT, **sheet("union", [["season"]]), **sheet("roster", [["season"]])}
     )
     text = asyncio.run(sync_union(union_store, None, api, timestamp="ts", now=99999))
-    assert text == "Union +0 (held 2) · Roster +2"
+    assert text == "UnionRaid +0 (held 2) · UnionRoster +2"

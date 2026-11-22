@@ -1,4 +1,4 @@
-"""Name sweep: every name in the gacha tabs that isn't a `name` in NikkeDatabase. Read-only.
+"""Name sweep: every name in the gacha tabs that isn't a `nikke` in NikkeDatabase. Read-only.
 
 uv run python tools/names.py [spreadsheet_id]   (default: gacha_spreadsheet_id in config/sheets.json)
 """
@@ -24,9 +24,9 @@ COLUMNS = {  # tab -> name columns, by row-1 header text; dict order is report o
     "Social": ("ssrDetails",),
     "Event": ("rateUpName", "ssrDetails"),
     "Ordinary": ("ssrDetails",),
-    "Molds": ("result",),
-    "SpareBody": ("target",),
-    "Other": ("rateUpName", "ssrDetails"),
+    "Mold": ("ssrDetails",),
+    "Exchange": ("nikke",),
+    "Extra": ("rateUpName", "ssrDetails"),
 }
 
 

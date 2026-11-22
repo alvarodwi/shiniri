@@ -8,7 +8,7 @@ from .sheets import SheetsApi, SheetsError, _checked, write_rows
 
 TAB = "RosterLog"
 FORM = "cli-roster-log"
-HEADERS = ("date", "nameCode", "name", "copies")
+HEADERS = ("date", "nameCode", "nikke", "copies")
 
 
 def _int(v) -> bool:

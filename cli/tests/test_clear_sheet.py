@@ -269,3 +269,8 @@ def test_long_fetch_logs_progress_every_50(store, monkeypatch):
     )
     asyncio.run(sync_clears(store, None, api, timestamp="ts", log=lines.append))
     assert lines == ["Tower: fetching 50/120", "Tower: fetching 120/120"]
+
+
+def test_headers_name_the_date_column():
+    assert HEADERS["campaign"][3:5] == ("stageName", "date")
+    assert HEADERS["tower"][3:5] == ("stageName", "date")
