@@ -32,7 +32,7 @@ purpose (TypeScript vs Python), and that's expected.
 - Sheet strings (tab names, headers, `source`/`sourceType` values, slot names) must match the sheet
   verbatim. Ask for the exact text when unsure, never guess.
 - Headers of tabs either part writes to are lowerCamelCase with no spaces (`bossElement`,
-  `totalDmg`). The owner renames old headers by hand, on both the real sheet and the copy.
+  `damage`). The owner renames old headers by hand, on both the real sheet and the copy.
 
 ## Contract changes and releases
 
