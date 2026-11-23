@@ -2,8 +2,8 @@
 
 The web app: a personal input app for NIKKE farming logs. Vue 3 + Vite + UnoCSS + Pinia SPA with
 hash routing and no backend. It writes to Google Sheets via the Sheets REST API with a browser OAuth
-token (Google Identity Services). Netlify deploys from `main`, with build settings in
-`../netlify.toml`.
+token (Google Identity Services). Cloudflare deploys from `main`, with build settings in the Cloudflare dashboard (root
+directory `ui`, build command `yarn build`). There is no wrangler file in the repo.
 
 The sheet contract and development flow are in `../CLAUDE.md`. Paths here are relative to `ui/`.
 
@@ -42,7 +42,7 @@ dashboard), label every input, and hide sheet links on small screens.
 2. Push `develop` first.
 3. Fast-forward `main` to `develop`, bump `version` in `package.json` (minor for features), commit
    `chore: bump to version X.Y.Z` (semver: minor for features, patch for fixes only), push `main`.
-   Netlify deploys from `main`.
+   Cloudflare deploys from `main`.
 4. Fast-forward `develop` to `main` and push it, so both carry the bump.
 5. Prune merged branches, local and remote.
 

@@ -2,7 +2,7 @@
 
 NIKKE progress, logged into one Google Sheet by two parts:
 
-- `ui/`: the web app. Vue SPA, browser OAuth, deployed by Netlify. See `ui/CLAUDE.md`.
+- `ui/`: the web app. Vue SPA, browser OAuth, deployed by Cloudflare. See `ui/CLAUDE.md`.
 - `cli/`: the Python CLI. Its `watch` runs on the owner's homeserver with a service account. See
   `cli/CLAUDE.md`.
 

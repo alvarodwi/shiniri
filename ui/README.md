@@ -1,6 +1,6 @@
 # shiniri ui
 
-Live at <https://shiniri.netlify.app/>.
+Live at <https://shiniri.varoa-dwi.workers.dev/>.
 
 Personal input app for NIKKE farming logs. It writes straight into Google Sheets, and the sheet is
 the only copy of the data. The app keeps no database of its own.
@@ -23,7 +23,7 @@ in the browser is the only access control.
 3. Under Credentials, create an **OAuth client ID** of type Web application. Add these
    authorized JavaScript origins:
    - `http://localhost:5173`
-   - the Netlify site URL (e.g. `https://<site>.netlify.app`)
+   - the Cloudflare site URL (`https://shiniri.varoa-dwi.workers.dev`)
 
 ## Local development
 
@@ -50,14 +50,16 @@ savedAt | form | ranges | rows
 
 Without it, every save is refused: a missing tab shows `Sheets API 400: Unable to parse range: 'AuditLog'!A1:D1`, and a wrong header shows a header error. Timestamps are stored as text, `YYYY-MM-DD HH:mm:ss` in WIB.
 
-## Deploy (Netlify)
+## Deploy (Cloudflare)
 
-1. Connect the GitHub repo in Netlify. Production branch: `main`.
-2. Build settings come from `../netlify.toml` (base `ui`, `yarn build`, publish `dist`). Leave the
-   build fields in the Netlify UI empty, so the file is the only source.
-3. Environment variables: `VITE_GOOGLE_CLIENT_ID`, and `VITE_JOURNAL_SHEET_ID` set to the **real**
-   sheet.
-4. Add the Netlify URL to the OAuth client's JavaScript origins.
+1. Connect the GitHub repo in the Cloudflare dashboard (Workers & Pages). Production branch: `main`.
+2. Build settings live in the dashboard: root directory `ui`, build command `yarn build`. The repo
+   has no wrangler file.
+3. Build variables (Settings, Build, Build variables and secrets; not the Worker's runtime
+   "Variables and secrets", which a static-assets Worker can't have): `VITE_GOOGLE_CLIENT_ID`, and
+   `VITE_JOURNAL_SHEET_ID` set to the **real** sheet. Vite bakes `VITE_*` values in at build time,
+   so redeploy after changing them.
+4. Add the Cloudflare URL to the OAuth client's JavaScript origins.
 
 ## Checks
 

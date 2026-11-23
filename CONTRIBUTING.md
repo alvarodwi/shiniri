@@ -6,7 +6,7 @@ This repo holds two parts: `ui/` (web app) and `cli/` (CLI). Branch and commit r
 
 - `develop` is the integration branch. Branch `feat/<name>` or `fix/<name>` from it and merge back
   into it.
-- `main` is production for the web app. Netlify builds and deploys every push to `main` that
+- `main` is production for the web app. Cloudflare builds and deploys every push to `main` that
   changes `ui/`.
 - The CLI ships by the homeserver pulling `develop`. It has no release step.
 
