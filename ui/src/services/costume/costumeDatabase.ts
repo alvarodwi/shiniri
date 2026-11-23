@@ -21,7 +21,7 @@ export function toCostumes(rows: string[][], releaseDateCol?: number): Costume[]
   return rows.flatMap((row) => {
     const [costumeId, nikke, costumeName, grade, source, image, owned] =
       COSTUME_DATABASE_TAB.headers.map((_, i) => String(row[i] ?? '').trim())
-    if (!costumeId || !nikke || !costumeName) return []
+    if (!costumeId || !nikke) return []
     const releaseDate =
       releaseDateCol === undefined ? '' : cellToIsoDate(String(row[releaseDateCol] ?? ''))
     return [

@@ -61,9 +61,9 @@ describe('toCostumes', () => {
     expect(toCostumes(rows).map((c) => c.owned)).toEqual([true, true, true, false, false, false])
   })
 
-  it('skips rows with a blank costumeId, nikke or costumeName', () => {
+  it('skips rows with a blank costumeId or nikke, but keeps one with a blank costumeName', () => {
     const rows = [row('', 'A', 'a'), row('2', ' ', 'b'), row('3', 'C', ''), [], row('5', 'E', 'e')]
-    expect(toCostumes(rows).map((c) => c.costumeId)).toEqual(['5'])
+    expect(toCostumes(rows).map((c) => c.costumeId)).toEqual(['3', '5'])
   })
 
   it('reads releaseDate from the lookup column when present', () => {

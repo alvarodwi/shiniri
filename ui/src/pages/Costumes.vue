@@ -61,11 +61,12 @@ onUnmounted(() => observer?.disconnect())
     </p>
 
     <p v-if="store.error" role="alert" class="text-accent-ink py-2">{{ store.error }}</p>
-    <p v-else-if="store.status === 'loading' && !store.costumes.length" class="ink-soft py-8">
+    <p v-if="store.status === 'loading' && !store.costumes.length" class="ink-soft py-8">
       Reading the costumes…
     </p>
 
-    <template v-else>
+    <!-- A failed refresh keeps showing the costumes already read -->
+    <template v-else-if="!store.error || store.costumes.length">
       <label class="flex flex-col gap-1 text-sm">
         <span class="ink-soft">Search</span>
         <input
@@ -93,7 +94,7 @@ onUnmounted(() => observer?.disconnect())
             v-else
             class="rule-ink ink-soft flex aspect-square w-full items-center justify-center border text-3xl"
           >
-            {{ c.costumeName.charAt(0) }}
+            {{ (c.costumeName || c.nikke).charAt(0) }}
           </span>
           <span class="flex flex-col gap-0.5 p-2 text-sm">
             <span class="font-semibold">{{ c.nikke }}</span>
