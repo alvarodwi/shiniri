@@ -45,9 +45,9 @@ value, not an array, so each `FILTER` keeps its own `LEN(Overcored!C2:C)`.
     ex("Social", Social!A2:A, Social!D2:D, Social!A2:A, FALSE),
     ex("Event", Event!A2:A, Event!H2:H, Event!B2:B, TRUE),
     ex("Ordinary", Ordinary!A2:A, Ordinary!F2:F, Ordinary!A2:A, FALSE),
-    ex("Molds", Molds!A2:A, Molds!E2:E, Molds!A2:A, FALSE),
-    ex("SpareBody", SpareBody!A2:A, SpareBody!B2:B, SpareBody!A2:A, FALSE),
-    ex("Other", Other!A2:A, Other!H2:H, Other!D2:D, TRUE)),
+    ex("Mold", Mold!A2:A, Mold!E2:E, Mold!A2:A, FALSE),
+    ex("Exchange", Exchange!A2:A, Exchange!B2:B, Exchange!A2:A, FALSE),
+    ex("Extra", Extra!A2:A, Extra!H2:H, Extra!D2:D, TRUE)),
   s, CHOOSECOLS(SORT(HSTACK(all, SEQUENCE(ROWS(all))), 1, TRUE, 5, TRUE), 1, 2, 3, 4),
   n, ROWS(s), names, CHOOSECOLS(s, 2), dates, CHOOSECOLS(s, 1),
   b, MIN(FILTER(RosterLog!A2:A, LEN(RosterLog!C2:C))),
@@ -57,14 +57,14 @@ value, not an array, so each `FILTER` keeps its own `LEN(Overcored!C2:C)`.
     IFNA(XLOOKUP(INDEX(names, i), bn, bc), 0)
       + SUMPRODUCT((SEQUENCE(n) <= i) * (names = INDEX(names, i)) * (dates > b))))),
   srcs, CHOOSECOLS(s, 3),
-  od, MAP(FILTER(Overcored!A2:A, LEN(Overcored!C2:C)), LAMBDA(x, IF(ISTEXT(x), DATEVALUE(x), x))),
-  on, MAP(FILTER(Overcored!C2:C, LEN(Overcored!C2:C)), LAMBDA(x, TRIM(x))),
-  of, MAP(FILTER(Overcored!B2:B, LEN(Overcored!C2:C)), LAMBDA(x, SWITCH(TRIM(x), "Social Pulls", "Social", "Event Banner", "Event", "Other Banner", "Other", TRIM(x)))),
+  od, MAP(FILTER(Overcore!A2:A, LEN(Overcore!C2:C)), LAMBDA(x, IF(ISTEXT(x), DATEVALUE(x), x))),
+  on, MAP(FILTER(Overcore!C2:C, LEN(Overcore!C2:C)), LAMBDA(x, TRIM(x))),
+  of, MAP(FILTER(Overcore!B2:B, LEN(Overcore!C2:C)), LAMBDA(x, SWITCH(TRIM(x), "Social", "Event", "Ordinary", "Mold", "Exchange", "Extra", TRIM(x)))),
   oc, MAP(SEQUENCE(n), LAMBDA(i, IF(INDEX(cp, i) <> "", INDEX(cp, i) > 11, LET(
     d, INDEX(dates, i), nm, INDEX(names, i), sr, INDEX(srcs, i),
     SUMPRODUCT((SEQUENCE(n) > i) * (dates = d) * (names = nm) * (srcs = sr))
       < SUMPRODUCT((od = d) * (on = nm) * (of = sr)))))),
-  VSTACK({"date", "ssr", "source", "spook", "copy", "isOvercore"}, HSTACK(s, cp, oc))
+  VSTACK({"date", "nikke", "source", "spook", "copy", "isOvercore"}, HSTACK(s, cp, oc))
 )
 ```
 
@@ -74,12 +74,12 @@ value, not an array, so each `FILTER` keeps its own `LEN(Overcored!C2:C)`.
 
 One formula in `DupeTracker!A1`, header included. The owner clears the old contents by hand.
 
-| header | value |
-| --- | --- |
-| `nikke` | each distinct `name` in RosterLog |
-| `copies` | `copies` of its last RosterLog row (lowest on the sheet) |
+| header     | value                                                                                                                                                                        |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `nikke`    | each distinct `name` in RosterLog                                                                                                                                            |
+| `copies`   | `copies` of its last RosterLog row (lowest on the sheet)                                                                                                                     |
 | `expected` | MIN(its last `copy` in AllPulls, 11). If its last pull is on or before the baseline (blank `copy`) or it has no pull, its baseline copies (0 when it's not in the baseline). |
-| `unused` | `expected` − `copies` |
+| `unused`   | `expected` − `copies`                                                                                                                                                        |
 
 - Only Nikkes with `unused` ≠ 0 are listed, biggest `unused` first. Positive means a dupe is waiting
   in the inventory. Negative means the roster grew without a logged pull.
@@ -151,7 +151,7 @@ were never logged; those end up as `?`.
   rel, MAP(own, LAMBDA(n, LET(d, XLOOKUP(n, dbN, dbD, ""), IF(ISNUMBER(d), TEXT(d, "yyyy-mm-dd"), TRIM(d))))),
   list, SORT(HSTACK(own, rel), 2, TRUE),
   head, VSTACK(
-    {"nikke", "confidence", "release", "firstCopy", "lb1", "lb2", "lb3", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "totalCopies", "untracked", "tracked"},
+    {"nikke", "confidence", "releaseDate", "firstCopy", "lb1", "lb2", "lb3", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "totalCopies", "untracked", "tracked"},
     HSTACK("", "", "", SEQUENCE(1, 11), "", "", "")),
   REDUCE(head, SEQUENCE(ROWS(list)), LAMBDA(acc, i, LET(
     n, INDEX(list, i, 1),
