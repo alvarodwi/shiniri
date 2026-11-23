@@ -7,7 +7,7 @@ on that date. It is as complete as the site code: a file the site never asks for
 ## Host and scheme
 
 `https://sg-tools-cdn.blablalink.com/` + the hashed form of a plain path, computed by `cdn_url`
-in `cli/src/shiniri_cli/fetch.py` (scheme in `docs/superpowers/specs/2026-11-18-computed-cdn-urls-design.md`).
+in `cli/src/shiniri_cli/fetch.py` (scheme in `docs/plans/archive/2026-11-18-computed-cdn-urls-design.md`).
 Paths under `spine/` use a different branch of the site's `obfuscatedPath` that `cdn_url` does
 not implement (so `spine/spine-layers.json` 404s through it).
 

@@ -14,7 +14,7 @@ purpose (TypeScript vs Python), and that's expected.
 `docs/state/` describes the code as it is now, one file per module (`ui-navigation.md` covers
 routing, the Pulls page and the Log; `sheet-writer.md` covers both writers, the Sheets clients and
 mock mode; `cli-watch.md` covers the CLI's `watch` loop and its sheet steps; `ui-pages.md` covers the form
-pages, their stores and row logic, and Overcore). Decisions worth not undoing are in `docs/decisions/`. Finished specs and plans go to `docs/plans/archive/`; read
+pages, their stores and row logic, and Overcore; `cli-shell.md` covers the interactive shell, the Store and Union Raid data; `cli-tools.md` covers `cli/tools/`). Formulas that live only in the sheet are in `docs/sheet-formulas.md`. Decisions worth not undoing are in `docs/decisions/`. Finished specs and plans go to `docs/plans/archive/`; read
 them only for history.
 
 ## Sheet contract

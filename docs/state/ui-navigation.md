@@ -12,6 +12,7 @@ the Log pages audit rows. All in `ui/`. No sheet write behaviour lives here.
   (no sub-row).
 - Routes: `ui/src/router/index.ts`. Real routes are `/journal/*`, `/gacha/*`, `/log`. Hash history.
 - Old paths: `ui/src/router/redirects.ts`. Each old form path goes to `/gacha/pulls?form=<key>`.
+  `/special` goes to `/journal/anomaly` (`redirects.test.ts`): the Special page was dropped for good.
 - Pulls page: `ui/src/pages/Pulls.vue`, a `<select>` over `PULL_FORMS`
   (`ui/src/services/gacha/pullForms.ts`) that renders one form page inside `<KeepAlive>`.
 - Log page: `ui/src/pages/Log.vue` over `useLogStore` (`ui/src/stores/logStore.ts`): tabs per

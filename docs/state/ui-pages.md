@@ -68,6 +68,33 @@ Shared pieces:
 - Solo Raid damage is typed with locale separators; `parseDamage` accepts only whole groups of
   three, and `rankText` keeps two decimals at most, comma or dot.
 - Pull stores expose `isDirty` and `discard()` (see `ui-navigation.md`).
+- Pools by source: Event allows Pilgrim, and Abnormal only for the collaboration banner; Ordinary
+  allows Pilgrim, not Abnormal; Social allows neither; Spare Body Gold Mileage allows both, Silver
+  Mileage and Other allow Pilgrim only; a Union Chip gives only `LIBERATION_UNITS` (`Sin`, `Quency`,
+  `Guilty`, `Nihilister`), by exact name (`types/spareBody.ts`). Changing the type or source prunes
+  picks outside the new pool (`setRateUpType`, `setMoldType`).
+- `pulls()` (`services/gacha/pulls.ts`, shared by Event, Ordinary and Other): a blank currency is 0, gems
+  must be a multiple of 300, and under 1 pull is `null`. Molds: `toRow` is `null` when names exceed the
+  amount, and a Perfect mold needs names equal to the amount (`moldRows.ts`).
+- Spare Body writes one row per copy (1 to `MAX_COPIES`) and only the last row carries the note, as does
+  Other. Other: Free Pulls is one row with `rateUpName` required and `sourceDetail` blank; Guaranteed SSR
+  needs `sourceDetail`, and its `pulls` is typed, never derived from gems.
+- Gear: `GEAR_MAX_ITEMS` per save; lowering the count discards the dropped cards, so raising it again does
+  not restore them. A Furnace result's manufacturer is forced to the target, and the card is complete
+  only if they match. No once-a-day lock on Gear.
+- Level: `lastLevel` throws when the last cell of column A is not a number, so the page refuses to
+  load. A function cell in column A is refused by the writer. The note goes on the last step row only.
+- Overcore: `findOvercores` returns nothing when RosterLog has no baseline, or the date is on or before
+  it. One remark is built from the worst level and names all the overcores in a save. A Pilgrim adds
+  `PILGRIM_LINE` and does not raise the level. Header errors from the reads name the tab.
+- Anomaly: turning Double day off drops the edits made to runs 6 to 10. The sheet link and the
+  "fix in the sheet" line are hidden below `sm` on purpose.
+- Costumes: reads `A1:Z` and finds the owner's `releaseDate` column by header text, right of column G.
+  `costumeImage` accepts only `character/mi/<name>.webp`. Cards render 24 at a time.
+- The mock sheet is keyed by spreadsheet id (`MOCK_SHEETS`), and a test checks the `SPREADSHEETS` ids
+  are distinct. `vite.config.ts` pins test env ids so tests never read `.env.local`.
+- `NikkePicker`: the same name can be picked again, Enter picks the last hit, results are capped at 8
+  with prefix matches first, and `pinned` is ignored in `single` mode.
 
 ## Owns
 
@@ -92,4 +119,9 @@ Nothing persistent. Entry state is in-memory Pinia state. The sheet is the only 
 
 ## Known gaps
 
-- None found in code. Phase 2 (plan triage) not run yet for this module.
+- `GearGrid.vue` is still in `components/anomaly/` though the Gear page uses it; moving it to
+  `components/gear/` was planned and not done.
+- Anomaly always logs the full daily limit; logging a partial day (1 to the limit runs) was in the first
+  spec and was dropped. (unconfirmed whether still wanted)
+- The Spending types `Mission Pass, Costume` and `Event Pass, Costume` must be split by hand on the
+  sheet; whether that was done on the real sheet is unconfirmed (a test fixture still has one).

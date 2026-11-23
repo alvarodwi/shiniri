@@ -15,7 +15,9 @@ the only copy of the data. Two parts write to it, append-only:
 ```
 CLAUDE.md          shared sheet contract and development flow
 CONTRIBUTING.md    branches, commits, checks, release
-docs/superpowers/  design specs and plans for both parts
+docs/state/        how each module works now
+docs/decisions/    decisions worth not undoing
+docs/plans/archive/ finished specs and plans, for history
 ui/                the web app
 cli/               the CLI
 ```

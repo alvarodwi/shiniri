@@ -90,7 +90,28 @@ edits rows (see `../../CLAUDE.md`).
   later are ignored. The timestamp cell is written with a leading `'` to stay text.
 - `watch` runs every step with blocking `asyncio.run` calls, one after another. A slow step delays
   the rest of the check, but the next check still lands on :59.
+- Holds differ by tab. `Campaign` and `Tower` hold the whole tab when any new row has an unknown
+  NIKKE or an empty `stageName`, to keep clear order. `UnionRaid` and `UnionRoster` hold per season.
+  `Profile` is never held. Held rows are written on a later check once the names resolve
+  (`clear_sheet.py`, `union_sheet.py`).
+- `Campaign` and `Tower` write `date` as a WIB timestamp text (`'YYYY-MM-DD HH:MM:SS`, `clear_sheet.py`),
+  not the in-game day. This is intended and an exception to `decisions/0004-sheet-names-one-cutover.md`.
+- A union season is written once, after `locked()` (its end plus an hour). A season missing from
+  `raid_list` has no end time and is never written. `UnionRoster` `source` is `api` when the season file
+  has `members`, else `hits` with blank level and synchro level.
+- `NikkeDatabase` is written on every check, not tied to the daily row, so a restarted `watch` fills it
+  at once. Rows go in `order`; a missing or non-integer `order` sorts last; the first of a repeated
+  `name_code` wins; skipped entries are logged as `entry <index>`.
+- `RosterLog` names come from the sheet's `NikkeDatabase`, because the owner renames collab names there.
+  An empty `characters` list is a failure, not "owns nothing". Do not pull gacha between the first check
+  of a game day and the day's end, or `DupeTracker` shows a missed log.
+- The first run on an empty sheet backfills thousands of clears (about 3,700 Campaign and 5,800 Tower) in
+  one request. Later clears that arrive late land at the bottom; rows are never reordered.
+- Extra log lines: `fetching N/total` every 50 clears, one `sync:` line per check, `(stage_list
+  missing)`, and a `wrote` or `held` line per tab.
+- Stopping does not wait for a running check: checks are short and re-runnable, and the day guard stops
+  a second `Profile` row.
 
 ## Known gaps
 
-- None found in code. Phase 2 (plan triage) not run yet.
+- None found in code.
