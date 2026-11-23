@@ -12,7 +12,8 @@ purpose (TypeScript vs Python), and that's expected.
 ## State docs
 
 `docs/state/` describes the code as it is now, one file per module (`ui-navigation.md` covers
-routing, the Pulls page and the Log). Finished specs and plans go to `docs/plans/archive/`; read
+routing, the Pulls page and the Log; `sheet-writer.md` covers both writers, the Sheets clients and
+mock mode). Decisions worth not undoing are in `docs/decisions/`. Finished specs and plans go to `docs/plans/archive/`; read
 them only for history.
 
 ## Sheet contract
