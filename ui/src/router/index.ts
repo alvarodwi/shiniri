@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
 import Anomaly from '@/pages/Anomaly.vue'
+import Costumes from '@/pages/Costumes.vue'
 import EventPage from '@/pages/Event.vue'
 import Gear from '@/pages/Gear.vue'
 import Level from '@/pages/Level.vue'
@@ -30,6 +31,7 @@ export const router = createRouter({
     { path: '/social', component: Social },
     { path: '/solo-raid', component: SoloRaid },
     { path: '/special', component: Special },
+    { path: '/costumes', component: Costumes },
     { path: '/log', component: Log },
   ],
 })

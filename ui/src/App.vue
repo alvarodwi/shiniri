@@ -24,6 +24,7 @@ const links = [
   { to: '/social', label: 'Social' },
   { to: '/solo-raid', label: 'Solo Raid' },
   { to: '/special', label: 'Special' },
+  { to: '/costumes', label: 'Costumes' },
   { to: '/log', label: 'Log' },
 ]
 </script>

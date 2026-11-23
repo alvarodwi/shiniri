@@ -1,6 +1,7 @@
 import {
   ALL_PULLS_TAB,
   ANOMALY_TAB,
+  COSTUME_DATABASE_TAB,
   EVENT_TAB,
   FURNACE_TAB,
   LEVEL_TAB,
@@ -42,6 +43,7 @@ const AUDIT_ROWS: Record<string, Cell[][]> = {
     ['2026-11-18 20:55:33', 'Anomaly', "'Anomaly'!A4:I5", 2],
   ],
   Gacha: [
+    ['2026-11-20 06:00:05', 'cli-costume-database', "'CostumeDatabase'!A2:G4", 3],
     ['2026-11-21 06:00:05', 'cli-nikke-database', "'NikkeDatabase'!A2:J4", 3],
     ['2026-11-21 07:00:05', 'cli-nikke-database', "'NikkeDatabase'!A5:J5", 1],
   ],
@@ -105,6 +107,19 @@ export const MOCK_SHEETS = sheets([
     ],
     [5004, 'New Nikke', 'SSR', 'MISSILIS', 'Defender', 'Step2', 'Water', 'MG', 999, ''],
     [5005, 'Noah', 'SSR', 'PILGRIM', 'Defender', 'Step2', 'Wind', 'RL', 13, 45000],
+  ]),
+  tab(COSTUME_DATABASE_TAB, [
+    [
+      130007,
+      'Marian: Queen',
+      'Last Affection',
+      'Unique',
+      'Costume Gacha',
+      'character/mi/mi_c019_01_s.webp',
+      true,
+    ],
+    [130008, 'Rapi', 'Red Hood', 'Unique', 'Mission Pass', 'character/mi/mi_c010_01_s.webp', false],
+    [130009, 'Noah', 'Winter Cozy', 'Unique', '', 'character/mi/mi_c013_01_s.webp', true],
   ]),
   // Rapi and Noah sit at copy 11 (C10), so one more copy is an overcore: the two mock scenarios.
   tab(ROSTER_LOG_TAB, [

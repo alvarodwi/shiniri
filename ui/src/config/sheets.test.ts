@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   ALL_PULLS_TAB,
   ANOMALY_TAB,
+  COSTUME_DATABASE_TAB,
   EVENT_TAB,
   EXCHANGE_TAB,
   EXTRA_TAB,
@@ -118,6 +119,12 @@ describe('tab specs', () => {
         'ssrDetails',
         'notes',
       ],
+    })
+  })
+  it('CostumeDatabase', () => {
+    expect(shape(COSTUME_DATABASE_TAB)).toEqual({
+      tab: 'CostumeDatabase',
+      headers: ['costumeId', 'nikke', 'costumeName', 'grade', 'source', 'image', 'owned'],
     })
   })
   it('NikkeDatabase', () => {
