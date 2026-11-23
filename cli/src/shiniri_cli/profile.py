@@ -16,6 +16,7 @@ from .fetch import (
     make_client,
     sync_reference,
 )
+from .roledata import fetch_roledata, needs_full_refresh
 from .sheets import HttpSheets, SheetsError, service_account_token, write_row
 from .store import Store, atomic_write
 
@@ -272,26 +273,34 @@ async def _run_clears(clears: Callable[[], Awaitable[str]] | None) -> str:
         return f" · clears: {type(e).__name__}: {e}"
 
 
-async def refresh_reference(store: Store) -> str:
+async def refresh_reference(store: Store, now: datetime | None = None) -> str:
     """Re-download every reference file; the `sync:` log line. Never raises: the files on disk still work."""
+    now = now or datetime.now(WIB)
     try:
         async with (
             httpx.AsyncClient() as cdn
         ):  # its own client: the game cookies never go to the CDN host
             results = await sync_reference(store, cdn)
+            try:
+                roledata_line = await fetch_roledata(
+                    store, cdn, force=needs_full_refresh(store, game_day(now))
+                )
+            except Exception as e:  # reference files are fine without it
+                roledata_line = f"roledata: {type(e).__name__}: {e}"
     except Exception as e:  # a missing or bad sources.json and the like
         return f"sync: {type(e).__name__}: {e}"
     if any(not s.startswith("failed") for s in results.values()):
         store.mark("sync")  # same rule as the shell's sync command
-    return "sync: " + " · ".join(f"{name} {status}" for name, status in results.items())
+    line = "sync: " + " · ".join(f"{name} {status}" for name, status in results.items())
+    return f"{line} · {roledata_line}"
 
 
 def _check(store: Store, now: datetime, log: Callable[[str], None]) -> str:
     log(
-        asyncio.run(refresh_reference(store))
+        asyncio.run(refresh_reference(store, now))
     )  # first: profile, clears and union all read these files
     # Every file is re-read each check, so a cookie ambil refreshed or a fixed config is picked up.
-    from . import nikke_sheet, roster_sheet
+    from . import costume_sheet, nikke_sheet, roster_sheet
     from .clear_sheet import sync_clears  # clear_sheet imports WIB from here
     from .union_sheet import sync_union
 
@@ -362,9 +371,25 @@ def _check(store: Store, now: datetime, log: Callable[[str], None]) -> str:
                 Exception
             ) as e:  # client setup or teardown; sync_roster_log itself never raises
                 log(f"RosterLog: {type(e).__name__}: {e}")
+
+            async def costumes() -> str:
+                async with make_client(cookies) as client:
+                    return await costume_sheet.sync_costume_database(
+                        store,
+                        client,
+                        cookies["game_openid"],
+                        gacha,
+                        timestamp=wib_timestamp(now),
+                    )
+
+            try:
+                log(asyncio.run(costumes()))
+            except Exception as e:  # same as RosterLog above
+                log(f"CostumeDatabase: {type(e).__name__}: {e}")
         else:
             log("NikkeDatabase: no gacha_spreadsheet_id")
             log("RosterLog: no gacha_spreadsheet_id")
+            log("CostumeDatabase: no gacha_spreadsheet_id")
         return text
 
 

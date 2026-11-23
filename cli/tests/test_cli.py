@@ -156,6 +156,23 @@ def test_union_bad_args_keep_running(union_store):
     assert "Traceback" not in out.export_text()
 
 
+def test_sync_command_fetches_roledata(store, monkeypatch):
+    forces = []
+
+    async def fake_sync(*a, **k):
+        return {}
+
+    async def fake_roledata(store_, client, *, force):
+        forces.append(force)
+        return "roledata new 3"
+
+    monkeypatch.setattr("shiniri_cli.cli.sync_reference", fake_sync)
+    monkeypatch.setattr("shiniri_cli.cli.fetch_roledata", fake_roledata)
+    app, out = make_app(store)
+    app.execute("sync")
+    assert forces == [True] and "roledata new 3" in out.export_text()
+
+
 def test_live_wipes_union_exports(union_store, monkeypatch):
     app, _ = make_app(union_store)
     app.execute("union missed s46")

@@ -17,6 +17,7 @@ from rich.table import Table
 
 from . import union_queries as uq
 from .fetch import AuthError, load_cookie, make_client, save_cookie, sync_reference
+from .roledata import fetch_roledata
 from .store import Store, export_name, scopes_to_wipe
 from .union import CODES, UnionError, build_union, fetch_union, write_union_parsed
 from .union_queries import QueryError, Result
@@ -452,14 +453,17 @@ class App:
     def do_sync(self, cmd: Command) -> None:
         async def run():
             async with httpx.AsyncClient() as client:
-                return await sync_reference(self.store, client)
+                return await sync_reference(self.store, client), await fetch_roledata(
+                    self.store, client, force=True
+                )
 
-        results = asyncio.run(run())
+        results, roledata_line = asyncio.run(run())
         if any(not s.startswith("failed") for s in results.values()):
             self.store.mark("sync")
         for name, status in results.items():
             colour = {"changed": "green", "unchanged": "dim"}.get(status, "red")
             self.out.print(f"[{colour}]{name}: {status}[/]")
+        self.out.print(f"[dim]{roledata_line}[/]")
         changed = {n for n, s in results.items() if s == "changed"}
         self.refresh(synced=changed)
 

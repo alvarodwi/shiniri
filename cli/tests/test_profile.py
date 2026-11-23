@@ -225,6 +225,16 @@ def make_write(writes):
     return lambda row, day: writes.append((row, day)) or "'Profile'!A5:AU5"
 
 
+@pytest.fixture(autouse=True)
+def no_roledata_network(monkeypatch):
+    from shiniri_cli import profile
+
+    async def fetch(store_, client, *, force):
+        return "roledata new 0"
+
+    monkeypatch.setattr(profile, "fetch_roledata", fetch)
+
+
 def run_check(store, now, points, write, clears=None):
     c = client_for(
         {
@@ -387,16 +397,26 @@ def test_check_joins_clears_and_union(store, monkeypatch):
         == "Campaign +0 · Tower +0 · Union +1 · Roster +1"
     )
     assert lines == [
-        "sync: raid_list changed",
+        "sync: raid_list changed · roledata new 0",
         "Campaign: wrote",
         "NikkeDatabase: no gacha_spreadsheet_id",
         "RosterLog: no gacha_spreadsheet_id",
+        "CostumeDatabase: no gacha_spreadsheet_id",
     ]
     assert seen == {"api": "sheets", "now": now.timestamp()}
 
 
-def _check_with_gacha(store, monkeypatch, fake_nikke, fake_roster):
-    from shiniri_cli import clear_sheet, nikke_sheet, profile, roster_sheet, union_sheet
+def _check_with_gacha(
+    store, monkeypatch, fake_nikke, fake_roster, fake_costume=lambda api: "CostumeDatabase +0"
+):
+    from shiniri_cli import (
+        clear_sheet,
+        costume_sheet,
+        nikke_sheet,
+        profile,
+        roster_sheet,
+        union_sheet,
+    )
 
     store.config_dir.mkdir(parents=True, exist_ok=True)
     (store.config_dir / "sheets.json").write_text(
@@ -436,11 +456,39 @@ def _check_with_gacha(store, monkeypatch, fake_nikke, fake_roster):
         return fake_roster(openid, api, day, timestamp)
 
     monkeypatch.setattr(roster_sheet, "sync_roster_log", roster)
+
+    async def costumes(store_, client, openid, api, *, timestamp):
+        return fake_costume(api)
+
+    monkeypatch.setattr(costume_sheet, "sync_costume_database", costumes)
     lines = []
     text = profile._check(
         store, datetime(2026, 11, 20, 12, 59, tzinfo=WIB), lines.append
     )
     return text, lines, apis
+
+
+def test_check_syncs_costume_database(store, monkeypatch):
+    seen = []
+
+    def fake_costume(api):
+        seen.append(api)
+        return "CostumeDatabase +3"
+
+    _, lines, _ = _check_with_gacha(
+        store, monkeypatch, lambda api: "n", lambda *a: "r", fake_costume
+    )
+    assert seen == ["sheets:g"] and lines[-1] == "CostumeDatabase +3"
+
+
+def test_costume_exception_is_a_line_not_a_crash(store, monkeypatch):
+    def boom(api):
+        raise RuntimeError("client died")
+
+    text, lines, _ = _check_with_gacha(
+        store, monkeypatch, lambda api: "n", lambda *a: "r", boom
+    )
+    assert lines[-1] == "CostumeDatabase: RuntimeError: client died"
 
 
 def test_check_syncs_nikke_database(store, monkeypatch):
@@ -453,7 +501,7 @@ def test_check_syncs_nikke_database(store, monkeypatch):
     text, lines, apis = _check_with_gacha(
         store, monkeypatch, fake_nikke, lambda *a: "RosterLog +0"
     )
-    assert seen == ["sheets:g"] and lines[-2] == "NikkeDatabase +2"
+    assert seen == ["sheets:g"] and lines[-3] == "NikkeDatabase +2"
     assert (
         apis == {"clears": "sheets:x", "union": "sheets:x"}
         and text == "Campaign +0 · Union +1"
@@ -470,7 +518,7 @@ def test_check_logs_roster_after_nikke_database(store, monkeypatch):
     text, lines, _ = _check_with_gacha(
         store, monkeypatch, lambda api: "NikkeDatabase +2", fake_roster
     )
-    assert lines[-2:] == ["NikkeDatabase +2", "RosterLog +2"]
+    assert lines[-3:-1] == ["NikkeDatabase +2", "RosterLog +2"]
     assert seen == [("me", "sheets:g", "2026-11-20", "2026-11-20 12:59:00")]
     assert text == "Campaign +0 · Union +1"
 
@@ -480,7 +528,7 @@ def test_roster_failure_leaves_the_rest(store, monkeypatch):
         store, monkeypatch, lambda api: "NikkeDatabase +2", lambda *a: "RosterLog: boom"
     )
     assert (
-        lines[-2:] == ["NikkeDatabase +2", "RosterLog: boom"]
+        lines[-3:-1] == ["NikkeDatabase +2", "RosterLog: boom"]
         and text == "Campaign +0 · Union +1"
     )
 
@@ -494,9 +542,59 @@ def test_refresh_reference_line(store, monkeypatch):
     monkeypatch.setattr(profile, "sync_reference", fake)
     assert (
         asyncio.run(profile.refresh_reference(store))
-        == "sync: nikke_list_en changed · stage_list unchanged"
+        == "sync: nikke_list_en changed · stage_list unchanged · roledata new 0"
     )
     assert "sync" in store.state()  # the shell's "synced …" status moves too
+
+
+def _patch_reference(monkeypatch, fetch):
+    from shiniri_cli import profile
+
+    async def fake(store_, client):
+        return {"nikke_list_en": "unchanged"}
+
+    monkeypatch.setattr(profile, "sync_reference", fake)
+    monkeypatch.setattr(profile, "fetch_roledata", fetch)
+
+
+def test_refresh_reference_includes_roledata_line(store, monkeypatch):
+    from shiniri_cli import profile
+
+    async def fetch(store_, client, *, force):
+        return "roledata new 2"
+
+    _patch_reference(monkeypatch, fetch)
+    assert asyncio.run(profile.refresh_reference(store)).endswith("· roledata new 2")
+
+
+def test_refresh_reference_skips_full_refresh_same_day(store, monkeypatch):
+    from shiniri_cli import profile
+
+    forces = []
+
+    async def fetch(store_, client, *, force):
+        forces.append(force)
+        return "roledata new 0"
+
+    _patch_reference(monkeypatch, fetch)
+    now = datetime(2026, 11, 20, 12, 0, tzinfo=profile.WIB)
+    asyncio.run(profile.refresh_reference(store, now))  # no state: full refresh
+    (store.root / "data" / "state.json").write_text(
+        json.dumps({"roledata": "2026-11-20 11:00"}), encoding="utf-8"
+    )
+    asyncio.run(profile.refresh_reference(store, now))  # stamped that game day
+    assert forces == [True, False]
+
+
+def test_refresh_reference_roledata_error_is_a_line(store, monkeypatch):
+    from shiniri_cli import profile
+
+    async def fetch(store_, client, *, force):
+        raise RuntimeError("cdn died")
+
+    _patch_reference(monkeypatch, fetch)
+    line = asyncio.run(profile.refresh_reference(store))
+    assert line.startswith("sync:") and "roledata: RuntimeError: cdn died" in line
 
 
 def test_refresh_reference_never_raises(store):  # tmp store has no config/sources.json
@@ -523,6 +621,6 @@ def test_roster_exception_is_a_line_not_a_crash(store, monkeypatch):
         store, monkeypatch, lambda api: "NikkeDatabase +2", boom
     )
     assert (
-        lines[-1] == "RosterLog: RuntimeError: client died"
+        lines[-2] == "RosterLog: RuntimeError: client died"
         and text == "Campaign +0 · Union +1"
     )

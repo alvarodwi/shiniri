@@ -17,6 +17,14 @@ from typing import NamedTuple
 import httpx
 
 from shiniri_cli.fetch import CDN_HEADERS, cdn_url
+from shiniri_cli.roledata import (
+    costume_entries,
+    image_path,
+    missing_ids,
+    raw_name,
+    resource_ids,
+)
+from shiniri_cli.store import Store
 
 
 class Job(NamedTuple):
@@ -28,6 +36,7 @@ class Job(NamedTuple):
 
 
 QUALITY = ("-q", "82", "-m", "6")
+STORE_ROOT = Path(__file__).resolve().parents[1]  # the cli/ folder
 IMG_ROOT = Path(__file__).resolve().parents[2] / "ui" / "public" / "img"
 ITEMS_FILE = Path(__file__).with_name("items.json")
 NIKKE_LIST = "character/en/nikke_list_en_v2.json"
@@ -132,6 +141,16 @@ def item_jobs(items: dict[str, str], root: Path) -> list[Job]:
     ]
 
 
+def costume_jobs(store: Store, root: Path) -> list[Job]:
+    """The medium image of every usable costume in the stored roledata."""
+    jobs = []
+    for rid in resource_ids(store):
+        for c in costume_entries(store.load_raw(raw_name(rid), {})):
+            path = image_path(c)
+            jobs.append(Job(cdn_url(path), root / "nikke" / "mi" / Path(path).name, None))
+    return jobs
+
+
 def load_items(path: Path) -> dict[str, str]:
     try:
         items = json.loads(path.read_text(encoding="utf-8"))
@@ -145,10 +164,20 @@ def load_items(path: Path) -> dict[str, str]:
 
 
 async def main_async(
-    client: httpx.AsyncClient | None = None, root: Path = IMG_ROOT
+    client: httpx.AsyncClient | None = None,
+    root: Path = IMG_ROOT,
+    store: Store | None = None,
 ) -> int:
     if shutil.which("cwebp") is None:
         print("cwebp not found on PATH (install the webp package)")
+        return 1
+    store = store or Store(STORE_ROOT)
+    if not resource_ids(store):
+        print("no Nikke list yet; run sync first")
+        return 1
+    if missing := missing_ids(store):
+        first = ", ".join(map(str, missing[:3]))
+        print(f"roledata missing for {len(missing)} Nikkes (first: {first}); run sync first")
         return 1
     items = load_items(ITEMS_FILE)
     async with client or httpx.AsyncClient() as client:
@@ -166,7 +195,9 @@ async def main_async(
             )
             return 1
         jobs, bad = nikke_jobs(nikkes, root)
-        out = await run(client, jobs + item_jobs(items, root))
+        out = await run(
+            client, jobs + item_jobs(items, root) + costume_jobs(store, root)
+        )
     failed = [f"{dest.relative_to(root)}: {why}" for dest, why in out["failed"]] + bad
     print(f"new {len(out['new'])}, skipped {len(out['skipped'])}, failed {len(failed)}")
     for line in failed:

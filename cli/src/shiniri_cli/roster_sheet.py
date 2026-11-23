@@ -79,24 +79,27 @@ def roster_rows(
     return rows, notes
 
 
+async def fetch_characters(client: httpx.AsyncClient, openid: str) -> list:
+    """The account's `data.characters`; SheetsError on a non-zero code or no characters."""
+    resp = await api_call(
+        client, "GetUserCharacters", {"intl_open_id": openid, "nikke_area_id": AREA_ID}
+    )
+    if resp.get("code") != 0:
+        raise SheetsError(
+            f"code {resp.get('code')}" + (f": {resp['msg']}" if resp.get("msg") else "")
+        )
+    characters = (resp.get("data") or {}).get("characters")
+    if not characters or not isinstance(characters, list):
+        raise SheetsError("no characters")
+    return characters
+
+
 async def sync_roster_log(
     client: httpx.AsyncClient, openid: str, api: SheetsApi, *, day: str, timestamp: str
 ) -> str:
     """Append the Nikkes whose copy count changed in one block; the log line. Never raises."""
     try:
-        resp = await api_call(
-            client,
-            "GetUserCharacters",
-            {"intl_open_id": openid, "nikke_area_id": AREA_ID},
-        )
-        if resp.get("code") != 0:
-            raise SheetsError(
-                f"code {resp.get('code')}"
-                + (f": {resp['msg']}" if resp.get("msg") else "")
-            )
-        characters = (resp.get("data") or {}).get("characters")
-        if not characters or not isinstance(characters, list):
-            raise SheetsError("no characters")
+        characters = await fetch_characters(client, openid)
         _checked(
             api, TAB, HEADERS
         )  # a renamed header shows up even on a run that writes nothing

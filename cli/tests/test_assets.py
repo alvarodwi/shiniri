@@ -6,6 +6,18 @@ import pytest
 from assets import QUALITY, Job
 
 
+@pytest.fixture(autouse=True)
+def data_present(monkeypatch, tmp_path_factory):
+    """main_async must not depend on the real cli/data/: point it at a store whose roledata is complete."""
+    from shiniri_cli.store import Store
+
+    root = tmp_path_factory.mktemp("cli")
+    store = Store(root)
+    store.save_raw("nikke_list_en", [{"resource_id": 1}])
+    store.save_raw("roledata/1", {"character_costume_list": []})
+    monkeypatch.setattr(assets, "STORE_ROOT", root)
+
+
 def fake_encode(data, args):
     fake_encode.args = args
     return b"WEBP" + data
@@ -224,3 +236,76 @@ def test_missing_cwebp_stops_before_download(tmp_path, monkeypatch, capsys):
         assets.main_async(client_for(lambda req: calls.append(req)), tmp_path)
     )
     assert code == 1 and calls == [] and "cwebp not found" in capsys.readouterr().out
+
+
+def _seed_costume(store, rids=(19,)):
+    store.save_raw("nikke_list_en", [{"resource_id": r} for r in rids])
+    store.save_raw(
+        "roledata/19",
+        {
+            "character_costume_list": [
+                {"id": 130007, "resource_id": 19, "costume_index": 1, "is_hidden": False},
+                {"id": 130008, "resource_id": 19, "costume_index": 2, "is_hidden": True},
+            ]
+        },
+    )
+
+
+def test_costume_jobs_paths(store, tmp_path):
+    from shiniri_cli.fetch import cdn_url
+
+    _seed_costume(store)
+    assert assets.costume_jobs(store, tmp_path) == [
+        Job(
+            cdn_url("character/mi/mi_c019_01_s.webp"),
+            tmp_path / "nikke/mi/mi_c019_01_s.webp",
+            None,
+        )
+    ]
+
+
+def test_main_stops_before_any_request_when_roledata_missing(
+    store, tmp_path, monkeypatch, capsys
+):
+    monkeypatch.setattr(assets.shutil, "which", lambda name: "/usr/bin/cwebp")
+    store.save_raw("nikke_list_en", [{"resource_id": 19}, {"resource_id": 20}])
+    calls = []
+    code = asyncio.run(
+        assets.main_async(
+            client_for(lambda req: calls.append(req)), tmp_path, store=store
+        )
+    )
+    out = capsys.readouterr().out
+    assert code == 1 and calls == []
+    assert "roledata missing for 2 Nikkes (first: 19, 20); run sync first" in out
+
+
+def test_main_downloads_costume_images(store, tmp_path, monkeypatch):
+    from shiniri_cli.fetch import cdn_url
+
+    monkeypatch.setattr(assets.shutil, "which", lambda name: "/usr/bin/cwebp")
+    _seed_costume(store)
+    mi = cdn_url("character/mi/mi_c019_01_s.webp")
+    seen = []
+
+    def handler(req):
+        seen.append(str(req.url))
+        if str(req.url) == cdn_url(assets.NIKKE_LIST):
+            return httpx.Response(200, json=[{"resource_id": 19}])
+        return httpx.Response(200, content=b"IMG", headers={"content-type": "image/webp"})
+
+    asyncio.run(assets.main_async(client_for(handler), tmp_path, store=store))
+    assert (tmp_path / "nikke/mi/mi_c019_01_s.webp").read_bytes() == b"IMG"
+    seen.clear()
+    asyncio.run(assets.main_async(client_for(handler), tmp_path, store=store))
+    assert mi not in seen
+
+
+def test_main_stops_when_there_is_no_nikke_list(store, tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(assets.shutil, "which", lambda name: "/usr/bin/cwebp")
+    (store.raw_dir / "nikke_list_en.json").unlink()
+    calls = []
+    code = asyncio.run(
+        assets.main_async(client_for(lambda req: calls.append(req)), tmp_path, store=store)
+    )
+    assert code == 1 and calls == [] and "run sync first" in capsys.readouterr().out
