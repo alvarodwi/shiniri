@@ -28,8 +28,9 @@ describe('mock sheet with the real stores', () => {
     expect(level.lastSaved).toEqual({ updatedRange: "'LevelLog'!A7:D8", count: 2 })
 
     const log = useLogStore()
-    await log.load(api)
-    expect(log.sections.map((s) => s.name)).toEqual(['Progression', 'Gacha'])
+    await log.open('Journal', api)
+    await log.open('Gacha', api)
+    expect(log.sections.map((s) => s.name)).toEqual(['Journal', 'Gacha'])
     expect(log.sections[0].entries[0]).toMatchObject({ form: 'Level', rows: '2' })
     // the journal save did not land in the gacha log
     expect(log.sections[1].entries[0]).toMatchObject({ form: 'cli-nikke-database' })

@@ -11,6 +11,7 @@ import { writeTabsAtEnd } from '@/services/sheets/tabWriter'
 import { sheetsApi } from '@/stores/authStore'
 import { COLLAB_TYPE } from '@/types/event'
 import type { EventEntry } from '@/types/event'
+import { isEntryDirty } from '@/utils/dirty'
 import { gameDay } from '@/utils/gameDay'
 
 const newEntry = (): EventEntry => ({
@@ -37,6 +38,7 @@ export const useEventStore = defineStore('event', {
   }),
 
   getters: {
+    isDirty: (state) => isEntryDirty(state.entry, newEntry()),
     row: (state) => toRow(state.entry),
     // Pilgrim can come out of any event banner; Abnormal only out of a collaboration one.
     pool: (state) =>
@@ -52,6 +54,9 @@ export const useEventStore = defineStore('event', {
   },
 
   actions: {
+    discard() {
+      this.entry = newEntry()
+    },
     // Runs on every visit to the page, so it must not undo a save in flight or a typed entry.
     async load(api: SheetsApi = sheetsApi): Promise<boolean> {
       if (this.status === 'saving') return false

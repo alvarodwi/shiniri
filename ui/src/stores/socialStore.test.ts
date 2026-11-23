@@ -177,3 +177,26 @@ describe('socialStore', () => {
     expect(store.entry.names.length).toBe(1)
   })
 })
+
+describe('socialStore isDirty', () => {
+  it('tracks unsaved input and clears once the entry is fresh again', () => {
+    setActivePinia(createPinia())
+    const store = useSocialStore()
+    expect(store.isDirty).toBe(false)
+    store.entry.notes = 'typed'
+    expect(store.isDirty).toBe(true)
+    store.entry.notes = ''
+    expect(store.isDirty).toBe(false)
+  })
+})
+
+describe('socialStore discard', () => {
+  it('drops the typed entry', () => {
+    setActivePinia(createPinia())
+    const store = useSocialStore()
+    store.entry.notes = 'typed'
+    store.discard()
+    expect(store.entry.notes).toBe('')
+    expect(store.isDirty).toBe(false)
+  })
+})

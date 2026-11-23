@@ -12,7 +12,7 @@ onMounted(() => store.load())
 </script>
 
 <template>
-  <main class="mx-auto flex max-w-xl flex-col gap-4 px-4 pb-24">
+  <div class="mx-auto flex max-w-xl flex-col gap-4 px-4 pb-24">
     <h2 class="pt-4 text-xl font-bold">Event</h2>
 
     <!-- Only the first read hides the form; a reload after Save keeps it mounted, so focus stays. -->
@@ -117,5 +117,5 @@ onMounted(() => store.load())
         {{ store.status === 'saving' ? 'Saving…' : 'Save session' }}
       </button>
     </div>
-  </main>
+  </div>
 </template>

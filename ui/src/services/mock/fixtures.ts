@@ -38,7 +38,7 @@ const tab = (spec: TabSpec, rows: Cell[][]): Seed => [spec, rows]
 
 // Each AuditLog is seeded by its own SPREADSHEETS entry.
 const AUDIT_ROWS: Record<string, Cell[][]> = {
-  Progression: [
+  Journal: [
     ['2026-11-17 21:04:12', 'Anomaly', "'Anomaly'!A2:I3", 2],
     ['2026-11-18 20:55:33', 'Anomaly', "'Anomaly'!A4:I5", 2],
   ],

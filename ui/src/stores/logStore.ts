@@ -6,16 +6,38 @@ import type { SheetsApi } from '@/services/google/sheetsApi'
 import { nextEmptyRow, readColumnA, readRows } from '@/services/sheets/tabWriter'
 import { sheetsApi } from '@/stores/authStore'
 
-const RECENT = 20
+const CHUNK = 20
 
 export type AuditEntry = { savedAt: string; form: string; ranges: string; rows: string }
-export type LogSection = { name: string; entries: AuditEntry[]; error: string | null }
+// oldest is the first sheet row read so far; row 1 is the header, so 2 means nothing older is left.
+export type LogSection = {
+  name: string
+  entries: AuditEntry[]
+  error: string | null
+  loaded: boolean
+  oldest: number
+  busy: boolean
+}
 
-// Newest first. Row 1 is the header, so an empty log reads nothing past column A.
-async function recentEntries(api: SheetsApi, sheet: Spreadsheet): Promise<AuditEntry[]> {
-  const last = nextEmptyRow(await readColumnA(api, sheet.audit)) - 1
-  if (last < 2) return []
-  const rows = await readRows(api, sheet.audit, Math.max(2, last - RECENT + 1), last)
+const blank = (name: string): LogSection => ({
+  name,
+  entries: [],
+  error: null,
+  loaded: false,
+  oldest: 2,
+  busy: false,
+})
+
+export const hasMore = (section: LogSection) => section.loaded && section.oldest > 2
+
+// Newest first within the chunk.
+async function readChunk(
+  api: SheetsApi,
+  sheet: Spreadsheet,
+  from: number,
+  to: number,
+): Promise<AuditEntry[]> {
+  const rows = await readRows(api, sheet.audit, from, to)
   return rows
     .map(([savedAt = '', form = '', ranges = '', rows = '']) => ({ savedAt, form, ranges, rows }))
     .filter((e) => e.savedAt.trim()) // a row cleared by hand
@@ -24,25 +46,57 @@ async function recentEntries(api: SheetsApi, sheet: Spreadsheet): Promise<AuditE
 
 export const useLogStore = defineStore('log', {
   state: () => ({
-    sections: [] as LogSection[],
-    status: 'idle' as 'idle' | 'loading',
+    sections: SPREADSHEETS.map((s) => blank(s.name)),
   }),
-
   actions: {
-    // Read-only. A failing spreadsheet only marks its own section.
-    async load(api: SheetsApi = sheetsApi, spreadsheets: Spreadsheet[] = SPREADSHEETS) {
-      if (this.status === 'loading') return // e.g. leaving and re-opening the page mid-load
-      this.status = 'loading'
-      this.sections = await Promise.all(
-        spreadsheets.map(async (sheet) => {
-          try {
-            return { name: sheet.name, entries: await recentEntries(api, sheet), error: null }
-          } catch (e) {
-            return { name: sheet.name, entries: [], error: (e as Error).message }
-          }
-        }),
-      )
-      this.status = 'idle'
+    // Read-only. Reads the newest chunk of one sheet's audit tab, once. A failure marks only that
+    // section.
+    async open(
+      name: string,
+      api: SheetsApi = sheetsApi,
+      spreadsheets: Spreadsheet[] = SPREADSHEETS,
+    ) {
+      const section = this.sections.find((s) => s.name === name)
+      const sheet = spreadsheets.find((s) => s.name === name)
+      if (!section || !sheet || section.loaded || section.busy) return
+      section.busy = true
+      section.error = null
+      try {
+        const last = nextEmptyRow(await readColumnA(api, sheet.audit)) - 1
+        const from = Math.max(2, last - CHUNK + 1)
+        section.entries = last < 2 ? [] : await readChunk(api, sheet, from, last)
+        section.oldest = from
+        section.loaded = true
+      } catch (e) {
+        section.error = (e as Error).message
+      } finally {
+        section.busy = false
+      }
+    },
+    // Reads the next older chunk and appends it. A failure keeps what is already shown.
+    async more(
+      name: string,
+      api: SheetsApi = sheetsApi,
+      spreadsheets: Spreadsheet[] = SPREADSHEETS,
+    ) {
+      const section = this.sections.find((s) => s.name === name)
+      const sheet = spreadsheets.find((s) => s.name === name)
+      if (!section || !sheet || !hasMore(section) || section.busy) return
+      section.busy = true
+      section.error = null
+      try {
+        const to = section.oldest - 1
+        const from = Math.max(2, to - CHUNK + 1)
+        section.entries.push(...(await readChunk(api, sheet, from, to)))
+        section.oldest = from
+      } catch (e) {
+        section.error = (e as Error).message
+      } finally {
+        section.busy = false
+      }
+    },
+    reset() {
+      this.sections = SPREADSHEETS.map((s) => blank(s.name))
     },
   },
 })

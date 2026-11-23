@@ -135,7 +135,7 @@ export type Spreadsheet = { name: string; audit: TabSpec }
 
 export const SPREADSHEETS: Spreadsheet[] = [
   {
-    name: 'Progression',
+    name: 'Journal',
     audit: {
       spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
       tab: 'AuditLog',

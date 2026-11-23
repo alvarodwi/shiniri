@@ -9,6 +9,7 @@ import { writeTabsAtEnd } from '@/services/sheets/tabWriter'
 import { parseCopies, spareBodyPool, toRows } from '@/services/spareBody/spareBodyRows'
 import { sheetsApi } from '@/stores/authStore'
 import type { SpareBodyEntry } from '@/types/spareBody'
+import { isEntryDirty } from '@/utils/dirty'
 import { gameDay } from '@/utils/gameDay'
 
 const newEntry = (): SpareBodyEntry => ({
@@ -30,6 +31,7 @@ export const useSpareBodyStore = defineStore('spareBody', {
   }),
 
   getters: {
+    isDirty: (state) => isEntryDirty(state.entry, newEntry()),
     rows: (state) => toRows(state.entry),
     pool: (state) => spareBodyPool(state.nikkes, state.entry.source),
     canSave(): boolean {
@@ -43,6 +45,9 @@ export const useSpareBodyStore = defineStore('spareBody', {
   },
 
   actions: {
+    discard() {
+      this.entry = newEntry()
+    },
     // Runs on every visit to the page, so it must not undo a save in flight or a typed entry.
     async load(api: SheetsApi = sheetsApi): Promise<boolean> {
       if (this.status === 'saving') return false

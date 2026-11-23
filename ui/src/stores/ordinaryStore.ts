@@ -10,6 +10,7 @@ import { checkOvercores } from '@/services/overcore/overcore'
 import { writeTabsAtEnd } from '@/services/sheets/tabWriter'
 import { sheetsApi } from '@/stores/authStore'
 import type { OrdinaryEntry } from '@/types/ordinary'
+import { isEntryDirty } from '@/utils/dirty'
 import { gameDay } from '@/utils/gameDay'
 
 const newEntry = (): OrdinaryEntry => ({
@@ -31,6 +32,7 @@ export const useOrdinaryStore = defineStore('ordinary', {
   }),
 
   getters: {
+    isDirty: (state) => isEntryDirty(state.entry, newEntry()),
     row: (state) => toRow(state.entry),
     pool: (state) => ssrPool(state.nikkes, { pilgrim: true, abnormal: false }),
     canSave(): boolean {
@@ -44,6 +46,9 @@ export const useOrdinaryStore = defineStore('ordinary', {
   },
 
   actions: {
+    discard() {
+      this.entry = newEntry()
+    },
     // Runs on every visit to the page, so it must not undo a save in flight or a typed entry.
     async load(api: SheetsApi = sheetsApi): Promise<boolean> {
       if (this.status === 'saving') return false

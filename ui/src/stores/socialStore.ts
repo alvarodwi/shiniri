@@ -10,6 +10,7 @@ import { writeTabsAtEnd } from '@/services/sheets/tabWriter'
 import { toRow } from '@/services/social/socialRows'
 import { sheetsApi } from '@/stores/authStore'
 import type { SocialEntry } from '@/types/social'
+import { isEntryDirty } from '@/utils/dirty'
 import { gameDay } from '@/utils/gameDay'
 
 const newEntry = (): SocialEntry => ({ date: gameDay(), times: '', names: [], notes: '' })
@@ -25,6 +26,7 @@ export const useSocialStore = defineStore('social', {
   }),
 
   getters: {
+    isDirty: (state) => isEntryDirty(state.entry, newEntry()),
     row: (state) => toRow(state.entry),
     // totalSsr counts SSRs only. Abnormal (collab, event only) and Pilgrim (event and ordinary only)
     // never come out of a social pull.
@@ -40,6 +42,9 @@ export const useSocialStore = defineStore('social', {
   },
 
   actions: {
+    discard() {
+      this.entry = newEntry()
+    },
     // Runs on every visit to the page, so it must not undo a save in flight or a typed entry.
     async load(api: SheetsApi = sheetsApi): Promise<boolean> {
       if (this.status === 'saving') return false

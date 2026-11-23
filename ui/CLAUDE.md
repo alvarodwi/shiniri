@@ -20,7 +20,9 @@ The sheet contract and development flow are in `../CLAUDE.md`. Paths here are re
 
 Add a `TabSpec` in `src/config/sheets.ts` (exact headers), pure row logic in
 `src/services/<form>/`, a store in `src/stores/`, a page in `src/pages/`, components in
-`src/components/<form>/`, and a route. `services/google` and `services/sheets` should not need
+`src/components/<form>/`, and a route. A pull form (a gacha tab) has no route of its own: add it
+to `PULL_FORMS` in `src/services/gacha/pullForms.ts` and to the `pages` and `stores` maps in
+`src/pages/Pulls.vue`, and give its store `isDirty` and `discard`. `services/google` and `services/sheets` should not need
 changes.
 
 ## UI
@@ -48,7 +50,7 @@ dashboard), label every input, and hide sheet links on small screens.
 
 ## Reviewing the UI
 
-- Run `yarn dev:mock` and open `http://localhost:5173/#/anomaly` (or the port Vite prints, if 5173 is
+- Run `yarn dev:mock` and open `http://localhost:5173/#/journal/anomaly` (or the port Vite prints, if 5173 is
   taken). The app starts signed in on a fake
   in-memory sheet (`src/services/mock/`); nothing is sent to Google, and a banner says so.
 - Saves land in the fake sheet, so follow-up screens update. Everything resets on reload.
@@ -59,10 +61,10 @@ dashboard), label every input, and hide sheet links on small screens.
   `vite.config.ts`); builds never contain it. A new form adds its tab to
   `MOCK_SHEETS` in `src/services/mock/fixtures.ts`.
 - Overcore scenarios (the mock AllPulls and RosterLog put Rapi and Noah at copy 11):
-  1. `#/exchange`: source Gold Mileage, target Rapi, copies 1, Save. Expect the "Saved to ..." line
+  1. `#/exchange` (opens Pulls on Exchange): source Gold Mileage, target Rapi, copies 1, Save. Expect the "Saved to ..." line
      plus a remark containing `Rapi C8`.
-  2. `#/mold`: Pilgrim Perfect Mold, Amount opened 1, pick Noah, Save session. Expect a remark containing
+  2. `#/mold` (opens Pulls on Mold): Pilgrim Perfect Mold, Amount opened 1, pick Noah, Save session. Expect a remark containing
      `Noah C8` and ending `And she's a Pilgrim.`
   3. The mock AllPulls is static, so repeats show C8 again; reload to reset.
 - Headless check without a browser tool:
-  `google-chrome --headless=new --virtual-time-budget=5000 --dump-dom http://localhost:5173/#/level`.
+  `google-chrome --headless=new --virtual-time-budget=5000 --dump-dom http://localhost:5173/#/journal/level`.

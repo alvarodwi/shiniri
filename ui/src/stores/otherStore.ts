@@ -10,6 +10,7 @@ import { writeTabsAtEnd } from '@/services/sheets/tabWriter'
 import { sheetsApi } from '@/stores/authStore'
 import { FREE_PULLS, GUARANTEED } from '@/types/other'
 import type { OtherEntry } from '@/types/other'
+import { isEntryDirty } from '@/utils/dirty'
 import { gameDay } from '@/utils/gameDay'
 
 const newEntry = (): OtherEntry => ({
@@ -35,6 +36,7 @@ export const useOtherStore = defineStore('other', {
   }),
 
   getters: {
+    isDirty: (state) => isEntryDirty(state.entry, newEntry()),
     rows: (state) => toRows(state.entry),
     pool: (state) => otherPool(state.nikkes),
     canSave(): boolean {
@@ -48,6 +50,9 @@ export const useOtherStore = defineStore('other', {
   },
 
   actions: {
+    discard() {
+      this.entry = newEntry()
+    },
     // Runs on every visit to the page, so it must not undo a save in flight or a typed entry.
     async load(api: SheetsApi = sheetsApi): Promise<boolean> {
       if (this.status === 'saving') return false

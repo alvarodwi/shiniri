@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { defineAsyncComponent } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 
+import { NAV, groupOf } from '@/router/nav'
 import { useAuthStore } from '@/stores/authStore'
 
 const auth = useAuthStore()
@@ -11,22 +12,7 @@ const version = __APP_VERSION__
 const MockBanner = __MOCK__
   ? defineAsyncComponent(() => import('@/components/MockBanner.vue'))
   : null
-const links = [
-  { to: '/anomaly', label: 'Anomaly' },
-  { to: '/event', label: 'Event' },
-  { to: '/ordinary', label: 'Ordinary' },
-  { to: '/mold', label: 'Mold' },
-  { to: '/exchange', label: 'Exchange' },
-  { to: '/extra', label: 'Extra' },
-  { to: '/spending', label: 'Spending' },
-  { to: '/gear', label: 'Gear' },
-  { to: '/level', label: 'Level' },
-  { to: '/social', label: 'Social' },
-  { to: '/solo-raid', label: 'Solo Raid' },
-  { to: '/special', label: 'Special' },
-  { to: '/costumes', label: 'Costumes' },
-  { to: '/log', label: 'Log' },
-]
+const group = computed(() => groupOf(route.path))
 </script>
 
 <template>
@@ -34,15 +20,16 @@ const links = [
     <header class="rule flex flex-wrap items-center gap-x-3 border-b px-4 py-3">
       <h1 class="text-lg font-bold">Shiniri</h1>
       <span class="ink-soft text-xs">v{{ version }}</span>
-      <nav v-if="auth.signedIn" class="flex flex-wrap gap-x-3 text-sm">
+      <nav v-if="auth.signedIn" aria-label="Main" class="flex flex-wrap gap-x-3 text-sm">
         <RouterLink
-          v-for="link in links"
-          :key="link.to"
-          :to="link.to"
+          v-for="g in NAV"
+          :key="g.key"
+          :to="g.to"
+          :aria-current="group?.key === g.key ? 'true' : undefined"
           class="focus flex min-h-11 items-center whitespace-nowrap"
-          :class="route.path === link.to ? 'ink font-semibold underline' : 'ink-soft'"
+          :class="group?.key === g.key ? 'ink font-semibold underline' : 'ink-soft'"
         >
-          {{ link.label }}
+          {{ g.label }}
         </RouterLink>
       </nav>
       <button
@@ -53,6 +40,21 @@ const links = [
         Sign out
       </button>
     </header>
+    <nav
+      v-if="auth.signedIn && group?.links.length"
+      aria-label="Section"
+      class="rule flex flex-wrap gap-x-3 border-b px-4 text-sm"
+    >
+      <RouterLink
+        v-for="link in group.links"
+        :key="link.to"
+        :to="link.to"
+        class="focus flex min-h-11 items-center whitespace-nowrap"
+        :class="route.path === link.to ? 'ink font-semibold underline' : 'ink-soft'"
+      >
+        {{ link.label }}
+      </RouterLink>
+    </nav>
     <component :is="MockBanner" v-if="MockBanner" />
 
     <RouterView v-if="auth.signedIn" />
