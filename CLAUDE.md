@@ -9,6 +9,12 @@ NIKKE progress, logged into one Google Sheet by two parts:
 Both write to the same sheet under the same contract. Some logic is duplicated between them on
 purpose (TypeScript vs Python), and that's expected.
 
+## State docs
+
+`docs/state/` describes the code as it is now, one file per module (`ui-navigation.md` covers
+routing, the Pulls page and the Log). Finished specs and plans go to `docs/plans/archive/`; read
+them only for history.
+
 ## Sheet contract
 
 - The Google Sheet is the only source of truth for logged data. Never add a server-side copy of
