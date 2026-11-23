@@ -82,8 +82,8 @@ edits rows (see `../../CLAUDE.md`).
   is under 100 points, no check runs them, so Campaign and Tower stay behind until the daily is done
   or the 02:59 check.
 - `store.mark` stamps machine local time, but `needs_full_refresh` compares that stamp's date with
-  the WIB game day. On a server not on WIB the full roledata refresh can run on the wrong day
-  boundary, or twice a day. (unconfirmed in practice)
+  the WIB game day. The homeserver's zone is WIB, so they agree; on any other zone the full
+  roledata refresh would run on the wrong day boundary.
 - `fetch_roledata` marks `roledata` even when some files failed. Missing files retry as missing on
   the next check; a permanent failure does not force a full re-download each hour.
 - The `Profile` row keeps 47 cells even when an id is missing (the cell is `""`). Ids the game adds
