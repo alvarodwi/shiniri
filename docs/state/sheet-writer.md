@@ -45,8 +45,8 @@ CLI:
   `ensure_rows`): at least 100 rows (`GROW_MIN` in both), existing last-row format pasted over them,
   nothing shifts. Tabs that are long enough send nothing. A missing tab throws.
 - UI API client: a 401 gets exactly one fresh-token retry; a 429 becomes a plain rate-limit
-  message and is not retried. CLI: a 429 is waited out and retried up to three times, with an
-  injectable sleep (`test_sheets.py`). See `docs/decisions/0002-ui-does-not-retry-rate-limits.md`.
+  message and is not retried. CLI: a 429 is waited out (a fixed 60 s, the per-minute quota) and retried, 4 attempts in
+  all, with an injectable sleep (`test_sheets.py`). See `docs/decisions/0002-ui-does-not-retry-rate-limits.md`.
 - Audit row cells: `savedAt` (WIB timestamp), `form`, `ranges`, `rows`. Timestamp and ranges are
   stored as text with a leading `'`.
 
@@ -74,10 +74,14 @@ CLI:
 - `ensureRows` inserts after the last grid row (`inheritFromBefore` unless the grid is empty) and
   pastes the last row's format over the new rows to keep borders. Growth is
   `max(shortfall, GROW_MIN)`. A tab with no `gridProperties` is not a tab; a missing `sheetId` is 0.
-  The CLI caches grid metadata in `HttpSheets._grid`. Why: `docs/decisions/0001-audit-row-in-the-same-batch.md`.
+  The CLI reads grid metadata once per `HttpSheets` instance (`HttpSheets._grid`), so a tab
+  added by hand mid-run is not seen until the next instance (each `watch` check makes a new one). Why: `docs/decisions/0001-audit-row-in-the-same-batch.md`.
 - Tab and header names are the renamed ones (`Anomaly`, `Gear`, `LevelLog`, `SoloRaid`, `Furnace`,
   `Mold`, `Exchange`, CLI `UnionRaid`/`UnionRoster`). Old names survive only as code identifiers
-  (`SpareBody.vue`, `moldsStore`).
+  (`SpareBody.vue`, `moldsStore`). `ui/src/config/sheets.test.ts` pins every `TabSpec`, so a header
+  rename updates it. The live sheet still has legacy values the code no longer writes: old `AllPulls`
+  source values (`Molds`, `SpareBody`, `Other`, matched by the owner's `SWITCH` formula) and old
+  `AuditLog` `form`/`ranges` rows. Why: `docs/decisions/0004-sheet-names-one-cutover.md`.
 - Releases: Cloudflare deploys `main` through Workers static assets, not classic Pages. The live
   origin is `shiniri.varoa-dwi.workers.dev` (`README.md`) and the OAuth origin must match it. Hash
   history means no redirect rules. The CLI ships by the homeserver pulling `develop`
