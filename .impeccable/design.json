@@ -1,83 +1,312 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-24T00:00:00Z",
+  "generatedAt": "2026-11-24T12:59:18.288537+00:00",
   "title": "Design System: Shiniri",
   "extensions": {
     "colorMeta": {
-      "cream": { "role": "neutral", "displayName": "Warm Cream", "canonical": "#fdfcf9", "tonalRamp": ["#27262a", "#4a494c", "#76757a", "#a3a2a5", "#cfcecf", "#e6e5e2", "#f4f3ef", "#fdfcf9"] },
-      "charcoal": { "role": "primary", "displayName": "Charcoal Ink", "canonical": "#27262a", "tonalRamp": ["#0c0c0d", "#18171a", "#27262a", "#403f43", "#5c5b5f", "#807f83", "#a8a7aa", "#d0cfd1"] },
-      "accent": { "role": "secondary", "displayName": "Salmon Fill", "canonical": "#d48275", "tonalRamp": ["#5a2a22", "#7d3b30", "#a2554a", "#d48275", "#e09c91", "#ebb8af", "#f4d3cd", "#fae9e6"] },
-      "accent-ink": { "role": "secondary", "displayName": "Brick Ink", "canonical": "#c14e3c", "tonalRamp": ["#3d1710", "#5e2318", "#8a3425", "#c14e3c", "#d47868", "#e3a498", "#efc9c1", "#f8e5e1"] }
+      "cream": {
+        "role": "neutral",
+        "displayName": "Account-Book Cream",
+        "canonical": "#f6eedd",
+        "tonalRamp": [
+          "#342b19",
+          "#6b511c",
+          "#997528",
+          "#c79835",
+          "#d5b061",
+          "#e1c78f",
+          "#eddebd",
+          "#f7f4ee"
+        ]
+      },
+      "charcoal": {
+        "role": "neutral",
+        "displayName": "Charcoal Ink",
+        "canonical": "#241719",
+        "tonalRamp": [
+          "#2b2123",
+          "#523539",
+          "#764b52",
+          "#99626b",
+          "#b1858c",
+          "#c8a8ad",
+          "#decccf",
+          "#f4f1f1"
+        ]
+      },
+      "lacquer": {
+        "role": "neutral",
+        "displayName": "Lacquer Black",
+        "canonical": "#170d0f",
+        "tonalRamp": [
+          "#2d2022",
+          "#563138",
+          "#7b4650",
+          "#a15b69",
+          "#b77f8a",
+          "#cca4ac",
+          "#e1c9ce",
+          "#f4f0f1"
+        ]
+      },
+      "seal": {
+        "role": "primary",
+        "displayName": "Vermilion Seal",
+        "canonical": "#c23a24",
+        "tonalRamp": [
+          "#361b16",
+          "#722215",
+          "#a3311e",
+          "#d43f27",
+          "#e06956",
+          "#e99587",
+          "#f2c0b8",
+          "#f8eeed"
+        ]
+      },
+      "seal-edge": {
+        "role": "primary",
+        "displayName": "Seal Edge",
+        "canonical": "#8e2514",
+        "tonalRamp": [
+          "#381a15",
+          "#761f11",
+          "#a92c18",
+          "#dc391f",
+          "#e6644f",
+          "#ed9182",
+          "#f5beb6",
+          "#f8eeec"
+        ]
+      },
+      "seal-text": {
+        "role": "primary",
+        "displayName": "Seal Ink",
+        "canonical": "#fff6e6",
+        "tonalRamp": [
+          "#3d2d0f",
+          "#875600",
+          "#c17c00",
+          "#fba100",
+          "#ffb737",
+          "#ffcc71",
+          "#ffe1ab",
+          "#faf4eb"
+        ]
+      },
+      "gold-on-paper": {
+        "role": "secondary",
+        "displayName": "Brass Gold (on paper)",
+        "canonical": "#8f6410",
+        "tonalRamp": [
+          "#392c14",
+          "#79550e",
+          "#ae7913",
+          "#e29e19",
+          "#ebb54b",
+          "#f1ca7f",
+          "#f7e0b4",
+          "#f8f4ec"
+        ]
+      },
+      "gold-on-lacquer": {
+        "role": "secondary",
+        "displayName": "Brass Gold (on lacquer)",
+        "canonical": "#e3b347",
+        "tonalRamp": [
+          "#372d15",
+          "#755612",
+          "#a87c1a",
+          "#daa121",
+          "#e5b751",
+          "#eccc84",
+          "#f4e1b6",
+          "#f8f4ed"
+        ]
+      },
+      "error-on-paper": {
+        "role": "neutral",
+        "displayName": "Error (on paper)",
+        "canonical": "#b3301c",
+        "tonalRamp": [
+          "#371a16",
+          "#751f12",
+          "#a72d1a",
+          "#d93a22",
+          "#e46552",
+          "#ec9284",
+          "#f4bfb7",
+          "#f8eeed"
+        ]
+      },
+      "error-on-lacquer": {
+        "role": "neutral",
+        "displayName": "Error (on lacquer)",
+        "canonical": "#ff9078",
+        "tonalRamp": [
+          "#3d170f",
+          "#871800",
+          "#c12200",
+          "#fb2d00",
+          "#ff5a37",
+          "#ff8a71",
+          "#ffbaab",
+          "#faedeb"
+        ]
+      },
+      "accent": {
+        "role": "secondary",
+        "displayName": "Salmon Fill",
+        "canonical": "#d48275",
+        "tonalRamp": [
+          "#321e1a",
+          "#672a20",
+          "#933c2e",
+          "#c04e3c",
+          "#cf7566",
+          "#dd9d93",
+          "#ebc5bf",
+          "#f6efee"
+        ]
+      }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "Page titles and wordmark." },
-      "body": { "displayName": "Body", "purpose": "Inputs, labels, rows." },
-      "label": { "displayName": "Label", "purpose": "Hints, version, grid headers." }
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page titles with a brass rule."
+      },
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "Shiniri in the header."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Inputs, labels and rows."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section labels."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Hints and grid headers."
+      }
     },
     "shadows": [],
     "motion": [
-      { "name": "press", "value": "transform 150ms ease-out; active translateY(1px)", "purpose": "Tap feedback; disabled under reduced motion." }
+      {
+        "name": "seal-press",
+        "value": "150ms transform, border-bottom 5px to 2px",
+        "purpose": "Seal pressed on click."
+      },
+      {
+        "name": "stamp-in",
+        "value": "380ms cubic-bezier(0.16, 1, 0.3, 1), scale 1.6 to 1, rotate -8deg to -4deg",
+        "purpose": "The Saved line. Skipped under prefers-reduced-motion."
+      }
     ],
-    "breakpoints": [{ "name": "max-content", "value": "36rem (max-w-xl)" }]
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      }
+    ]
   },
   "components": [
     {
-      "name": "Save Button",
+      "name": "Seal Button",
       "kind": "button",
-      "refersTo": "button-primary",
-      "description": "Full-width pinned submit.",
-      "html": "<button class=\"ds-save\">Save 5 runs</button>",
-      "css": ".ds-save{background:#27262a;color:#fdfcf9;min-height:48px;width:100%;font-weight:600;border:0;border-radius:0;font-size:14px}.ds-save:hover{background:#403f43}.ds-save:focus-visible{outline:2px solid #27262a;outline-offset:2px}.ds-save:active{transform:translateY(1px)}.ds-save:disabled{opacity:.4}"
+      "refersTo": "button-seal",
+      "description": "The one primary action: Save, Sign in.",
+      "html": "<button class=\"ds-seal\">Save session</button>",
+      "css": ".ds-seal{font-family:'Zen Kaku Gothic New',system-ui,sans-serif;width:100%;min-height:48px;background:#c23a24;color:#fff6e6;border:2px solid #8e2514;border-bottom-width:5px;border-radius:6px;font-weight:700;letter-spacing:.04em;font-size:14px;transition:transform .15s}.ds-seal:active{border-bottom-width:2px;transform:translateY(3px)}.ds-seal:focus-visible{outline:2px solid #c23a24;outline-offset:2px}"
     },
     {
-      "name": "Secondary Button",
-      "kind": "button",
-      "refersTo": "button-secondary",
-      "description": "Outlined action such as Sign out or Refresh.",
-      "html": "<button class=\"ds-btn\">Sign out</button>",
-      "css": ".ds-btn{background:#fdfcf9;color:#27262a;border:1px solid #27262a;border-radius:0;min-height:44px;padding:0 12px;font-size:14px}.ds-btn:focus-visible{outline:2px solid #27262a;outline-offset:2px}.ds-btn:active{transform:translateY(1px)}"
-    },
-    {
-      "name": "Tap Selected",
-      "kind": "chip",
-      "refersTo": "tap-selected",
-      "description": "Module-count tap; selected inverts.",
-      "html": "<div style=\"display:flex;gap:8px\"><button class=\"ds-tap ds-on\">0</button><button class=\"ds-tap\">1</button></div>",
-      "css": ".ds-tap{width:44px;height:44px;border:1px solid #27262a;border-radius:0;background:#fdfcf9;color:#27262a;font-size:18px;font-weight:600}.ds-on{background:#27262a;color:#fdfcf9}"
+      "name": "Coin Label",
+      "kind": "custom",
+      "refersTo": "coin-icon",
+      "description": "Gold-ringed coin icon before a field label.",
+      "html": "<span class=\"ds-label\"><span class=\"ds-coin\">★</span>Rate-up</span>",
+      "css": ".ds-label{font-family:'Zen Kaku Gothic New',system-ui,sans-serif;display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:14px;color:#241719}.ds-coin{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:9999px;border:1.5px solid #8f6410;color:#8f6410}"
     },
     {
       "name": "Text Input",
       "kind": "input",
-      "description": "Labeled square field.",
-      "html": "<label style=\"font-size:14px\">Search Nikke<input class=\"ds-input\" style=\"display:block\"></label>",
-      "css": ".ds-input{background:#fdfcf9;border:1px solid #27262a;border-radius:0;min-height:44px;width:100%;padding:0 8px;margin-top:4px}.ds-input:focus-visible{outline:2px solid #27262a;outline-offset:2px}"
+      "description": "Square, paper fill, 70% ink border.",
+      "html": "<label class=\"ds-field\">Gems<input class=\"ds-input\" value=\"300\"></label>",
+      "css": ".ds-field{font-family:'Zen Kaku Gothic New',system-ui,sans-serif;display:flex;flex-direction:column;gap:4px;font-size:14px;color:#241719}.ds-input{min-height:44px;width:112px;padding:0 8px;background:#f6eedd;border:1px solid rgba(36,23,25,.7);border-radius:0;font:inherit;font-variant-numeric:tabular-nums}.ds-input:focus-visible{outline:2px solid #c23a24;outline-offset:2px}"
     },
     {
-      "name": "Nav Link",
+      "name": "Header Nav",
       "kind": "nav",
-      "description": "Active link is semibold underlined.",
-      "html": "<nav style=\"display:flex;gap:12px;font-size:14px\"><a class=\"ds-a ds-act\">Journal</a><a class=\"ds-a\">Gacha</a></nav>",
-      "css": ".ds-a{min-height:44px;display:flex;align-items:center;color:rgba(39,38,42,.75)}.ds-act{color:#27262a;font-weight:600;text-decoration:underline}"
+      "description": "Lacquer band, gold active item.",
+      "html": "<nav class=\"ds-nav\"><a class=\"on\">Journal</a><a>Gacha</a><a>Log</a></nav>",
+      "css": ".ds-nav{font-family:'Zen Kaku Gothic New',system-ui,sans-serif;display:flex;gap:16px;background:#170d0f;border-bottom:2px solid #e3b347;padding:0 16px}.ds-nav a{min-height:44px;display:flex;align-items:center;font-size:14px;color:rgba(246,238,221,.8);border-bottom:2px solid transparent}.ds-nav a.on{color:#e3b347;border-bottom-color:#e3b347;font-weight:700}"
     },
     {
-      "name": "Picked Cell",
-      "kind": "custom",
-      "description": "Gear grid cell when picked.",
-      "html": "<div style=\"display:flex;gap:8px\"><div class=\"ds-cell\"></div><div class=\"ds-cell ds-pick\"></div></div>",
-      "css": ".ds-cell{width:44px;height:44px;border:1px solid #27262a;background:#fdfcf9}.ds-pick{background:#d48275;border-color:#c14e3c}"
+      "name": "Selected Tap",
+      "kind": "chip",
+      "refersTo": "tap-selected",
+      "description": "44px square tap; selected fills vermilion.",
+      "html": "<button class=\"ds-tap\">Tetra</button><button class=\"ds-tap on\">Pilgrim</button>",
+      "css": ".ds-tap{font-family:'Zen Kaku Gothic New',system-ui,sans-serif;min-height:44px;padding:0 12px;margin-right:8px;background:#f6eedd;color:#241719;border:1px solid rgba(36,23,25,.7);font-weight:700;font-size:14px}.ds-tap.on{background:#c23a24;border-color:#c23a24;color:#f6eedd}.ds-tap:focus-visible{outline:2px solid #c23a24;outline-offset:2px}"
     }
   ],
   "narrative": {
-    "northStar": "The Ledger Page",
-    "overview": "Shiniri looks like a printed ledger: cream paper, charcoal ink, hairline rules, square corners. Nothing decorates; every control is an outlined box you can hit with a thumb.",
-    "keyCharacteristics": ["Two-tone paper/ink with one salmon accent used sparingly.", "Square corners, 1px borders, no shadows.", "44px minimum touch targets; 48px for Save.", "System font stack, small type.", "Phone-first single column."],
-    "rules": [
-      { "name": "The Swap Rule", "body": "Dark mode inverts cream and charcoal through paper/ink shortcuts. Never add a third dark surface color.", "section": "colors" },
-      { "name": "The Rare Salmon Rule", "body": "Salmon marks selection in a grid or an error, nothing else.", "section": "colors" },
-      { "name": "The Underline Is Active Rule", "body": "The current nav item is semibold and underlined; no pills or tabs.", "section": "typography" },
-      { "name": "The Flat Rule", "body": "No shadow, blur or gradient anywhere.", "section": "elevation" }
+    "northStar": "The Merchant's Counter",
+    "overview": "Shiniri is a shop counter at night. The shell is black lacquer with a brass rule under it and Yan, the in-game merchant, behind the counter. The pages below it are account-book paper in light mode and dark lacquer in dark mode, ruled in brass. Every save is a vermilion seal pressed into the book. The name is Yan's word for the player, 新入り (rookie), and the tag sits beside the wordmark.\n\nThe app is still an Operate surface: one column, labels above inputs, 44px targets, a Save bar pinned to the bottom of the screen. The world enters through color, type, icons and one signature move (the seal), never through layout or controls.\n\nYan is a binding brand commitment (PRODUCT.md). She appears as a bust-up portrait in the header and as the smiling banner on the sign-in screen. The wider `yan-burst` art is reserved for a future view-only mode.",
+    "keyCharacteristics": [
+      "Lacquer shell, paper pages, brass rules, one vermilion seal.",
+      "Zen Antique for display only; Zen Kaku Gothic New for everything people read and type.",
+      "Light and dark are both first-class, switched by a header button; dark is the lantern-lit shop.",
+      "Icons sit on gold-ringed coins beside short labels; the text stays for screen readers.",
+      "Phone-first single column, `max-w-xl` centered on desktop."
     ],
-    "dos": ["Do use the paper, ink, rule, focus, press shortcuts from uno.config.ts for every surface.", "Do keep touch targets at 44px or more and Save at 48px.", "Do keep pages sparse: one column, labels above inputs.", "Do honor prefers-reduced-motion."],
-    "donts": ["Don't add border radius, shadows, gradients or blur.", "Don't use salmon as a button fill or decoration.", "Don't introduce a third surface color in dark mode.", "Don't list logged history on form pages."]
+    "rules": [
+      {
+        "name": "The Seal Is The Action Rule",
+        "body": "Vermilion marks the one primary action or a selected state. If two vermilion things compete on a screen, one of them is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Brass Is Structure Rule",
+        "body": "Gold draws rules, rings and the active item. It is never a text fill for body copy.",
+        "section": "colors"
+      },
+      {
+        "name": "The Swap Rule",
+        "body": "Dark mode swaps cream and charcoal through the `paper` / `ink` shortcuts and flips `--gold` and `--err`. It adds no third page color. The header stays lacquer in both themes.",
+        "section": "colors"
+      },
+      {
+        "name": "The Signboard Rule",
+        "body": "Zen Antique names things (the app, a page). It never sets a label, an input or a sentence.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Rule",
+        "body": "Numeric inputs use tabular figures so columns of counts line up.",
+        "section": "typography"
+      },
+      {
+        "name": "The Chop Rule",
+        "body": "Weight comes from a thicker border edge, never from a drop shadow. No blur, no hard offset shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** use the `paper`, `ink`, `ink-soft`, `rule`, `rule-ink`, `focus`, `press`, `tap-on`, `btn-save`, `savebar` and `page-title` shortcuts from `uno.config.ts`.",
+      "**Do** keep touch targets at 44px or more and Save at 48px.",
+      "**Do** keep pages sparse: one column, labels above inputs.",
+      "**Do** honor `prefers-reduced-motion`, and keep text beside every icon in the markup.",
+      "**Do** check any new color in both themes; gold and error have separate light and dark values."
+    ],
+    "donts": [
+      "**Don't** use Zen Antique for labels, inputs or running text.",
+      "**Don't** add drop shadows, blur or gradients for depth; use a border edge.",
+      "**Don't** use vermilion as decoration or on more than one primary action per screen.",
+      "**Don't** introduce a third page color in dark mode.",
+      "**Don't** list logged history on form pages; that belongs to a future dashboard."
+    ]
   }
 }

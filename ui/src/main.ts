@@ -7,6 +7,7 @@ import { router } from '@/router'
 import { useSheetsApi } from '@/stores/authStore'
 
 import 'uno.css'
+import '@/styles/shop.css'
 import '@unocss/reset/tailwind-v4.css'
 
 // Mock code is imported only inside the __MOCK__ branch, so production bundles never contain it.

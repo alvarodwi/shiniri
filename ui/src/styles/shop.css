@@ -1,0 +1,157 @@
+@font-face {
+  font-family: 'Zen Antique';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('@/assets/fonts/zen-antique-400-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Zen Antique';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('@/assets/fonts/zen-antique-400-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+/* Body face. The ja subset holds only the glyphs of 新入り (U+65B0, U+5165, U+308A); re-subset it
+   with the Google Fonts `text=` parameter when Japanese copy is added. */
+@font-face {
+  font-family: 'Zen Kaku Gothic New';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('@/assets/fonts/zen-kaku-gothic-new-400-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Zen Kaku Gothic New';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('@/assets/fonts/zen-kaku-gothic-new-400-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Zen Kaku Gothic New';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('@/assets/fonts/zen-kaku-gothic-new-400-ja-subset.woff2') format('woff2');
+  unicode-range: U+65B0, U+5165, U+308A;
+}
+@font-face {
+  font-family: 'Zen Kaku Gothic New';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('@/assets/fonts/zen-kaku-gothic-new-700-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Zen Kaku Gothic New';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('@/assets/fonts/zen-kaku-gothic-new-700-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Zen Kaku Gothic New';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('@/assets/fonts/zen-kaku-gothic-new-700-ja-subset.woff2') format('woff2');
+  unicode-range: U+65B0, U+5165, U+308A;
+}
+
+:root {
+  color-scheme: light;
+  --gold: #8f6410; /* brass on paper: 4.55:1 on cream, but only 3.63:1 on lacquer: never use it there */
+  --err: #b3301c;
+  --seal-text: #fff6e6;
+}
+/* The `dark` class is set on <html> by index.html before first paint and by utils/theme.ts. */
+:root.dark {
+  color-scheme: dark;
+  --gold: #e3b347; /* lantern brass on lacquer */
+  --err: #ff9078;
+}
+
+body {
+  font-family: 'Zen Kaku Gothic New', system-ui, sans-serif;
+}
+::selection {
+  background: var(--gold);
+  color: #170d0f;
+}
+input,
+select {
+  caret-color: #c23a24;
+  accent-color: #c23a24;
+}
+input[type='number'],
+input[inputmode='numeric'] {
+  font-variant-numeric: tabular-nums;
+}
+html {
+  scrollbar-color: var(--gold) transparent;
+}
+
+/* Lacquer shell: black-red, brass hairline under it, in both themes. */
+.shop-header {
+  --gold: #e3b347; /* the shell is lacquer in both themes, so it always takes the lantern brass */
+  background: #170d0f;
+  color: #f6eedd;
+  border-bottom: 2px solid var(--gold);
+  box-shadow: 0 1px 0 #170d0f;
+}
+.shop-title {
+  font-family: 'Zen Antique', 'Noto Serif JP', serif;
+  letter-spacing: 0.02em;
+}
+
+/* Brass-stamped icon on a coin: round, hole-less, gold ring. */
+.coin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 9999px;
+  border: 1.5px solid var(--gold);
+  color: var(--gold);
+  flex: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stamp-in {
+    animation: stamp-in 380ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+@keyframes stamp-in {
+  from {
+    transform: scale(1.6) rotate(-8deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(-4deg);
+    opacity: 1;
+  }
+}

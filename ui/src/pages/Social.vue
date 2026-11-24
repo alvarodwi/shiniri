@@ -19,7 +19,7 @@ const pointsHint = computed(() => {
 
 <template>
   <div class="mx-auto flex max-w-xl flex-col gap-4 px-4 pb-24">
-    <h2 class="pt-4 text-xl font-bold">Social</h2>
+    <h2 class="page-title pt-4">Social</h2>
 
     <!-- Only the first read hides the form; a reload after Save keeps it mounted, so focus stays. -->
     <p v-if="store.status === 'loading' && !store.nikkes.length" class="ink-soft py-8">
@@ -69,16 +69,19 @@ const pointsHint = computed(() => {
     </template>
 
     <p v-if="store.error" role="alert" class="text-accent-ink py-3">{{ store.error }}</p>
-    <p v-if="store.lastSaved" role="status" class="py-1">Saved to {{ store.lastSaved }}.</p>
+    <p
+      v-if="store.lastSaved"
+      :key="store.lastSaved"
+      role="status"
+      class="stamp-in text-seal dark:text-gold flex items-center gap-2 py-1"
+    >
+      <span class="i-ph-seal-check-duotone text-2xl" aria-hidden="true" />
+      <span class="ink">Saved to {{ store.lastSaved }}.</span>
+    </p>
     <p v-if="store.remark" role="status" class="py-1">{{ store.remark }}</p>
 
-    <div class="paper rule fixed inset-x-0 bottom-0 border-t px-4 py-3">
-      <button
-        type="button"
-        class="focus press bg-charcoal text-cream dark:bg-cream dark:text-charcoal mx-auto block min-h-12 w-full max-w-xl font-semibold disabled:opacity-40"
-        :disabled="!store.canSave"
-        @click="store.save()"
-      >
+    <div class="savebar">
+      <button type="button" class="btn-save" :disabled="!store.canSave" @click="store.save()">
         {{ store.status === 'saving' ? 'Saving…' : 'Save session' }}
       </button>
     </div>

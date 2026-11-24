@@ -39,7 +39,7 @@ A personal, backend-less logger: browser OAuth writes straight to the owner's ow
 ## Evidence on Hand
 
 - Yan mascot images, item/boss/icon art under `ui/public/img/`.
-- Existing pages and state docs in `docs/state/`. No DESIGN.md yet.
+- Existing pages and state docs in `docs/state/`; the visual system is in `DESIGN.md`.
 
 ## Product Principles
 

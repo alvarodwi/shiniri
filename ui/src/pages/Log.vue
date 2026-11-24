@@ -55,7 +55,7 @@ onBeforeUnmount(() => observer?.disconnect())
 <template>
   <main class="mx-auto flex max-w-xl flex-col px-4 pb-12" :aria-busy="active.busy">
     <div class="flex items-center gap-3 py-4">
-      <h2 class="text-xl font-bold">Log</h2>
+      <h2 class="page-title">Log</h2>
       <button
         type="button"
         class="focus press rule-ink ml-auto min-h-11 border px-3 text-sm"

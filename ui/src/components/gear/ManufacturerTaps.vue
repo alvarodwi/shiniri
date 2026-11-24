@@ -14,7 +14,7 @@ const emit = defineEmits<{ 'update:modelValue': [value: Manufacturer] }>()
       type="button"
       :aria-pressed="modelValue === m"
       class="focus press rule-ink min-h-11 border px-3 text-sm font-semibold"
-      :class="modelValue === m ? 'bg-charcoal text-cream dark:bg-cream dark:text-charcoal' : ''"
+      :class="modelValue === m ? 'tap-on' : ''"
       @click="emit('update:modelValue', m)"
     >
       {{ m }}

@@ -14,7 +14,7 @@ const counts: ModuleCount[] = [0, 1, 2, 3]
       type="button"
       :aria-pressed="modelValue === n"
       class="focus press rule-ink size-11 border text-lg font-semibold"
-      :class="modelValue === n ? 'bg-charcoal text-cream dark:bg-cream dark:text-charcoal' : ''"
+      :class="modelValue === n ? 'tap-on' : ''"
       @click="emit('update:modelValue', n)"
     >
       {{ n }}

@@ -29,7 +29,7 @@ function setTarget(input: HTMLInputElement) {
 <template>
   <main class="mx-auto flex max-w-xl flex-col gap-4 px-4 pb-24">
     <div class="flex flex-wrap items-center gap-3 pt-4">
-      <h2 class="text-xl font-bold">Level</h2>
+      <h2 class="page-title">Level</h2>
       <input
         v-model="store.date"
         type="date"
@@ -72,13 +72,8 @@ function setTarget(input: HTMLInputElement) {
       Saved {{ rows(store.lastSaved.count) }} to {{ store.lastSaved.updatedRange }}.
     </p>
 
-    <div class="paper rule fixed inset-x-0 bottom-0 border-t px-4 py-3">
-      <button
-        type="button"
-        class="focus press bg-charcoal text-cream dark:bg-cream dark:text-charcoal mx-auto block min-h-12 w-full max-w-xl font-semibold disabled:opacity-40"
-        :disabled="!store.canSave"
-        @click="store.save()"
-      >
+    <div class="savebar">
+      <button type="button" class="btn-save" :disabled="!store.canSave" @click="store.save()">
         {{ store.status === 'saving' ? 'Saving…' : 'Save level' }}
       </button>
     </div>

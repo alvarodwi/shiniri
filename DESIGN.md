@@ -1,46 +1,71 @@
 ---
 name: Shiniri
-description: Stark paper-and-ink phone forms for logging NIKKE progress into a Google Sheet.
+description: A merchant's counter for logging NIKKE progress: lacquer shell, account-book pages, a vermilion seal for Save.
 colors:
-  cream: "#fdfcf9"
-  charcoal: "#27262a"
+  cream: "#f6eedd"
+  charcoal: "#241719"
+  lacquer: "#170d0f"
+  seal: "#c23a24"
+  seal-edge: "#8e2514"
+  seal-text: "#fff6e6"
+  gold-on-paper: "#8f6410"
+  gold-on-lacquer: "#e3b347"
+  error-on-paper: "#b3301c"
+  error-on-lacquer: "#ff9078"
   accent: "#d48275"
-  accent-ink: "#c14e3c"
 typography:
   display:
-    fontFamily: "system-ui, sans-serif"
-    fontSize: "1.25rem"
-    fontWeight: 700
-    lineHeight: 1.4
+    fontFamily: "Zen Antique, Noto Serif JP, serif"
+    fontSize: "1.5rem"
+    fontWeight: 400
+    lineHeight: 1.25
+    letterSpacing: "0.025em"
+  wordmark:
+    fontFamily: "Zen Antique, Noto Serif JP, serif"
+    fontSize: "1.875rem"
+    fontWeight: 400
+    lineHeight: 1
   body:
-    fontFamily: "system-ui, sans-serif"
+    fontFamily: "Zen Kaku Gothic New, system-ui, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 400
     lineHeight: 1.4
+  title:
+    fontFamily: "Zen Kaku Gothic New, system-ui, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 700
+    lineHeight: 1.4
   label:
-    fontFamily: "system-ui, sans-serif"
+    fontFamily: "Zen Kaku Gothic New, system-ui, sans-serif"
     fontSize: "0.75rem"
     fontWeight: 400
     lineHeight: 1.33
 rounded:
   none: "0px"
+  seal: "6px"
+  coin: "9999px"
 spacing:
   sm: "8px"
   md: "12px"
   lg: "16px"
 components:
-  button-primary:
-    backgroundColor: "{colors.charcoal}"
-    textColor: "{colors.cream}"
-    rounded: "{rounded.none}"
+  button-seal:
+    backgroundColor: "{colors.seal}"
+    textColor: "{colors.seal-text}"
+    rounded: "{rounded.seal}"
     height: "48px"
-  button-secondary:
-    backgroundColor: "{colors.cream}"
-    textColor: "{colors.charcoal}"
-    rounded: "{rounded.none}"
-    height: "44px"
+  button-seal-disabled:
+    backgroundColor: "{colors.seal}"
+    textColor: "{colors.seal-text}"
+  header-shell:
+    backgroundColor: "{colors.lacquer}"
+    textColor: "{colors.cream}"
+  coin-icon:
+    textColor: "{colors.gold-on-paper}"
+    rounded: "{rounded.coin}"
+    size: "28px"
   tap-selected:
-    backgroundColor: "{colors.charcoal}"
+    backgroundColor: "{colors.seal}"
     textColor: "{colors.cream}"
     size: "44px"
   cell-picked:
@@ -52,107 +77,116 @@ components:
 
 ## Overview
 
-**Creative North Star: "The Ledger Page"**
+**Creative North Star: "The Merchant's Counter"**
 
-Shiniri looks like a printed ledger: cream paper, charcoal ink, hairline rules, square corners. Nothing decorates; every control is an outlined box you can hit with a thumb. The sheet is the product, so the UI stays out of its way and reads as a form someone filled in by hand.
+Shiniri is a shop counter at night. The shell is black lacquer with a brass rule under it and Yan, the in-game merchant, behind the counter. The pages below it are account-book paper in light mode and dark lacquer in dark mode, ruled in brass. Every save is a vermilion seal pressed into the book. The name is Yan's word for the player, 新入り (rookie), and the tag sits beside the wordmark.
 
-Density is low and vertical. One column, labels above inputs, a pinned Save bar at the bottom. Dark mode swaps paper and ink rather than introducing new colors. Salmon appears only to mark a picked grid cell or an error.
+The app is still an Operate surface: one column, labels above inputs, 44px targets, a Save bar pinned to the bottom of the screen. The world enters through color, type, icons and one signature move (the seal), never through layout or controls.
 
-The Yan mascot is a binding brand commitment (PRODUCT.md) but is not yet placed in any shipped screen; where it lands is undecided.
+Yan is a binding brand commitment (PRODUCT.md). She appears as a bust-up portrait in the header and as the smiling banner on the sign-in screen. The wider `yan-burst` art is reserved for a future view-only mode.
 
 **Key Characteristics:**
-- Two-tone paper/ink with one salmon accent used sparingly.
-- Square corners, 1px borders, no shadows.
-- 44px minimum touch targets; 48px for Save.
-- System font stack, small type (14px body), bold for page titles.
+- Lacquer shell, paper pages, brass rules, one vermilion seal.
+- Zen Antique for display only; Zen Kaku Gothic New for everything people read and type.
+- Light and dark are both first-class, switched by a header button; dark is the lantern-lit shop.
+- Icons sit on gold-ringed coins beside short labels; the text stays for screen readers.
 - Phone-first single column, `max-w-xl` centered on desktop.
 
 ## Colors
 
-A cream-and-charcoal pair carries the whole app; salmon is a rare signal.
+Two grounds, one shell, one seal. Paper and lacquer swap with the theme; the header never does.
 
 ### Primary
-- **Charcoal Ink** (#27262a): all text, borders, primary button fill, selected tap fill. In dark mode it becomes the page background.
+- **Vermilion Seal** (#c23a24): the Save button, sign-in button, selected taps and the saved stamp. It carries the action on a screen and is not used as decoration.
+- **Seal Edge** (#8e2514): the seal's border, thicker on the bottom edge.
+- **Seal Ink** (#fff6e6): text on the seal.
 
 ### Secondary
-- **Salmon Fill** (#d48275): background of a picked cell in gear and class-slot grids, paired with charcoal text and a Brick Ink border.
-- **Brick Ink** (#c14e3c): error and hint text, and the border of a picked cell.
+- **Brass Gold** (#8f6410 on paper, #e3b347 on lacquer): rules under titles and the header, the Save bar's top rule, coin rings, the active nav item and the 新入り tag. It is a CSS variable (`--gold`) that follows the theme.
+- **Salmon Fill** (#d48275): a picked cell in the gear and class-slot grids, with charcoal text.
 
 ### Neutral
-- **Warm Cream** (#fdfcf9): page background and secondary button fill. In dark mode it becomes the text color.
-- **Soft Ink** (charcoal at 75% / 20%): secondary text and hairline rules.
+- **Account-Book Cream** (#f6eedd): the page in light mode; text in dark mode.
+- **Charcoal Ink** (#241719): text in light mode; the page in dark mode.
+- **Lacquer Black** (#170d0f): the header band in both themes.
+- **Error** (#b3301c on paper, #ff9078 on lacquer): hint and error text, via `--err`.
 
 ### Named Rules
-**The Swap Rule.** Dark mode inverts cream and charcoal through the `paper`/`ink` shortcuts. Never add a third dark surface color.
-**The Rare Salmon Rule.** Salmon marks selection in a grid or an error, nothing else. It is never a button fill or decoration.
+**The Seal Is The Action Rule.** Vermilion marks the one primary action or a selected state. If two vermilion things compete on a screen, one of them is wrong.
+**The Brass Is Structure Rule.** Gold draws rules, rings and the active item. It is never a text fill for body copy.
+**The Swap Rule.** Dark mode swaps cream and charcoal through the `paper` / `ink` shortcuts and flips `--gold` and `--err`. It adds no third page color. The header stays lacquer in both themes.
 
 ## Typography
 
-**Display Font:** system sans (reset default; renders Noto Sans on Linux)
-**Body Font:** same
-**Label/Mono Font:** none
+**Display Font:** Zen Antique (with Noto Serif JP, serif)
+**Body Font:** Zen Kaku Gothic New (with system-ui, sans-serif)
 
-**Character:** Plain and utilitarian. Hierarchy comes from weight and size only.
+**Character:** an antique signboard over a clean gothic. The serif is a signboard voice, used sparingly, and the gothic does the reading and typing. Both ship as self-hosted woff2. Body ships Latin plus a glyph subset for 新入り only; adding Japanese copy means re-subsetting.
 
 ### Hierarchy
-- **Display** (700, 1.25rem): page title (`Anomaly`, `Log`) and `Shiniri` wordmark at 1.125rem.
-- **Title** (600, 0.875rem): section labels, active nav link (underlined).
-- **Body** (400, 0.875rem): inputs, labels, list rows.
-- **Label** (400, 0.75rem): version tag, hints, error hints, grid column headers.
+- **Wordmark** (400, 1.875rem, 1): "Shiniri" in the header.
+- **Display** (400, 1.5rem, 1.25, +0.025em): page titles, with a brass rule beneath (`page-title`).
+- **Title** (700, 0.875rem): section labels such as "Rate-up" and "SSR pulled".
+- **Body** (400, 0.875rem, 1.4): inputs, labels, list rows.
+- **Label** (400, 0.75rem): hints and grid column headers.
 
 ### Named Rules
-**The Underline Is Active Rule.** The current nav item is semibold and underlined; inactive items are soft ink. No pills or tabs.
+**The Signboard Rule.** Zen Antique names things (the app, a page). It never sets a label, an input or a sentence.
+**The Tabular Rule.** Numeric inputs use tabular figures so columns of counts line up.
 
 ## Layout
 
-Single column, `max-w-xl` centered, 16px side padding. Header wraps: wordmark, version, group nav, Sign out pushed right. A second nav row lists the group's pages. Section blocks separate with hairline rules, not cards. The Save button is pinned to the bottom of the viewport on form pages. Spacing steps in use: 8, 12, 16px. Sheet links are hidden on small screens.
+Single column, `max-w-xl` centered, 16px side padding, spacing steps 8, 12 and 16px. The header is a full-width lacquer band whose content is held to the same column: wordmark, 新入り, theme button, a group nav row and a section nav row. The Yan portrait sits at the top right of that column. Section blocks separate with hairline rules, not cards. The Save bar is fixed to the bottom with a brass top rule. On phones the version number is hidden to leave the theme button clear of Yan.
 
 ## Elevation & Depth
 
-Flat. No shadows. Depth is conveyed only by 1px charcoal outlines on interactive controls and 20% hairlines on structure. The mock banner is a solid charcoal strip.
+Flat. Depth is borders and rules, not shadows. The seal is the one thing with weight: a 5px bottom border that flattens to 2px and nudges down 3px on press. Yan's portrait fades out at its cropped bottom edge with a mask.
 
 ### Named Rules
-**The Flat Rule.** No shadow, blur or gradient anywhere. State changes are fills (selected) or a 1px press nudge.
+**The Chop Rule.** Weight comes from a thicker border edge, never from a drop shadow. No blur, no hard offset shadow.
 
 ## Shapes
 
-Square everywhere: 0 radius on buttons, inputs, selects, taps and grid cells. Borders are 1px solid charcoal (`rule-ink`) on controls and charcoal at 20% (`rule`) on dividers. Tap groups are 44px squares, 8px apart.
+Controls are square: inputs, selects, taps and grid cells have no radius and a 1px border at 70% ink. The seal is the exception, with a 6px radius. Icons sit on round coins (28px, 1.5px brass ring).
 
 ## Components
 
-### Buttons
-- **Shape:** square, 1px charcoal border for secondary.
-- **Primary:** charcoal fill, cream text, full width, min-height 48px, semibold; disabled at 40% opacity (Save bar).
-- **Secondary:** cream fill, charcoal border, min-height 44px, 12px horizontal padding (Sign out, Refresh).
-- **Hover / Focus:** 2px offset charcoal (cream in dark) outline on `:focus-visible`; active state nudges down 1px over 150ms, disabled under reduced motion.
+### Seal button
+- **Shape:** 6px radius, 2px seal-edge border with a 5px bottom edge, full width, 48px tall, semibold with slight tracking.
+- **States:** pressing flattens the bottom edge and nudges the button 3px down; disabled drops to 45% opacity; focus is a 2px offset outline (seal on paper, gold on lacquer).
+- **Saved:** the "Saved to…" line shows a seal-check icon and a stamp-in animation, skipped under reduced motion.
 
-### Tap groups (module count, manufacturer)
-- **Style:** 44px square outlined buttons, `aria-pressed`; selected inverts to charcoal fill with cream text.
+### Header and navigation
+- **Shell:** lacquer band, brass bottom rule, cream text. The group nav and section nav are icon plus label; the active group is gold with a 2px gold underline, the active section is cream and semibold with a gold icon.
+- **Sign out and theme:** icon-only 44px buttons with `aria-label`s.
+- **Yan portrait:** `yan-default.webp` cropped to bust-up, decorative (`alt=""`), faded at the bottom.
 
-### Grid cells (gear, class slots)
-- **State:** empty is outlined; picked is Salmon Fill with charcoal text and Brick Ink border.
+### Coin icons (FieldLabel)
+A Phosphor duotone icon in a gold-ringed coin before a label. `hideText` hides the text visually and keeps it for screen readers. Which fields get an icon is decided per form by the owner.
 
 ### Inputs / Fields
-- **Style:** cream fill, 1px charcoal border, min-height 44px, labels above in 14px. Selects and date inputs are native controls.
-- **Focus:** the shared 2px offset outline.
-- **Error:** Brick Ink hint text (12px) below the field, linked by `aria-describedby`.
+- **Style:** paper fill, 1px 70%-ink border, square, 44px minimum height, labels above in 14px.
+- **Focus:** the shared 2px offset outline. **Error:** hint text in the error color, linked by `aria-describedby`.
 
-### Navigation
-- Two text-link rows, 44px tall, no backgrounds; active is underlined semibold.
+### Tap groups and grid cells
+- **Taps:** 44px square outlined buttons; selected fills vermilion with cream text.
+- **Cells:** empty is outlined; picked is salmon with charcoal text.
 
-### Mock banner
-- Full-width charcoal strip, cream centered 14px text. Appears only under `dev:mock`.
+### Sign-in screen
+The smiling `yan-burst-smile.webp` as a 16:9 banner, a short welcome line in Zen Antique, and a seal button with the Google icon.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** use the `paper`, `ink`, `ink-soft`, `rule`, `rule-ink`, `focus`, `press` shortcuts from `uno.config.ts` for every surface.
+- **Do** use the `paper`, `ink`, `ink-soft`, `rule`, `rule-ink`, `focus`, `press`, `tap-on`, `btn-save`, `savebar` and `page-title` shortcuts from `uno.config.ts`.
 - **Do** keep touch targets at 44px or more and Save at 48px.
 - **Do** keep pages sparse: one column, labels above inputs.
-- **Do** honor `prefers-reduced-motion` (`motion-reduce:transition-none`).
+- **Do** honor `prefers-reduced-motion`, and keep text beside every icon in the markup.
+- **Do** check any new color in both themes; gold and error have separate light and dark values.
 
 ### Don't:
-- **Don't** add border radius, shadows, gradients or blur.
-- **Don't** use salmon as a button fill or decoration.
-- **Don't** introduce a third surface color in dark mode.
+- **Don't** use Zen Antique for labels, inputs or running text.
+- **Don't** add drop shadows, blur or gradients for depth; use a border edge.
+- **Don't** use vermilion as decoration or on more than one primary action per screen.
+- **Don't** introduce a third page color in dark mode.
 - **Don't** list logged history on form pages; that belongs to a future dashboard.
