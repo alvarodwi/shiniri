@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-24T00:00:00Z",
+  "title": "Design System: Shiniri",
+  "extensions": {
+    "colorMeta": {
+      "cream": { "role": "neutral", "displayName": "Warm Cream", "canonical": "#fdfcf9", "tonalRamp": ["#27262a", "#4a494c", "#76757a", "#a3a2a5", "#cfcecf", "#e6e5e2", "#f4f3ef", "#fdfcf9"] },
+      "charcoal": { "role": "primary", "displayName": "Charcoal Ink", "canonical": "#27262a", "tonalRamp": ["#0c0c0d", "#18171a", "#27262a", "#403f43", "#5c5b5f", "#807f83", "#a8a7aa", "#d0cfd1"] },
+      "accent": { "role": "secondary", "displayName": "Salmon Fill", "canonical": "#d48275", "tonalRamp": ["#5a2a22", "#7d3b30", "#a2554a", "#d48275", "#e09c91", "#ebb8af", "#f4d3cd", "#fae9e6"] },
+      "accent-ink": { "role": "secondary", "displayName": "Brick Ink", "canonical": "#c14e3c", "tonalRamp": ["#3d1710", "#5e2318", "#8a3425", "#c14e3c", "#d47868", "#e3a498", "#efc9c1", "#f8e5e1"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page titles and wordmark." },
+      "body": { "displayName": "Body", "purpose": "Inputs, labels, rows." },
+      "label": { "displayName": "Label", "purpose": "Hints, version, grid headers." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "press", "value": "transform 150ms ease-out; active translateY(1px)", "purpose": "Tap feedback; disabled under reduced motion." }
+    ],
+    "breakpoints": [{ "name": "max-content", "value": "36rem (max-w-xl)" }]
+  },
+  "components": [
+    {
+      "name": "Save Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Full-width pinned submit.",
+      "html": "<button class=\"ds-save\">Save 5 runs</button>",
+      "css": ".ds-save{background:#27262a;color:#fdfcf9;min-height:48px;width:100%;font-weight:600;border:0;border-radius:0;font-size:14px}.ds-save:hover{background:#403f43}.ds-save:focus-visible{outline:2px solid #27262a;outline-offset:2px}.ds-save:active{transform:translateY(1px)}.ds-save:disabled{opacity:.4}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined action such as Sign out or Refresh.",
+      "html": "<button class=\"ds-btn\">Sign out</button>",
+      "css": ".ds-btn{background:#fdfcf9;color:#27262a;border:1px solid #27262a;border-radius:0;min-height:44px;padding:0 12px;font-size:14px}.ds-btn:focus-visible{outline:2px solid #27262a;outline-offset:2px}.ds-btn:active{transform:translateY(1px)}"
+    },
+    {
+      "name": "Tap Selected",
+      "kind": "chip",
+      "refersTo": "tap-selected",
+      "description": "Module-count tap; selected inverts.",
+      "html": "<div style=\"display:flex;gap:8px\"><button class=\"ds-tap ds-on\">0</button><button class=\"ds-tap\">1</button></div>",
+      "css": ".ds-tap{width:44px;height:44px;border:1px solid #27262a;border-radius:0;background:#fdfcf9;color:#27262a;font-size:18px;font-weight:600}.ds-on{background:#27262a;color:#fdfcf9}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "description": "Labeled square field.",
+      "html": "<label style=\"font-size:14px\">Search Nikke<input class=\"ds-input\" style=\"display:block\"></label>",
+      "css": ".ds-input{background:#fdfcf9;border:1px solid #27262a;border-radius:0;min-height:44px;width:100%;padding:0 8px;margin-top:4px}.ds-input:focus-visible{outline:2px solid #27262a;outline-offset:2px}"
+    },
+    {
+      "name": "Nav Link",
+      "kind": "nav",
+      "description": "Active link is semibold underlined.",
+      "html": "<nav style=\"display:flex;gap:12px;font-size:14px\"><a class=\"ds-a ds-act\">Journal</a><a class=\"ds-a\">Gacha</a></nav>",
+      "css": ".ds-a{min-height:44px;display:flex;align-items:center;color:rgba(39,38,42,.75)}.ds-act{color:#27262a;font-weight:600;text-decoration:underline}"
+    },
+    {
+      "name": "Picked Cell",
+      "kind": "custom",
+      "description": "Gear grid cell when picked.",
+      "html": "<div style=\"display:flex;gap:8px\"><div class=\"ds-cell\"></div><div class=\"ds-cell ds-pick\"></div></div>",
+      "css": ".ds-cell{width:44px;height:44px;border:1px solid #27262a;background:#fdfcf9}.ds-pick{background:#d48275;border-color:#c14e3c}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Ledger Page",
+    "overview": "Shiniri looks like a printed ledger: cream paper, charcoal ink, hairline rules, square corners. Nothing decorates; every control is an outlined box you can hit with a thumb.",
+    "keyCharacteristics": ["Two-tone paper/ink with one salmon accent used sparingly.", "Square corners, 1px borders, no shadows.", "44px minimum touch targets; 48px for Save.", "System font stack, small type.", "Phone-first single column."],
+    "rules": [
+      { "name": "The Swap Rule", "body": "Dark mode inverts cream and charcoal through paper/ink shortcuts. Never add a third dark surface color.", "section": "colors" },
+      { "name": "The Rare Salmon Rule", "body": "Salmon marks selection in a grid or an error, nothing else.", "section": "colors" },
+      { "name": "The Underline Is Active Rule", "body": "The current nav item is semibold and underlined; no pills or tabs.", "section": "typography" },
+      { "name": "The Flat Rule", "body": "No shadow, blur or gradient anywhere.", "section": "elevation" }
+    ],
+    "dos": ["Do use the paper, ink, rule, focus, press shortcuts from uno.config.ts for every surface.", "Do keep touch targets at 44px or more and Save at 48px.", "Do keep pages sparse: one column, labels above inputs.", "Do honor prefers-reduced-motion."],
+    "donts": ["Don't add border radius, shadows, gradients or blur.", "Don't use salmon as a button fill or decoration.", "Don't introduce a third surface color in dark mode.", "Don't list logged history on form pages."]
+  }
+}
