@@ -9,8 +9,8 @@ import Level from '@/pages/Level.vue'
 import Log from '@/pages/Log.vue'
 import Pulls from '@/pages/Pulls.vue'
 import SoloRaid from '@/pages/SoloRaid.vue'
-import Stats from '@/pages/Stats.vue'
 import SpendingPage from '@/pages/Spending.vue'
+import Stats from '@/pages/Stats.vue'
 
 export const router = createRouter({
   history: createWebHashHistory(),
