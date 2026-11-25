@@ -40,7 +40,9 @@ dashboard), label every input, and hide sheet links on small screens.
 
 ## Checks
 
-- `yarn format && yarn lint && yarn check && yarn build && yarn test`, run from `ui/`.
+- `yarn format && yarn lint && yarn check && yarn typecheck && yarn build && yarn test`, run from `ui/`.
+  `yarn check` is Prettier only; `yarn typecheck` is the fast type check (`vue-tsc -b`, the first half of `build`).
+- Stats facts live in `src/services/stats/facts.ts`; see `docs/state/ui-navigation.md` and ADR 0008.
 - Pure logic and stores have Vitest tests next to the source (`*.test.ts`). UI and Google sign-in
   are verified by hand against a sheet copy.
 - Pre-merge check for the owner: log a few runs against the sheet copy and confirm the rows land

@@ -8,6 +8,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
     "check": "prettier . --check",
+    "typecheck": "vue-tsc -b",
     "dev": "vite",
     "dev:mock": "vite --mode mock",
     "build": "vue-tsc -b && vite build",
