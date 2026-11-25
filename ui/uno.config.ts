@@ -29,6 +29,8 @@ export default defineConfig({
     'rule-ink': 'border-charcoal/70 dark:border-cream/70',
     focus:
       'outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-seal dark:focus-visible:outline-gold',
+    // An outlined 44px text button (Stats).
+    'btn-line': 'focus press rule-ink min-h-11 border px-3 text-sm',
     press:
       'transition-transform duration-150 ease-out active:translate-y-px motion-reduce:transition-none',
     // A selected tap or toggle: the seal colour.

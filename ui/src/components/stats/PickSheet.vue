@@ -34,7 +34,7 @@ watch(
     dialog.value?.focus()
   },
 )
-const btn = 'focus press rule-ink min-h-11 border px-3 text-sm text-left'
+const btn = 'btn-line text-left'
 </script>
 
 <template>

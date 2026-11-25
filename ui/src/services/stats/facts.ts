@@ -27,6 +27,10 @@ export type Fact = {
 export const fillQuestion = (q: string, values: Values) =>
   q.replace(/\{(\w+)\}/g, (_, id) => values[id] ?? '…')
 
+// Cells below the header: blank means '' or missing. Sheets can hand back either.
+const nonBlank = (col: unknown[]) => col.filter((c) => c !== '' && c != null)
+const distinct = (col: unknown[]) => [...new Set(nonBlank(col).map(String))]
+
 // Placeholder facts for the tracer; the real facts come in a later session.
 export const FACTS: Fact[] = [
   {
@@ -35,7 +39,7 @@ export const FACTS: Fact[] = [
     title: 'Anomaly runs',
     question: 'How many Anomaly runs have I logged?',
     reads: [{ tab: ANOMALY_TAB, columns: ['date'] }],
-    compute: (cols) => cols[ANOMALY_TAB.tab].date.filter((d) => d !== '' && d != null).length,
+    compute: (cols) => nonBlank(cols[ANOMALY_TAB.tab].date).length,
   },
   {
     id: 'anomaly-runs-by-boss',
@@ -46,16 +50,12 @@ export const FACTS: Fact[] = [
       {
         id: 'boss',
         label: 'Boss',
-        options: (cols) => [
-          'any boss',
-          ...new Set(cols[ANOMALY_TAB.tab].boss.filter((b) => b !== '' && b != null).map(String)),
-        ],
+        options: (cols) => ['any boss', ...distinct(cols[ANOMALY_TAB.tab].boss)],
       },
     ],
     reads: [{ tab: ANOMALY_TAB, columns: ['boss'] }],
     compute: (cols, { boss }) =>
-      cols[ANOMALY_TAB.tab].boss.filter((b) => b !== '' && (boss === 'any boss' || b === boss))
-        .length,
+      nonBlank(cols[ANOMALY_TAB.tab].boss).filter((b) => boss === 'any boss' || b === boss).length,
   },
   {
     id: 'anomaly-runs-by-range',
@@ -73,7 +73,6 @@ export const FACTS: Fact[] = [
     title: 'Bosses fought',
     question: 'How many different Anomaly bosses have I fought?',
     reads: [{ tab: ANOMALY_TAB, columns: ['boss'] }],
-    compute: (cols) =>
-      new Set(cols[ANOMALY_TAB.tab].boss.filter((b) => b !== '' && b != null).map(String)).size,
+    compute: (cols) => distinct(cols[ANOMALY_TAB.tab].boss).length,
   },
 ]

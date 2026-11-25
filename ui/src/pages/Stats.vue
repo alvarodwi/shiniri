@@ -17,20 +17,8 @@ onUnmounted(() => {
   <main class="mx-auto flex max-w-xl flex-col gap-4 px-4 pb-12">
     <h2 class="page-title py-4">Stats</h2>
     <div class="flex gap-3">
-      <button
-        type="button"
-        class="focus press rule-ink min-h-11 border px-3 text-sm"
-        @click="store.roll()"
-      >
-        Random fact
-      </button>
-      <button
-        type="button"
-        class="focus press rule-ink min-h-11 border px-3 text-sm"
-        @click="store.openPicker()"
-      >
-        Pick a fact
-      </button>
+      <button type="button" class="btn-line" @click="store.roll()">Random fact</button>
+      <button type="button" class="btn-line" @click="store.openPicker()">Pick a fact</button>
     </div>
     <section v-if="store.card.status !== 'idle'" aria-live="polite" class="rule border p-4">
       <h3 class="font-semibold">{{ store.card.fact.title }}</h3>
@@ -45,7 +33,7 @@ onUnmounted(() => {
           v-for="f in store.card.fact.filters"
           :key="f.id"
           type="button"
-          class="focus press rule-ink min-h-11 border px-3 text-sm"
+          class="btn-line"
           @click="store.editFilter(f.id)"
         >
           {{ f.label }}: {{ store.card.values[f.id] ?? '…' }}

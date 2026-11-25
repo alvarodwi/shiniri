@@ -18,7 +18,7 @@ export type Card =
   | { status: 'empty'; fact: Fact; values: Values; options: Options }
   | { status: 'error'; fact: Fact; values: Values; error: string }
 
-const quoted = (tab: string) => `'${tab.replace(/'/g, "''")}'`
+const quoteTab = (tab: string) => `'${tab.replace(/'/g, "''")}'`
 
 export const useStatsStore = defineStore('stats', () => {
   const card = ref<Card>({ status: 'idle' })
@@ -39,13 +39,17 @@ export const useStatsStore = defineStore('stats', () => {
   async function load(api: SheetsApi, fact: Fact): Promise<Columns> {
     const out: Columns = {}
     for (const { tab, columns } of fact.reads) {
-      const [header = []] = await read(api, tab.spreadsheetId, `${quoted(tab.tab)}!1:1`)
+      const [header = []] = await read(api, tab.spreadsheetId, `${quoteTab(tab.tab)}!1:1`)
       const cols: Record<string, unknown[]> = {}
       for (const name of columns) {
         const i = header.indexOf(name)
         if (i < 0) throw new Error(`Tab ${tab.tab} has no header "${name}".`)
         const letter = columnLetter(i + 1)
-        const values = await read(api, tab.spreadsheetId, `${quoted(tab.tab)}!${letter}:${letter}`)
+        const values = await read(
+          api,
+          tab.spreadsheetId,
+          `${quoteTab(tab.tab)}!${letter}:${letter}`,
+        )
         cols[name] = values.slice(1).map((r) => r[0] ?? '')
       }
       out[tab.tab] = cols
@@ -56,24 +60,25 @@ export const useStatsStore = defineStore('stats', () => {
   // Kept so Retry on a failed roll picks again instead of landing on a pending card.
   let lastPick: ((options: Options) => Values) | undefined
 
-  // pick: values to use once the options are known (random); else the given ones.
+  // chooseValues: values to use once the options are known (random); else the given ones.
   async function show(
     fact: Fact,
     api: SheetsApi = sheetsApi,
     values: Values = {},
-    pick?: (options: Options) => Values,
+    chooseValues?: (options: Options) => Values,
     now: Date = new Date(),
   ) {
-    lastPick = pick
+    lastPick = chooseValues
     card.value = { status: 'loading', fact, values }
     try {
       const cols = await load(api, fact)
       const options: Options = {}
       for (const f of fact.filters ?? [])
         options[f.id] = typeof f.options === 'function' ? f.options(cols) : f.options
-      const chosen = pick ? pick(options) : values
-      const done = (fact.filters ?? []).every((f) => chosen[f.id] !== undefined)
-      if (!done) return (card.value = { status: 'pending', fact, values: chosen, options })
+      const chosen = chooseValues ? chooseValues(options) : values
+      const allFiltersChosen = (fact.filters ?? []).every((f) => chosen[f.id] !== undefined)
+      if (!allFiltersChosen)
+        return (card.value = { status: 'pending', fact, values: chosen, options })
       const answer: Answer = fact.compute(cols, chosen, gameDay(now))
       card.value =
         answer === null
@@ -155,9 +160,9 @@ export const useStatsStore = defineStore('stats', () => {
     const pool = facts.filter((f) => !category.value || f.category === category.value)
     const chosen = fact ?? pickFrom(pool, random)
     if (!chosen) return
-    const was = sheet.value
+    const sheetBefore = sheet.value
     await show(chosen, api, {}, undefined, now)
-    if (sheet.value === was) advance() // the viewer closed or moved the sheet meanwhile
+    if (sheet.value === sheetBefore) advance() // the viewer closed or moved the sheet meanwhile
   }
 
   // No value = random from the filter's real options.
@@ -172,9 +177,9 @@ export const useStatsStore = defineStore('stats', () => {
     if (c.status === 'idle' || c.status === 'loading') return
     const v = value ?? ('options' in c ? pickFrom(c.options[id] ?? [], random) : undefined)
     if (v === undefined) return
-    const was = sheet.value
+    const sheetBefore = sheet.value
     await setFilter(id, v, api, now)
-    if (sheet.value === was) advance()
+    if (sheet.value === sheetBefore) advance()
   }
 
   const editFilter = (id: string) => (sheet.value = { step: id })
