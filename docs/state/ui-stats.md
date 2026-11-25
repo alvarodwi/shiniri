@@ -78,7 +78,7 @@ A new tab or header is a sheet change the owner makes by hand. Say so when a fac
   (`Tab X has no header "y".`), an unknown range preset. The error stays on that card only. The
   card offers Retry (`retry`), which calls `show` again with the same values and the same pick
   function, so a failed random roll picks its filters again.
-- A card with a loaded answer or error has a Shuffle button, which calls `roll()` (all categories).
+- Any card that is not loading has a Shuffle button, which calls `roll()` (all categories).
 - Random (`roll`) picks a fact, then picks every filter from its real options, ignoring the
   category. It never re-rolls on a `0` or an empty card. A filter with no options is left unchosen.
 - The pick sheet is a store-held `sheet.step`: `category`, `fact`, then one step per unchosen
