@@ -27,6 +27,8 @@ in the browser is the only access control.
 
 ## Local development
 
+Needs Node 24 or newer (developed on 26.13.1); Vitest 5 does not run on Node 23 or 25. See `CLAUDE.md`.
+
 Run from `ui/`:
 
 ```sh

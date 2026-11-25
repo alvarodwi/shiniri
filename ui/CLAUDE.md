@@ -30,6 +30,14 @@ changes.
 UI is phone-first. Keep pages uncluttered (no long lists of logged items; that belongs to a future
 dashboard), label every input, and hide sheet links on small screens.
 
+## Node
+
+- Developed and tested on Node 26.13.1 (Yarn 4.18.1 via `packageManager`).
+- Vitest 5.1 requires `^22.12.0 || ^24.0.0 || >=26.0.0`, so odd or old lines (20, 21, 23, 25) cannot run
+  the tests. Vite 8.3 alone needs `^20.19.0 || >=22.12.0`. Use Node 24 or newer.
+- No `engines` field or `.nvmrc` pins this. After bumping `vitest` or `vite`, re-check
+  `node_modules/vitest/package.json` `engines` and update this section.
+
 ## Checks
 
 - `yarn format && yarn lint && yarn check && yarn build && yarn test`, run from `ui/`.
