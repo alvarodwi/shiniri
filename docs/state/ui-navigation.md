@@ -17,7 +17,12 @@ the Log pages audit rows. All in `ui/`. No sheet write behaviour lives here.
   (`ui/src/services/gacha/pullForms.ts`) that renders one form page inside `<KeepAlive>`.
 - Stats page: `ui/src/pages/Stats.vue` over `useStatsStore` (`ui/src/stores/statsStore.ts`) and the
   typed `FACTS` in `ui/src/services/stats/facts.ts`. "Random fact" calls `roll()`, which picks one
-  fact and shows its card (title, question, answer). "Pick a fact" does nothing yet.
+  fact, draws every filter value from that filter's real options (injected random source) and shows
+  its card (title, question, answer). A fact's `filters` list options or derive them from the loaded
+  columns; "any" is an option the fact lists. Filters have no default: the card stays `pending`
+  until all are chosen. The card shows them as chips, `setFilter` recomputes from the cached tab
+  (no new read), and `{filterId}` in the question is filled with the chosen value. "Pick a fact"
+  does nothing yet.
 - Log page: `ui/src/pages/Log.vue` over `useLogStore` (`ui/src/stores/logStore.ts`): tabs per
   spreadsheet, newest first, infinite scroll.
 

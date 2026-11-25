@@ -76,4 +76,43 @@ describe('statsStore', () => {
     await s.roll(fakeApi(), [fact({ compute: () => 0 })], () => 0.99)
     expect(s.card).toMatchObject({ status: 'ready', answer: 0 })
   })
+  describe('filters', () => {
+    const filtered = (over: Partial<Fact> = {}) =>
+      fact({
+        question: 'Q {f}?',
+        filters: [{ id: 'f', label: 'F', options: (c) => ['any', ...c.T.b.map(String)] }],
+        compute: (_c, v) => (v.f === '0' ? 0 : v.f === 'none' ? null : Number(v.f) || 9),
+        ...over,
+      })
+    it('waits for a choice: no default, options derived from data', async () => {
+      const s = useStatsStore()
+      await s.show(filtered(), fakeApi())
+      expect(s.card).toMatchObject({
+        status: 'pending',
+        values: {},
+        options: { f: ['any', '1', '2', '0'] },
+      })
+    })
+    it('recomputes on change without a new read', async () => {
+      const api = fakeApi()
+      const s = useStatsStore()
+      await s.show(filtered(), api)
+      const reads = api.getValues.mock.calls.length
+      await s.setFilter('f', '2', api)
+      expect(s.card).toMatchObject({ status: 'ready', answer: 2, values: { f: '2' } })
+      expect(api.getValues).toHaveBeenCalledTimes(reads)
+    })
+    it('rolls filter values from the real options with the injected random', async () => {
+      const s = useStatsStore()
+      await s.roll(fakeApi(), [filtered()], () => 0.5) // 4 options -> index 2
+      expect(s.card).toMatchObject({ status: 'ready', values: { f: '2' }, answer: 2 })
+    })
+    it('does not re-roll on 0 or empty after a filter roll', async () => {
+      const s = useStatsStore()
+      await s.roll(fakeApi(), [filtered()], () => 0.99) // last option '0' -> answer 0
+      expect(s.card).toMatchObject({ status: 'ready', answer: 0 })
+      await s.roll(fakeApi(), [filtered({ compute: () => null })], () => 0)
+      expect(s.card.status).toBe('empty')
+    })
+  })
 })
