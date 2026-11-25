@@ -6,6 +6,7 @@ import { columnLetter } from '@/services/sheets/tabWriter'
 import { FACTS } from '@/services/stats/facts'
 import type { Answer, Columns, Fact, Values } from '@/services/stats/facts'
 import { sheetsApi } from '@/stores/authStore'
+import { gameDay } from '@/utils/gameDay'
 
 // options: each filter's real options; pending: filters not all chosen yet, so no answer.
 type Options = Record<string, string[]>
@@ -58,6 +59,7 @@ export const useStatsStore = defineStore('stats', () => {
     api: SheetsApi = sheetsApi,
     values: Values = {},
     pick?: (options: Options) => Values,
+    now: Date = new Date(),
   ) {
     card.value = { status: 'loading', fact, values }
     try {
@@ -68,7 +70,7 @@ export const useStatsStore = defineStore('stats', () => {
       const chosen = pick ? pick(options) : values
       const done = (fact.filters ?? []).every((f) => chosen[f.id] !== undefined)
       if (!done) return (card.value = { status: 'pending', fact, values: chosen, options })
-      const answer: Answer = fact.compute(cols, chosen)
+      const answer: Answer = fact.compute(cols, chosen, gameDay(now))
       card.value =
         answer === null
           ? { status: 'empty', fact, values: chosen, options }
@@ -84,20 +86,25 @@ export const useStatsStore = defineStore('stats', () => {
   }
 
   // Recomputes from the cached tab: no new read.
-  function setFilter(id: string, value: string, api?: SheetsApi) {
+  function setFilter(id: string, value: string, api?: SheetsApi, now?: Date) {
     if (card.value.status === 'idle') return
     const { fact, values } = card.value
-    return show(fact, api, { ...values, [id]: value })
+    return show(fact, api, { ...values, [id]: value }, undefined, now)
   }
 
   // Random draws every filter from its real options and never re-rolls on 0 or an empty card.
-  const roll = (api?: SheetsApi, facts: Fact[] = FACTS, random = Math.random) =>
-    show(facts[Math.floor(random() * facts.length)], api, {}, (options) =>
-      Object.fromEntries(
-        Object.entries(options)
-          .filter(([, o]) => o.length)
-          .map(([id, o]) => [id, o[Math.floor(random() * o.length)]]),
-      ),
+  const roll = (api?: SheetsApi, facts: Fact[] = FACTS, random = Math.random, now?: Date) =>
+    show(
+      facts[Math.floor(random() * facts.length)],
+      api,
+      {},
+      (options) =>
+        Object.fromEntries(
+          Object.entries(options)
+            .filter(([, o]) => o.length)
+            .map(([id, o]) => [id, o[Math.floor(random() * o.length)]]),
+        ),
+      now,
     )
 
   return { card, show, setFilter, roll }

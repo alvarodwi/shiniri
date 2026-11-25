@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useStatsStore } from './statsStore'
 
 import type { SheetsApi } from '@/services/google/sheetsApi'
+import { FACTS } from '@/services/stats/facts'
 import type { Fact } from '@/services/stats/facts'
 
 const TAB = { spreadsheetId: 's', tab: 'T' }
@@ -161,6 +162,65 @@ describe('statsStore', () => {
       expect(s.card).toMatchObject({ status: 'ready', answer: 0 })
       await s.roll(fakeApi(), [filtered({ compute: () => null })], () => 0)
       expect(s.card.status).toBe('empty')
+    })
+  })
+  describe('range presets', () => {
+    const rangeFact = FACTS.find((f) => f.id === 'anomaly-runs-by-range')!
+    const serial = (iso: string) => (Date.parse(iso) - Date.UTC(1899, 11, 30)) / 86_400_000
+    const dates = (isos: string[], asSerial = false) =>
+      fakeApi([['date'], ...isos.map((d) => [asSerial ? serial(d) : d]), ['']])
+    const count = async (range: string, now: string, api = dates(DAYS)) => {
+      setActivePinia(createPinia()) // fresh tab cache per call
+      const s = useStatsStore()
+      await s.show(rangeFact, api, { range }, undefined, new Date(now))
+      return s.card.status === 'ready' ? s.card.answer : s.card
+    }
+    // Wed 2026-11-25 is the game day below. Week: Mon 11-23..Sun 11-29; last week 11-16..11-22.
+    const DAYS = [
+      '2026-10-31',
+      '2026-11-01',
+      '2026-11-15',
+      '2026-11-16',
+      '2026-11-22',
+      '2026-11-23',
+      '2026-11-25',
+    ]
+    const NOW = '2026-11-25T12:00:00Z'
+
+    it('resolves this week, last week, this month, last month', async () => {
+      expect(await count('this week', NOW)).toBe(2)
+      expect(await count('last week', NOW)).toBe(2)
+      expect(await count('this month', NOW)).toBe(6)
+      expect(await count('last month', NOW)).toBe(1)
+      expect(await count('any time', NOW)).toBe(7)
+    })
+    it('falls on the previous game day between midnight UTC and the 20:00 UTC reset', async () => {
+      const api = dates(['2026-11-22', '2026-11-23'])
+      // Mon 11-23 00:30Z is still game day Sun 11-22 -> "this week" is Mon 11-16..Sun 11-22.
+      expect(await count('this week', '2026-11-23T00:30:00Z', api)).toBe(1)
+      // After the reset at 20:00Z it is Mon 11-23 -> only 11-23 is this week.
+      expect(await count('this week', '2026-11-22T20:00:00Z', api)).toBe(1)
+      expect(await count('last week', '2026-11-22T19:59:59Z', api)).toBe(0)
+    })
+    it('crosses month and year boundaries', async () => {
+      const api = dates(['2025-12-31', '2026-01-01', '2026-01-04', '2026-01-05'])
+      // Game day Mon 2026-01-05: last week is Mon 2025-12-29..Sun 2026-01-04.
+      expect(await count('last week', '2026-01-05T10:00:00Z', api)).toBe(3)
+      expect(await count('last month', '2026-01-05T10:00:00Z', api)).toBe(1)
+      expect(await count('this month', '2026-01-05T10:00:00Z', api)).toBe(3)
+      // Game day Tue 2026-03-31 -> last month is February.
+      expect(
+        await count('last month', '2026-03-31T10:00:00Z', dates(['2026-02-28', '2026-03-01'])),
+      ).toBe(1)
+    })
+    it('treats serial-number and ISO-text date cells the same', async () => {
+      for (const r of ['this week', 'last week', 'this month', 'last month', 'any time'])
+        expect(await count(r, NOW, dates(DAYS, true))).toBe(await count(r, NOW, dates(DAYS)))
+    })
+    it('rolls a range preset like any other option', async () => {
+      const s = useStatsStore()
+      await s.roll(dates(DAYS), [rangeFact], () => 0.5, new Date(NOW)) // 5 options -> index 2
+      expect(s.card).toMatchObject({ status: 'ready', values: { range: 'last week' }, answer: 2 })
     })
   })
 })

@@ -50,6 +50,10 @@ the Log pages audit rows. All in `ui/`. No sheet write behaviour lives here.
   of `null` is the "No answer." card; `0` shows as 0. The card resets to `idle` when the page
   unmounts, so nothing carries between visits. Nothing is written. Tested in `statsStore.test.ts`
   (decision 0008).
+- Range presets (`ui/src/services/stats/ranges.ts`: this/last week, this/last month, "any time") resolve
+  against `gameDay(now)`, passed to `compute` as `today`. Weeks start Monday; date cells may be serials
+  or ISO text. `show`, `setFilter` and `roll` take an optional `now` for tests. Placeholder fact:
+  `anomaly-runs-by-range`.
 - The mock sheets API reads whole-row ranges like `'Tab'!1:1` as well as `A1:G1`, `A:A` and `B12`
   (`mockSheetsApi.test.ts`).
 
