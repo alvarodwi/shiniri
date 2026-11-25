@@ -1,0 +1,37 @@
+# shiniri
+
+NIKKE progress logged into Google Sheets, plus a stats page that turns the logged data into one-line facts.
+
+## Stats
+
+**Fact**:
+One statistic the app can state, defined in code: its question, its filters, the tabs it reads and how it computes. A fact belongs to a single spreadsheet and may read several of its tabs.
+_Avoid_: Stored formula, stat, metric
+
+**Title**:
+The short heading of a fact, with no filters in it. The picker lists titles and a card shows its title as the heading.
+_Avoid_: Teaser, label, headline
+
+**Question**:
+The sentence template of a fact, with a slot for each filter. A card shows it with the chosen filters filled in.
+_Avoid_: Prompt
+
+**Filter**:
+A value the viewer picks to narrow a fact, such as a boss or a range preset. Each fact declares its own options, which may include "any". A filter has no default.
+_Avoid_: Arg, argument, parameter
+
+**Range preset**:
+A named date range resolved against the game day, such as "last week" or "this month".
+_Avoid_: Relative date, date shortcut
+
+**Answer**:
+The value computed for one fact under one set of filters. It is a single value, never a list or a chart. Zero is a value; a fact with nothing to say gives no answer.
+_Avoid_: Result, output
+
+**Card**:
+What the viewer sees: one fact's question with its filters filled in and its answer.
+_Avoid_: Tile, widget, panel
+
+**Category**:
+A group of facts the viewer can choose from before choosing a fact.
+_Avoid_: Section, topic
