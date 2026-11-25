@@ -53,6 +53,9 @@ export const useStatsStore = defineStore('stats', () => {
     return out
   }
 
+  // Kept so Retry on a failed roll picks again instead of landing on a pending card.
+  let lastPick: ((options: Options) => Values) | undefined
+
   // pick: values to use once the options are known (random); else the given ones.
   async function show(
     fact: Fact,
@@ -61,6 +64,7 @@ export const useStatsStore = defineStore('stats', () => {
     pick?: (options: Options) => Values,
     now: Date = new Date(),
   ) {
+    lastPick = pick
     card.value = { status: 'loading', fact, values }
     try {
       const cols = await load(api, fact)
@@ -83,6 +87,11 @@ export const useStatsStore = defineStore('stats', () => {
         error: e instanceof Error ? e.message : String(e),
       }
     }
+  }
+
+  function retry(api?: SheetsApi, now?: Date) {
+    if (card.value.status !== 'error') return
+    return show(card.value.fact, api, card.value.values, lastPick, now)
   }
 
   // Recomputes from the cached tab: no new read.
@@ -179,6 +188,7 @@ export const useStatsStore = defineStore('stats', () => {
     sheet,
     category,
     show,
+    retry,
     setFilter,
     roll,
     openPicker,

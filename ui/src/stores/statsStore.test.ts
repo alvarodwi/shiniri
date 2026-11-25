@@ -101,6 +101,20 @@ describe('statsStore', () => {
     await s.show(s.card.fact, api, s.card.values) // what the Retry button does
     expect(s.card).toMatchObject({ status: 'ready', answer: 3 })
   })
+  it('retry after a failed random roll picks the filters again', async () => {
+    const api = fakeApi()
+    api.getValues.mockRejectedValueOnce(new Error('rate limit'))
+    const s = useStatsStore()
+    const f = fact({
+      question: 'Q {f}?',
+      filters: [{ id: 'f', label: 'F', options: (c) => c.T.b.map(String) }],
+      compute: (_c, v) => Number(v.f),
+    })
+    await s.roll(api, [f], () => 0.5) // 3 options -> index 1
+    expect(s.card.status).toBe('error')
+    await s.retry(api)
+    expect(s.card).toMatchObject({ status: 'ready', values: { f: '2' }, answer: 2 })
+  })
   it('does not retry a rate limit by itself', async () => {
     const api = fakeApi()
     api.getValues.mockRejectedValue(new Error('Google rate limit hit.'))

@@ -61,7 +61,7 @@ onUnmounted(() => {
         <button
           type="button"
           class="focus press rule-ink ml-2 min-h-11 border px-3 text-sm"
-          @click="store.show(store.card.fact, undefined, store.card.values)"
+          @click="store.retry()"
         >
           Retry
         </button>

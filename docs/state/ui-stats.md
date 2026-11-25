@@ -76,8 +76,8 @@ A new tab or header is a sheet change the owner makes by hand. Say so when a fac
 - `ready` carries the `answer`. `empty` is a `null` answer ("No answer."). `0` is `ready`.
 - `error` carries a message. `show` catches any throw: a failed read, a missing header
   (`Tab X has no header "y".`), an unknown range preset. The error stays on that card only. The
-  card offers Retry, which calls `show` again with the same values. After a failed random roll
-  those values are `{}`, so Retry does not re-roll and can land on `pending`.
+  card offers Retry (`retry`), which calls `show` again with the same values and the same pick
+  function, so a failed random roll picks its filters again.
 - Random (`roll`) picks a fact, then picks every filter from its real options, ignoring the
   category. It never re-rolls on a `0` or an empty card. A filter with no options is left unchosen.
 - The pick sheet is a store-held `sheet.step`: `category`, `fact`, then one step per unchosen
