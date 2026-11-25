@@ -60,8 +60,8 @@ onMounted(() => store.load())
         <label for="sparebody-copies">Copies</label>
         <input
           id="sparebody-copies"
-          aria-describedby="sparebody-copies-hint"
           v-model="store.entry.copies"
+          aria-describedby="sparebody-copies-hint"
           type="text"
           inputmode="numeric"
           autocomplete="off"

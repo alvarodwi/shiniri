@@ -1,0 +1,4 @@
+#!/bin/sh
+# Runs the ui checks when a commit touches ui/. Enable once per clone: git config core.hooksPath .githooks
+git diff --cached --name-only | grep -q '^ui/' || exit 0
+cd "$(git rev-parse --show-toplevel)/ui" && yarn check && yarn lint && yarn typecheck && yarn test

@@ -121,8 +121,8 @@ onMounted(() => store.load())
             <label for="other-copies">Copies</label>
             <input
               id="other-copies"
-              aria-describedby="other-copies-hint"
               v-model="store.entry.copies"
+              aria-describedby="other-copies-hint"
               type="text"
               inputmode="numeric"
               autocomplete="off"
