@@ -2,20 +2,22 @@
 import { computed, nextTick, ref, watch } from 'vue'
 
 import { FACTS } from '@/services/stats/facts'
+import { usePickerStore } from '@/stores/pickerStore'
 import { useStatsStore } from '@/stores/statsStore'
 
-const store = useStatsStore()
+const stats = useStatsStore()
+const store = usePickerStore()
 const categories = [...new Set(FACTS.map((f) => f.category))]
 const facts = computed(() => FACTS.filter((f) => !store.category || f.category === store.category))
 // Filter steps read the chosen fact's loaded card.
 const filter = computed(() => {
-  const c = store.card
+  const c = stats.card
   const step = store.sheet?.step
   if (c.status === 'idle' || !step) return null
   const f = c.fact.filters?.find((x) => x.id === step)
   return f ? { ...f, options: 'options' in c ? (c.options[f.id] ?? []) : [] } : null
 })
-const loading = computed(() => store.card.status === 'loading')
+const loading = computed(() => stats.card.status === 'loading')
 // Esc only fires from inside the dialog, so focus it on open and on every step (the clicked
 // button is replaced), and hand focus back to the opener on close.
 // shortcut: no focus trap, Tab can leave the dialog; add one if keyboard use matters.
