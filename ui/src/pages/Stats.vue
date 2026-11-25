@@ -54,6 +54,14 @@ onUnmounted(() => {
           Retry
         </button>
       </p>
+      <button
+        v-if="store.card.status !== 'loading'"
+        type="button"
+        class="btn-line"
+        @click="store.roll()"
+      >
+        Shuffle
+      </button>
     </section>
     <PickSheet />
   </main>
