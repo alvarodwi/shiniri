@@ -16,7 +16,11 @@ This doc does not list the facts. `FACTS` in `ui/src/services/stats/facts.ts` is
   `FACTS`, and `fillQuestion`, which replaces each `{filterId}` in a question with the chosen value
   (`…` while unchosen).
 - `ui/src/services/stats/ranges.ts`: `RANGE_PRESETS`, `ANY_TIME` and `inRange`.
-- `ui/src/stores/statsStore.ts`: `useStatsStore`, tested in `statsStore.test.ts`.
+- `ui/src/services/stats/loader.ts`: `createLoader()`, the header-and-column reads and the cache.
+  `roll.ts`: `rollValues`, the random pick of every filter. Both have tests beside them.
+- `ui/src/stores/statsStore.ts`: `useStatsStore`, the card (`show`, `retry`, `setFilter`, `roll`,
+  `reset`). `ui/src/stores/pickerStore.ts`: `usePickerStore`, the pick sheet. Each has a test file.
+  The picker imports the card store, never the other way round.
 - `ui/src/pages/Stats.vue` renders the card. `ui/src/components/stats/PickSheet.vue` is the bottom
   sheet for "Pick a fact". The route is `/stats` (see `ui-navigation.md`).
 
@@ -88,7 +92,7 @@ A new tab or header is a sheet change the owner makes by hand. Say so when a fac
   A double tap on a fact while loading is ignored.
   The sheet focuses its dialog on open and on each step so Esc closes it, and returns focus to
   the opener on close. There is no focus trap.
-- `Stats.vue` resets `card` to `idle` and closes the picker on unmount, so nothing carries
+- `Stats.vue` calls `reset()` (card back to `idle`) and `closePicker()` on unmount, so nothing carries
   between visits.
 
 ## Range presets
