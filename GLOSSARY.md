@@ -33,7 +33,7 @@ What the viewer sees: one fact's question with its filters filled in and its ans
 _Avoid_: Tile, widget, panel
 
 **Category**:
-A group of facts the viewer can choose from before choosing a fact.
+A group of facts about one subject the viewer can choose from before choosing a fact, such as Pulls or Gear. A fact has exactly one category, which follows what the fact counts, not the tab it reads.
 _Avoid_: Section, topic
 
 **Pick sheet**:
