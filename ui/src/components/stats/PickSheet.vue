@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 
 import { FACTS } from '@/services/stats/facts'
 import { useStatsStore } from '@/stores/statsStore'
@@ -16,6 +16,24 @@ const filter = computed(() => {
   return f ? { ...f, options: 'options' in c ? (c.options[f.id] ?? []) : [] } : null
 })
 const loading = computed(() => store.card.status === 'loading')
+// Esc only fires from inside the dialog, so focus it on open and on every step (the clicked
+// button is replaced), and hand focus back to the opener on close.
+// shortcut: no focus trap, Tab can leave the dialog; add one if keyboard use matters.
+const dialog = ref<HTMLElement | null>(null)
+let opener: HTMLElement | null = null
+watch(
+  () => store.sheet?.step,
+  async (step, was) => {
+    if (step === undefined) {
+      opener?.focus()
+      opener = null
+      return
+    }
+    if (was === undefined) opener = document.activeElement as HTMLElement | null
+    await nextTick()
+    dialog.value?.focus()
+  },
+)
 const btn = 'focus press rule-ink min-h-11 border px-3 text-sm text-left'
 </script>
 
@@ -27,10 +45,12 @@ const btn = 'focus press rule-ink min-h-11 border px-3 text-sm text-left'
     @keydown.esc="store.closePicker()"
   >
     <div
+      ref="dialog"
+      tabindex="-1"
       role="dialog"
       aria-modal="true"
       aria-label="Pick a fact"
-      class="paper ink flex max-h-[80vh] w-full flex-col gap-2 overflow-y-auto p-4 sm:mx-auto sm:max-w-xl"
+      class="paper ink flex max-h-[80dvh] w-full flex-col gap-2 overflow-y-auto p-4 outline-none sm:mx-auto sm:max-w-xl"
     >
       <div class="flex items-center justify-between">
         <h3 class="font-semibold">

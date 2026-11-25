@@ -85,6 +85,8 @@ A new tab or header is a sheet change the owner makes by hand. Say so when a fac
   its tab, so derived options exist for the filter steps. The sheet closes on the card, also when
   the load failed. A filter chip calls `editFilter` to reopen the sheet at that step.
   A double tap on a fact while loading is ignored.
+  The sheet focuses its dialog on open and on each step so Esc closes it, and returns focus to
+  the opener on close. There is no focus trap.
 - `Stats.vue` resets `card` to `idle` and closes the picker on unmount, so nothing carries
   between visits.
 
