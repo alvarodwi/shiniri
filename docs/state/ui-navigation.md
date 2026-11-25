@@ -8,13 +8,16 @@ the Log pages audit rows. All in `ui/`. No sheet write behaviour lives here.
 ## Public surface
 
 - Header and groups: `ui/src/App.vue`, driven by `NAV` and `groupOf` in `ui/src/router/nav.ts`.
-  Groups are Journal (Anomaly, Gear, Level, Solo Raid), Gacha (Pulls, Spending, Costumes) and Log
-  (no sub-row).
-- Routes: `ui/src/router/index.ts`. Real routes are `/journal/*`, `/gacha/*`, `/log`. Hash history.
+  Groups are Journal (Anomaly, Gear, Level, Solo Raid), Gacha (Pulls, Spending, Costumes), Stats
+  (no sub-row) and Log (no sub-row).
+- Routes: `ui/src/router/index.ts`. Real routes are `/journal/*`, `/gacha/*`, `/stats`, `/log`. Hash history.
 - Old paths: `ui/src/router/redirects.ts`. Each old form path goes to `/gacha/pulls?form=<key>`.
   `/special` goes to `/journal/anomaly` (`redirects.test.ts`): the Special page was dropped for good.
 - Pulls page: `ui/src/pages/Pulls.vue`, a `<select>` over `PULL_FORMS`
   (`ui/src/services/gacha/pullForms.ts`) that renders one form page inside `<KeepAlive>`.
+- Stats page: `ui/src/pages/Stats.vue` over `useStatsStore` (`ui/src/stores/statsStore.ts`) and the
+  typed `FACTS` in `ui/src/services/stats/facts.ts`. "Random fact" calls `roll()`, which picks one
+  fact and shows its card (title, question, answer). "Pick a fact" does nothing yet.
 - Log page: `ui/src/pages/Log.vue` over `useLogStore` (`ui/src/stores/logStore.ts`): tabs per
   spreadsheet, newest first, infinite scroll.
 
@@ -35,6 +38,15 @@ the Log pages audit rows. All in `ui/`. No sheet write behaviour lives here.
   loaded entries. Tested in `logStore.test.ts`.
 - Tab labels are the `name` of each `SPREADSHEETS` entry (`Journal`, `Gacha`). The mock fixtures
   key their audit rows by the same name (`ui/src/services/mock/fixtures.ts`).
+
+- Stats reads only when a fact is shown: one header-row read (`'Tab'!1:1`) per tab, then one
+  `UNFORMATTED_VALUE` column read per declared header, found by header name. Reads are cached per
+  range in memory for the session; a failed read is evicted so Retry refetches. A compute result
+  of `null` is the "No answer." card; `0` shows as 0. The card resets to `idle` when the page
+  unmounts, so nothing carries between visits. Nothing is written. Tested in `statsStore.test.ts`
+  (decision 0008).
+- The mock sheets API reads whole-row ranges like `'Tab'!1:1` as well as `A1:G1`, `A:A` and `B12`
+  (`mockSheetsApi.test.ts`).
 
 ## Owns
 
