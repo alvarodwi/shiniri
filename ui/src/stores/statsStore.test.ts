@@ -21,11 +21,11 @@ const fact = (over: Partial<Fact> = {}): Fact => ({
   compute: (c) => c.T.b.length,
   ...over,
 })
-const fakeApi = () =>
+const fakeApi = (grid = GRID) =>
   ({
     getValues: vi.fn(async (_id: string, range: string) => {
       const m = range.match(/!(?:(\d+):\d+|([A-Z]):[A-Z])$/)!
-      return m[1] ? [GRID[0]] : GRID.map((r) => [r[m[2].charCodeAt(0) - 65]])
+      return m[1] ? [grid[0]] : grid.map((r) => [r[m[2].charCodeAt(0) - 65]])
     }),
     batchUpdateValues: vi.fn(),
     ensureRows: vi.fn(),
@@ -76,12 +76,7 @@ describe('statsStore', () => {
       ['n', 'p', 5, 'x'],
       ['n', 'q', 6, 'y'],
     ]
-    const api = {
-      getValues: vi.fn(async (_id: string, range: string) => {
-        const m = range.match(/!(?:(\d+):\d+|([A-Z]):[A-Z])$/)!
-        return m[1] ? [grid[0]] : grid.map((r) => [r[m[2].charCodeAt(0) - 65]])
-      }),
-    } as unknown as SheetsApi
+    const api = fakeApi(grid)
     const s = useStatsStore()
     await s.show(fact({ compute: (c) => c.T.b.reduce((a: number, v) => a + Number(v), 0) }), api)
     expect(s.card).toMatchObject({ status: 'ready', answer: 11 })
@@ -108,9 +103,12 @@ describe('statsStore', () => {
     const api = fakeApi()
     api.getValues.mockRejectedValue(new Error('Google rate limit hit.'))
     const s = useStatsStore()
+    vi.useFakeTimers()
     await s.show(fact(), api)
+    await vi.advanceTimersByTimeAsync(60_000)
+    vi.useRealTimers()
     expect(api.getValues).toHaveBeenCalledTimes(1)
-    expect(s.card.status).toBe('error')
+    expect(s.card).toMatchObject({ status: 'error', error: 'Google rate limit hit.' })
   })
   it('does not remember a failed read', async () => {
     const api = fakeApi()
