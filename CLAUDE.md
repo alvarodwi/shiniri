@@ -42,6 +42,14 @@ them only for history.
 - Headers of tabs either part writes to are lowerCamelCase with no spaces (`bossElement`,
   `damage`). The owner renames old headers by hand, on both the real sheet and the copy.
 
+## Branches
+
+- `main` is what Cloudflare deploys. `develop` is the trunk and stays releasable, because a release
+  fast-forwards `main` to it (`ui/CLAUDE.md`, Release).
+- Each spec gets its own `feat/<name>` branch cut from `develop`. It merges back only when it can
+  ship, so unfinished work never rides along with a hotfix.
+- A hotfix branches from `develop`, merges back and releases on its own.
+
 ## Contract changes and releases
 
 A change to the sheet contract (write behaviour, headers, tab names) updates `ui/` and `cli/` on

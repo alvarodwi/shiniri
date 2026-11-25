@@ -3,7 +3,7 @@
 The web app: a personal input app for NIKKE farming logs. Vue 3 + Vite + UnoCSS + Pinia SPA with
 hash routing and no backend. It writes to Google Sheets via the Sheets REST API with a browser OAuth
 token (Google Identity Services). Cloudflare deploys from `main`, with build settings in the Cloudflare dashboard (root
-directory `ui`, build command `yarn build`). There is no wrangler file in the repo.
+directory `ui`, build command `yarn build`). There is no wrangler file in the repo. Preview builds are off (Settings, Build, Branch control), so only `main` deploys.
 
 The sheet contract and development flow are in `../CLAUDE.md`. Paths here are relative to `ui/`.
 
