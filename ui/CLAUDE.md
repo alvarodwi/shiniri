@@ -43,7 +43,7 @@ dashboard), label every input, and hide sheet links on small screens.
 - `yarn format && yarn lint && yarn check && yarn typecheck && yarn build && yarn test`, run from `ui/`.
   `yarn check` is Prettier only; `yarn typecheck` is the fast type check (`vue-tsc -b`, the first half of `build`).
 - Stats: facts in `src/services/stats/facts.ts`, state in `src/stores/statsStore.ts` (+ test), page in
-  `src/pages/Stats.vue`; see `docs/state/ui-navigation.md` and ADR 0008.
+  `src/pages/Stats.vue`; see `docs/state/ui-stats.md` and ADR 0008.
 - A pre-commit hook (`.githooks/pre-commit`) runs `check`, `lint` (warnings fail), `typecheck` and `test`
   when a commit touches `ui/`. Enable it once per clone: `git config core.hooksPath .githooks`.
 - Pure logic and stores have Vitest tests next to the source (`*.test.ts`). UI and Google sign-in
