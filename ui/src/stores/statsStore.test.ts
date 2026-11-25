@@ -62,6 +62,56 @@ describe('statsStore', () => {
     await s.show(fact({ reads: [{ tab: TAB, columns: ['zzz'] }] }), fakeApi())
     expect(s.card).toMatchObject({ status: 'error', error: 'Tab T has no header "zzz".' })
   })
+  it('a missing header errors only that fact; another fact still answers', async () => {
+    const api = fakeApi()
+    const s = useStatsStore()
+    await s.show(fact({ reads: [{ tab: TAB, columns: ['zzz'] }] }), api)
+    expect(s.card.status).toBe('error')
+    await s.show(fact(), api)
+    expect(s.card).toMatchObject({ status: 'ready', answer: 3 })
+  })
+  it('finds columns by header name when they are reordered or inserted', async () => {
+    const grid = [
+      ['new', 'c', 'b', 'a'],
+      ['n', 'p', 5, 'x'],
+      ['n', 'q', 6, 'y'],
+    ]
+    const api = {
+      getValues: vi.fn(async (_id: string, range: string) => {
+        const m = range.match(/!(?:(\d+):\d+|([A-Z]):[A-Z])$/)!
+        return m[1] ? [grid[0]] : grid.map((r) => [r[m[2].charCodeAt(0) - 65]])
+      }),
+    } as unknown as SheetsApi
+    const s = useStatsStore()
+    await s.show(fact({ compute: (c) => c.T.b.reduce((a: number, v) => a + Number(v), 0) }), api)
+    expect(s.card).toMatchObject({ status: 'ready', answer: 11 })
+  })
+  it('a failed read is an error, never "empty" or 0', async () => {
+    const api = fakeApi()
+    api.getValues.mockRejectedValue(new Error('boom'))
+    const s = useStatsStore()
+    await s.show(fact({ compute: () => 0 }), api)
+    expect(s.card.status).toBe('error')
+    expect(s.card).not.toHaveProperty('answer')
+  })
+  it('retry after a failed read loads the tab and shows the answer', async () => {
+    const api = fakeApi()
+    api.getValues.mockRejectedValueOnce(new Error('rate limit'))
+    const s = useStatsStore()
+    await s.show(fact(), api)
+    expect(s.card.status).toBe('error')
+    if (s.card.status !== 'error') return
+    await s.show(s.card.fact, api, s.card.values) // what the Retry button does
+    expect(s.card).toMatchObject({ status: 'ready', answer: 3 })
+  })
+  it('does not retry a rate limit by itself', async () => {
+    const api = fakeApi()
+    api.getValues.mockRejectedValue(new Error('Google rate limit hit.'))
+    const s = useStatsStore()
+    await s.show(fact(), api)
+    expect(api.getValues).toHaveBeenCalledTimes(1)
+    expect(s.card.status).toBe('error')
+  })
   it('does not remember a failed read', async () => {
     const api = fakeApi()
     api.getValues.mockRejectedValueOnce(new Error('rate limit'))
