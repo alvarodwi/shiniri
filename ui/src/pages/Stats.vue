@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { onUnmounted } from 'vue'
+
 import { useStatsStore } from '@/stores/statsStore'
 
 const store = useStatsStore()
+// The page keeps nothing between visits.
+onUnmounted(() => (store.card = { status: 'idle' }))
 </script>
 
 <template>

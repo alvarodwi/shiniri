@@ -36,6 +36,12 @@ describe('createMockSheetsApi reads', () => {
     expect(await api.getValues('id', "'T'!C2")).toEqual([['5']])
   })
 
+  it('reads a whole row range like 1:1', async () => {
+    expect(await createMockSheetsApi(grid()).getValues('id', "'T'!1:1")).toEqual([
+      ['date', 'boss', 'note'],
+    ])
+  })
+
   it('drops trailing empty cells and rows like the real API', async () => {
     const api = createMockSheetsApi(grid())
     expect(await api.getValues('id', "'T'!A3:C3")).toEqual([])

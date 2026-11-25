@@ -4,7 +4,7 @@ import type { Cell } from '@/types/sheet'
 // Dev-only stand-in for the Sheets API (yarn dev:mock): one in-memory grid per tab of each spreadsheet id, nothing leaves
 // the browser. It covers the A1 ranges the app uses: 'Tab'!A1:G1, 'Tab'!A:A, 'Tab'!B12.
 
-const RANGE = /^'((?:[^']|'')+)'!([A-Z]+)(\d*)(?::([A-Z]+)(\d*))?$/
+const RANGE = /^'((?:[^']|'')+)'!(?:([A-Z]+)(\d*)(?::([A-Z]+)(\d*))?|(\d+):(\d+))$/
 
 const colIndex = (letters: string) =>
   [...letters].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1
@@ -12,9 +12,20 @@ const colIndex = (letters: string) =>
 function parse(range: string) {
   const m = RANGE.exec(range)
   if (!m) throw new Error(`Mock sheet can't read range ${range}`)
-  const [, tab, c1, r1, c2 = c1, r2 = r1] = m
+  const [, tab, c1, r1, c2 = c1, r2 = r1, rowFrom, rowTo] = m
+  const tabName = tab.replace(/''/g, "'")
+  // '1:1' is whole rows: every column.
+  if (rowFrom) {
+    return {
+      tab: tabName,
+      col: 0,
+      lastCol: Infinity,
+      row: Number(rowFrom) - 1,
+      lastRow: Number(rowTo) - 1,
+    }
+  }
   return {
-    tab: tab.replace(/''/g, "'"),
+    tab: tabName,
     col: colIndex(c1),
     lastCol: colIndex(c2),
     row: r1 ? Number(r1) - 1 : 0,
@@ -49,7 +60,8 @@ export function createMockSheetsApi(sheets: Record<string, Record<string, Cell[]
     async getValues(id, range) {
       const { tab, col, lastCol, row, lastRow } = parse(range)
       const rows = (tabOf(id, tab) ?? []).slice(row, lastRow + 1).map((r) => {
-        const cells = Array.from({ length: lastCol - col + 1 }, (_, i) => r[col + i] ?? '')
+        const width = Math.min(lastCol, r.length - 1) - col + 1
+        const cells = Array.from({ length: Math.max(width, 0) }, (_, i) => r[col + i] ?? '')
         while (cells.length && isEmpty(cells[cells.length - 1])) cells.pop()
         return cells
       })
