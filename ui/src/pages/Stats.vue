@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { onUnmounted } from 'vue'
 
+import PickSheet from '@/components/stats/PickSheet.vue'
 import { fillQuestion } from '@/services/stats/facts'
 import { useStatsStore } from '@/stores/statsStore'
 
 const store = useStatsStore()
 // The page keeps nothing between visits.
-onUnmounted(() => (store.card = { status: 'idle' }))
+onUnmounted(() => {
+  store.card = { status: 'idle' }
+  store.closePicker()
+})
 </script>
 
 <template>
@@ -20,8 +24,11 @@ onUnmounted(() => (store.card = { status: 'idle' }))
       >
         Random fact
       </button>
-      <!-- Pick opens its sheet in a later slice. -->
-      <button type="button" class="focus press rule-ink min-h-11 border px-3 text-sm">
+      <button
+        type="button"
+        class="focus press rule-ink min-h-11 border px-3 text-sm"
+        @click="store.openPicker()"
+      >
         Pick a fact
       </button>
     </div>
@@ -31,23 +38,17 @@ onUnmounted(() => (store.card = { status: 'idle' }))
         {{ fillQuestion(store.card.fact.question, store.card.values) }}
       </p>
       <div
-        v-for="f in store.card.fact.filters"
-        v-show="'options' in store.card"
-        :key="f.id"
-        role="group"
-        :aria-label="f.label"
+        v-if="store.card.fact.filters && 'options' in store.card"
         class="flex flex-wrap gap-2 py-2"
       >
         <button
-          v-for="o in 'options' in store.card ? store.card.options[f.id] : []"
-          :key="o"
+          v-for="f in store.card.fact.filters"
+          :key="f.id"
           type="button"
-          :aria-pressed="store.card.values[f.id] === o"
           class="focus press rule-ink min-h-11 border px-3 text-sm"
-          :class="{ 'font-semibold': store.card.values[f.id] === o }"
-          @click="store.setFilter(f.id, o)"
+          @click="store.editFilter(f.id)"
         >
-          {{ o }}
+          {{ f.label }}: {{ store.card.values[f.id] ?? '…' }}
         </button>
       </div>
       <p v-if="store.card.status === 'loading'" class="ink-soft py-2">Reading…</p>
@@ -66,5 +67,6 @@ onUnmounted(() => (store.card = { status: 'idle' }))
         </button>
       </p>
     </section>
+    <PickSheet />
   </main>
 </template>

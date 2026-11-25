@@ -22,7 +22,12 @@ the Log pages audit rows. All in `ui/`. No sheet write behaviour lives here.
   columns; "any" is an option the fact lists. Filters have no default: the card stays `pending`
   until all are chosen. The card shows them as chips, `setFilter` recomputes from the cached tab
   (no new read), and `{filterId}` in the question is filled with the chosen value. "Pick a fact"
-  does nothing yet.
+  opens `components/stats/PickSheet.vue`, a bottom sheet over the store's `sheet` step (category,
+  fact by title, then one step per filter), each with a Random option. Facts declare a `category`;
+  a picked or random category only limits the fact step (`roll()` ignores it). Choosing a fact
+  loads its tab, so derived filter options exist for the filter steps. The sheet closes on the
+  card, also on a load error. A filter chip on the card calls `editFilter` to reopen the sheet at
+  that step.
 - Log page: `ui/src/pages/Log.vue` over `useLogStore` (`ui/src/stores/logStore.ts`): tabs per
   spreadsheet, newest first, infinite scroll.
 

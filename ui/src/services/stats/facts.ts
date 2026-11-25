@@ -16,6 +16,7 @@ export type Filter = {
 export type Values = Record<string, string>
 export type Fact = {
   id: string
+  category: string // topical group; the picker chooses a category before a fact
   title: string
   question: string // {filterId} is filled with the chosen value
   filters?: Filter[]
@@ -30,6 +31,7 @@ export const fillQuestion = (q: string, values: Values) =>
 export const FACTS: Fact[] = [
   {
     id: 'anomaly-runs',
+    category: 'Runs',
     title: 'Anomaly runs',
     question: 'How many Anomaly runs have I logged?',
     reads: [{ tab: ANOMALY_TAB, columns: ['date'] }],
@@ -37,6 +39,7 @@ export const FACTS: Fact[] = [
   },
   {
     id: 'anomaly-runs-by-boss',
+    category: 'Runs',
     title: 'Anomaly runs by boss',
     question: 'How many Anomaly runs have I logged against {boss}?',
     filters: [
@@ -56,11 +59,21 @@ export const FACTS: Fact[] = [
   },
   {
     id: 'anomaly-runs-by-range',
+    category: 'Runs',
     title: 'Anomaly runs by range',
     question: 'How many Anomaly runs have I logged {range}?',
     filters: [{ id: 'range', label: 'Range', options: [ANY_TIME, ...RANGE_PRESETS] }],
     reads: [{ tab: ANOMALY_TAB, columns: ['date'] }],
     compute: (cols, { range }, today) =>
       cols[ANOMALY_TAB.tab].date.filter(inRange(range, today)).length,
+  },
+  {
+    id: 'anomaly-bosses-seen',
+    category: 'Bosses',
+    title: 'Bosses fought',
+    question: 'How many different Anomaly bosses have I fought?',
+    reads: [{ tab: ANOMALY_TAB, columns: ['boss'] }],
+    compute: (cols) =>
+      new Set(cols[ANOMALY_TAB.tab].boss.filter((b) => b !== '' && b != null).map(String)).size,
   },
 ]
