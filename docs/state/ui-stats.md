@@ -31,7 +31,9 @@ A `Fact` is a plain object in `FACTS`:
   makes sense, the fact lists it as an ordinary option.
 - `reads`: a list of `{ tab, columns }`. `tab` is a `TabSpec` (`spreadsheetId` and `tab`, from
   `ui/src/config/sheets.ts`) and `columns` are header names. A fact belongs to one spreadsheet and
-  may read several of its tabs; it never crosses the journal and gacha spreadsheets.
+  may read several of its tabs. By convention (ADR 0008) a fact never crosses the journal and gacha
+  spreadsheets and a tab that has to is migrated instead; each `tab` carries its own
+  `spreadsheetId`, so nothing in the code enforces this.
 - `compute(cols, values, today)`: `cols[tabName][header]` is the column's cells below the header,
   `values` the chosen filter values, `today` the game day (`YYYY-MM-DD`). It returns an `Answer`:
   a number or string, or `null` for no answer. `0` is a real answer.
@@ -67,18 +69,21 @@ A new tab or header is a sheet change the owner makes by hand. Say so when a fac
 
 `card` is one of `idle`, `loading`, `pending`, `ready`, `empty`, `error`.
 
-- `pending`: the tab is loaded but not every filter is chosen. The card shows the filter options
-  and no answer.
+- `pending`: the tab is loaded but not every filter is chosen. The card shows its filter chips
+  (`Label: …` for an unchosen one) and no answer. The options themselves appear only in the pick
+  sheet. Chips show only on cards that carry `options` (`pending`, `ready`, `empty`), not on
+  `loading` or `error`.
 - `ready` carries the `answer`. `empty` is a `null` answer ("No answer."). `0` is `ready`.
 - `error` carries a message. `show` catches any throw: a failed read, a missing header
   (`Tab X has no header "y".`), an unknown range preset. The error stays on that card only. The
-  card offers Retry, which calls `show` again with the same values.
+  card offers Retry, which calls `show` again with the same values. After a failed random roll
+  those values are `{}`, so Retry does not re-roll and can land on `pending`.
 - Random (`roll`) picks a fact, then picks every filter from its real options, ignoring the
   category. It never re-rolls on a `0` or an empty card. A filter with no options is left unchosen.
 - The pick sheet is a store-held `sheet.step`: `category`, `fact`, then one step per unchosen
   filter. Each step has a Random option. A category only limits the fact step. Choosing a fact loads
   its tab, so derived options exist for the filter steps. The sheet closes on the card, also when
-  the load failed. A filter chip on the card calls `editFilter` to reopen the sheet at that step.
+  the load failed. A filter chip calls `editFilter` to reopen the sheet at that step.
   A double tap on a fact while loading is ignored.
 - `Stats.vue` resets `card` to `idle` and closes the picker on unmount, so nothing carries
   between visits.
@@ -96,9 +101,5 @@ anything else is out of range. An unknown preset throws, which becomes an `error
 
 ## Invariants and rules
 
-- A fact is code. No stored formulas, no stats tab, no server copy of the data.
-- No write is ever made for stats.
-- Columns are found by header name, never by position. A missing header fails that card only.
-- A fact never crosses the journal and gacha spreadsheets. A tab that has to cross is migrated.
-- Filters have no default; the card stays `pending` until all are chosen.
-- Relative ranges go through `gameDay`.
+The rules (fact as code, no writes, header-name columns, lazy loading, no filter default, `gameDay`
+ranges) are stated where they apply above and in ADR 0008.
