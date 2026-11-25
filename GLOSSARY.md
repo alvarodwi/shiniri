@@ -35,3 +35,14 @@ _Avoid_: Tile, widget, panel
 **Category**:
 A group of facts the viewer can choose from before choosing a fact.
 _Avoid_: Section, topic
+
+**Pick sheet**:
+The bottom sheet where the viewer builds a card: first a category, then a fact, then each filter not yet chosen. Every step also offers Random.
+_Avoid_: Picker, modal, drawer
+
+**Roll**:
+Choosing a fact and every one of its filters at random, from all categories, then showing the card. A roll never repeats on a zero or an empty answer.
+_Avoid_: Random fact, re-roll
+
+**Shuffle**:
+The button that rolls a new card.

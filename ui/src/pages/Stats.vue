@@ -3,13 +3,15 @@ import { onUnmounted } from 'vue'
 
 import PickSheet from '@/components/stats/PickSheet.vue'
 import { fillQuestion } from '@/services/stats/facts'
+import { usePickerStore } from '@/stores/pickerStore'
 import { useStatsStore } from '@/stores/statsStore'
 
 const store = useStatsStore()
+const picker = usePickerStore()
 // The page keeps nothing between visits.
 onUnmounted(() => {
-  store.card = { status: 'idle' }
-  store.closePicker()
+  store.reset()
+  picker.closePicker()
 })
 </script>
 
@@ -17,8 +19,8 @@ onUnmounted(() => {
   <main class="mx-auto flex max-w-xl flex-col gap-4 px-4 pb-12">
     <h2 class="page-title py-4">Stats</h2>
     <div class="flex gap-3">
-      <button type="button" class="btn-line" @click="store.roll()">Random fact</button>
-      <button type="button" class="btn-line" @click="store.openPicker()">Pick a fact</button>
+      <button type="button" class="btn-line" @click="store.roll()">Shuffle</button>
+      <button type="button" class="btn-line" @click="picker.openPicker()">Pick a fact</button>
     </div>
     <section v-if="store.card.status !== 'idle'" aria-live="polite" class="rule border p-4">
       <h3 class="font-semibold">{{ store.card.fact.title }}</h3>
@@ -34,7 +36,7 @@ onUnmounted(() => {
           :key="f.id"
           type="button"
           class="btn-line"
-          @click="store.editFilter(f.id)"
+          @click="picker.editFilter(f.id)"
         >
           {{ f.label }}: {{ store.card.values[f.id] ?? '…' }}
         </button>
