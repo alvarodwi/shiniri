@@ -53,3 +53,17 @@ Releases are web-only; see `ui/CLAUDE.md`. The CLI ships by the homeserver pulli
 ## Formatting
 
 Prettier runs from `ui/` and covers only `ui/`. Root docs and Markdown aren't formatted.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `alvarodwi/shiniri` (via `gh`). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-label vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context; ADRs live in `docs/decisions/` rather than `docs/adr/`. See `docs/agents/domain.md`.
