@@ -9,6 +9,7 @@ import Level from '@/pages/Level.vue'
 import Log from '@/pages/Log.vue'
 import Pulls from '@/pages/Pulls.vue'
 import SoloRaid from '@/pages/SoloRaid.vue'
+import Stats from '@/pages/Stats.vue'
 import SpendingPage from '@/pages/Spending.vue'
 
 export const router = createRouter({
@@ -22,6 +23,7 @@ export const router = createRouter({
     { path: '/gacha/pulls', component: Pulls },
     { path: '/gacha/spending', component: SpendingPage },
     { path: '/gacha/costumes', component: Costumes },
+    { path: '/stats', component: Stats },
     { path: '/log', component: Log },
   ],
 })

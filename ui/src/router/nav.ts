@@ -1,5 +1,5 @@
 export type NavGroup = {
-  key: 'journal' | 'gacha' | 'log'
+  key: 'journal' | 'gacha' | 'stats' | 'log'
   label: string
   to: string
   icon: string
@@ -30,6 +30,7 @@ export const NAV: NavGroup[] = [
       { to: '/gacha/costumes', label: 'Costumes', icon: 'i-ph-t-shirt-duotone' },
     ],
   },
+  { key: 'stats', label: 'Stats', icon: 'i-ph-chart-bar-duotone', to: '/stats', links: [] },
   { key: 'log', label: 'Log', icon: 'i-ph-scroll-duotone', to: '/log', links: [] },
 ]
 
