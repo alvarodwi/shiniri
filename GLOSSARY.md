@@ -146,6 +146,18 @@ Mileage earned by ordinary pulls. It exchanges for fewer NIKKE than gold mileage
 Exchanging 200 gold mileage for a NIKKE. Pulls on event banners earn gold mileage, which carries over between banners and can be saved up.
 _Avoid_: Mileage exchange
 
+**Exchange**:
+Getting one copy of a chosen NIKKE by spending something earned, such as mileage or union chips, or through a liberation.
+
+**Union chip**:
+A currency that buys copies of the liberation NIKKE: Sin, Quency, Guilty and Nihilister. It also buys cubes.
+
+**Liberation**:
+A retired mode that gave a NIKKE for free after a long stretch of daily tasks. No new NIKKE join it.
+
+**Bonus recruit**:
+A retired milestone reward on the ordinary banner, exchanged for a NIKKE from a small fixed set.
+
 **Rerun banner**:
 A later banner for a NIKKE who has had one before. Its pulls are often free.
 
