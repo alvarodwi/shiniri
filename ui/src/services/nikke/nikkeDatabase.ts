@@ -33,7 +33,7 @@ export function toNikkes(rows: string[][]): Nikke[] {
       weapon,
       resourceId,
       date,
-      ltd,
+      limited,
     ] = NIKKE_DATABASE_TAB.headers.map((_, i) => String(row[i] ?? '').trim())
     if (!nameCode || !name) return []
     const releaseDate = cellToIsoDate(date)
@@ -49,7 +49,7 @@ export function toNikkes(rows: string[][]): Nikke[] {
         weapon,
         resourceId,
         releaseDate,
-        limited: ltd.toUpperCase() === 'TRUE',
+        limited: limited.toUpperCase() === 'TRUE',
       },
     ]
   })
