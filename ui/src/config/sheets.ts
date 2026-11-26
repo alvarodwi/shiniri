@@ -61,6 +61,7 @@ export const NIKKE_DATABASE_TAB: TabSpec = {
     'resourceId',
     'releaseDate',
     'limited',
+    'overspec',
   ],
 }
 

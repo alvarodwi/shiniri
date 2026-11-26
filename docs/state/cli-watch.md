@@ -103,6 +103,8 @@ edits rows (see `../../CLAUDE.md`).
   at once. Rows go in `order`; a missing or non-integer `order` sorts last; the first of a repeated
   `name_code` wins; skipped entries are logged as `entry <index>`.
 - `limited` is written `TRUE` for `ABNORMAL`, else `FALSE`. The owner flips seasonal limited NIKKEs by hand.
+- `overspec` is `TRUE` when the NIKKE's roledata has `corporation_sub_type` `OVERSPEC`. A new NIKKE
+  with no stored roledata is held (`held <names>: no roledata`) and a later check appends it.
 - `RosterLog` names come from the sheet's `NikkeDatabase`, because the owner renames collab names there.
   An empty `characters` list is a failure, not "owns nothing". Do not pull gacha between the first check
   of a game day and the day's end, or `DupeTracker` shows a missed log.

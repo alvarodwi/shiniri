@@ -30,6 +30,7 @@ describe('toNikkes', () => {
         resourceId: '10',
         releaseDate: '2023-03-15',
         limited: true,
+        overspec: false,
       },
     ])
   })
@@ -50,6 +51,22 @@ describe('toNikkes', () => {
       limited,
     ])
     expect(toNikkes([...rows, ['5002', 'Anis']]).map((n) => n.limited)).toEqual([
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+    ])
+  })
+
+  it('reads only TRUE as overspec', () => {
+    const rows = ['TRUE', 'true', 'FALSE', 'false', '', 'yes'].map((overspec) => [
+      ...['5001', 'Rapi', '', '', '', '', '', '', '', '', ''],
+      overspec,
+    ])
+    expect(toNikkes([...rows, ['5002', 'Anis']]).map((n) => n.overspec)).toEqual([
       true,
       true,
       false,

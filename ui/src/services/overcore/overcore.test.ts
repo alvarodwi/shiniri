@@ -41,6 +41,7 @@ const nikke = (name: string, manufacturer: string): Nikke => ({
   resourceId: '',
   releaseDate: '',
   limited: false,
+  overspec: false,
 })
 const nikkes = [nikke('Rapi', 'ELYSION'), nikke('Noah', 'PILGRIM')]
 

@@ -25,7 +25,7 @@ Shared pieces:
 
 - Nikke names: `services/nikke/nikkeDatabase.ts` (`readNikkes`, `searchNikkes`, `nikkeIcon`) and
   `nikkePool.ts` (`ssrPool`), picked with `components/nikke/NikkePicker.vue`. Reads the CLI-written
-  `NikkeDatabase` tab and caches nothing. `Nikke.limited` is true only for a `TRUE` cell.
+  `NikkeDatabase` tab and caches nothing. `Nikke.limited` and `Nikke.overspec` are true only for a `TRUE` cell.
 - Overcore: `checkOvercores` in `services/overcore/overcore.ts`, used by the six pull stores.
 - Limits: `config/limits.ts` (`ANOMALY_RUNS`, `GEAR_MAX_ITEMS`, `LEVEL_STEP`, `LEVEL_MAX_JUMP`,
   `MAX_COPIES`). Overcore lines: `config/overcoreLines.ts`.

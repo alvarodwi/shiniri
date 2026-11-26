@@ -154,6 +154,7 @@ describe('tab specs', () => {
         'resourceId',
         'releaseDate',
         'limited',
+        'overspec',
       ],
     })
   })

@@ -17,6 +17,7 @@ export type Nikke = {
   resourceId: string
   releaseDate: string
   limited: boolean
+  overspec: boolean
 }
 
 // Data rows only (no header). Blank or short rows are skipped or padded, never a crash.
@@ -34,6 +35,7 @@ export function toNikkes(rows: string[][]): Nikke[] {
       resourceId,
       date,
       limited,
+      overspec,
     ] = NIKKE_DATABASE_TAB.headers.map((_, i) => String(row[i] ?? '').trim())
     if (!nameCode || !name) return []
     const releaseDate = cellToIsoDate(date)
@@ -50,6 +52,7 @@ export function toNikkes(rows: string[][]): Nikke[] {
         resourceId,
         releaseDate,
         limited: limited.toUpperCase() === 'TRUE',
+        overspec: overspec.toUpperCase() === 'TRUE',
       },
     ]
   })

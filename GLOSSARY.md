@@ -7,6 +7,9 @@ NIKKE progress logged into Google Sheets, plus a stats page that turns the logge
 **Limited NIKKE**:
 A NIKKE obtainable from the gacha only during particular banners. A **collaboration limited** one is Abnormal (every Abnormal NIKKE is limited); a **seasonal limited** one is any other limited NIKKE.
 
+**Overspec NIKKE**:
+Any Pilgrim NIKKE, or one of the few from another manufacturer that the game ranks with them, such as `Rapi: Red Hood` or `Anis: Star`.
+
 ## Furnace
 
 **Furnace attempt**:
