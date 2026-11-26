@@ -148,6 +148,10 @@ How much an overcore stings, from 1 to 7, set by where the copy came from: the m
 **Untracked copy**:
 A copy a NIKKE has whose date and source were never logged. Always one of the earliest ones.
 
+**Unused dupe**:
+A copy of a NIKKE, up to Core 7, that has been pulled but not yet spent on a limit break or core level.
+_Avoid_: Spare, spare copy
+
 **Silver mileage**:
 Mileage earned by ordinary pulls. It exchanges for fewer NIKKE than gold mileage does: never the current rate-up, and Noah is the only Pilgrim.
 
