@@ -308,3 +308,14 @@ A Special Interception run that gave nothing tracked.
 **Double reward day**:
 A game day with twice the usual number of runs.
 _Avoid_: Bonus day
+
+## Spending
+
+**Purchase**:
+One thing bought with real money. Two of the same thing bought on one day are two purchases.
+
+**Costume purchase**:
+A costume, costume gacha, event pass or mission pass purchase, counted at its full price. One can give more than one costume.
+
+**Pass lapse**:
+A day, after the first monthly pass, that no monthly pass covers. Each pass covers 30 days, and passes stack without limit.
