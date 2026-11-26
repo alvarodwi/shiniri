@@ -2,6 +2,17 @@
 
 NIKKE progress logged into Google Sheets, plus a stats page that turns the logged data into one-line facts.
 
+## Furnace
+
+**Furnace attempt**:
+One use of Manufacturer Arms Furnace, which consumes two sacrifices and gives one gear piece.
+
+**Target**:
+The manufacturer the viewer chooses before a furnace attempt. The result always has it.
+
+**Sacrifice**:
+A gear piece consumed by a furnace attempt.
+
 ## Gacha
 
 **Limited NIKKE**:
@@ -19,17 +30,6 @@ A NIKKE given out by an event instead of recruited on a banner, such as `Kilo` o
 
 **Liberation NIKKE**:
 A NIKKE obtained through Liberation missions rather than recruitment. They arrive in batches: `Guilty`, `Sin` and `Quency` first, then `Nihilister`.
-
-## Furnace
-
-**Furnace attempt**:
-One use of Manufacturer Arms Furnace, which consumes two sacrifices and gives one gear piece.
-
-**Target**:
-The manufacturer the viewer chooses before a furnace attempt. The result always has it.
-
-**Sacrifice**:
-A gear piece consumed by a furnace attempt.
 
 ## Stats
 
@@ -54,7 +54,7 @@ A named date range resolved against the game day, such as "last week" or "this m
 _Avoid_: Relative date, date shortcut
 
 **Answer**:
-The value computed for one fact under one set of filters. It is a single value, never a list or a chart. Zero is a value; a fact with nothing to say gives no answer.
+The value computed for one fact under one set of filters. It is one finding, which may carry its count or date, never a list or a chart. Zero is a value; a fact with nothing to say gives no answer.
 _Avoid_: Result, output
 
 **Card**:
@@ -76,10 +76,20 @@ _Avoid_: Random fact, re-roll
 **Shuffle**:
 The button that rolls a new card.
 
-## Union Raid
+## Anomaly Interception
 
-**Union raid season**:
-One run of Union Raid, spanning a few consecutive game days.
+**Run**:
+One Anomaly Interception attempt against one boss.
+_Avoid_: Attempt, battle
 
-**Raid progress**:
-How far the union got in a season: the mode and level it reached, and what was left on that level. **HP left** is the total over that level's bosses. Hard level 4 has a single endless boss, so there the measure is **damage dealt** instead.
+**Module drop**:
+A run that gave at least one module. Its size is the number of modules that run gave.
+_Avoid_: Module day
+
+**Gear drop**:
+A run against a boss other than Kraken that gave equipment.
+_Avoid_: Equipment day
+
+**Double reward day**:
+A game day with twice the usual number of runs.
+_Avoid_: Bonus day

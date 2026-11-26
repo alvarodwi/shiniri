@@ -19,7 +19,7 @@ viewer or rolled at random. Vocabulary is in `GLOSSARY.md`.
 - Relative ranges ("last week", "this month") resolve through `gameDay`.
 - A filter has no default. Each fact declares its options, including "any" where it makes sense,
   or they are derived from the loaded data.
-- An answer is one value, 0 included, or no answer. Random never re-rolls on a 0 or an empty card.
+- An answer is one finding (it may carry its count or date), 0 included, or no answer. Random never re-rolls on a 0 or an empty card.
 - The page keeps no state between visits.
 
 ## Rejected
