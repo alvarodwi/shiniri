@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { furnaceRow, gearCode, isCardComplete, newCard, rowsFor, t9ManuRow } from './gearRows'
+import { furnaceRow, isCardComplete, newCard, rowsFor, t9ManuRow } from './gearRows'
 
 import type { GearCard, GearItem } from '@/types/gear'
 
@@ -32,20 +32,19 @@ describe('t9ManuRow', () => {
   })
 })
 
-describe('gearCode', () => {
-  it('writes manufacturer-class-slot', () => {
-    expect(gearCode(abnSupHelmet)).toBe('Abnormal-Supporter-Helmet')
-  })
-})
-
 describe('furnaceRow', () => {
-  it('maps to date | target | sacrifice1 | sacrifice2 | result', () => {
+  it('maps to one column per field, with no result manufacturer', () => {
     expect(furnaceRow(DATE, furnaceCard())).toEqual([
       DATE,
       'Pilgrim',
-      'Abnormal-Supporter-Helmet',
-      'Abnormal-Supporter-Boots',
-      'Pilgrim-Defender-Torso',
+      'Supporter',
+      'Abnormal',
+      'Helmet',
+      'Supporter',
+      'Abnormal',
+      'Boots',
+      'Defender',
+      'Torso',
     ])
   })
 })

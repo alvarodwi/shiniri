@@ -30,7 +30,19 @@ export const SOLO_RAID_TAB: TabSpec = {
 export const FURNACE_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
   tab: 'Furnace',
-  headers: ['date', 'target', 'sacrifice1', 'sacrifice2', 'result'],
+  // no resultManufacturer: the result always has the target's
+  headers: [
+    'date',
+    'target',
+    'sacrifice1Class',
+    'sacrifice1Manufacturer',
+    'sacrifice1Slot',
+    'sacrifice2Class',
+    'sacrifice2Manufacturer',
+    'sacrifice2Slot',
+    'resultClass',
+    'resultSlot',
+  ],
 }
 
 // Read-only here: the cli writes it.

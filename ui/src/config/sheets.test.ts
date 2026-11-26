@@ -51,7 +51,18 @@ describe('tab specs', () => {
   it('Furnace', () => {
     expect(shape(FURNACE_TAB)).toEqual({
       tab: 'Furnace',
-      headers: ['date', 'target', 'sacrifice1', 'sacrifice2', 'result'],
+      headers: [
+        'date',
+        'target',
+        'sacrifice1Class',
+        'sacrifice1Manufacturer',
+        'sacrifice1Slot',
+        'sacrifice2Class',
+        'sacrifice2Manufacturer',
+        'sacrifice2Slot',
+        'resultClass',
+        'resultSlot',
+      ],
     })
   })
   it('LevelLog', () => {

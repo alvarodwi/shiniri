@@ -81,7 +81,7 @@ Shared pieces:
   needs `sourceDetail`, and its `pulls` is typed, never derived from gems.
 - Gear: `GEAR_MAX_ITEMS` per save; lowering the count discards the dropped cards, so raising it again does
   not restore them. A Furnace result's manufacturer is forced to the target, and the card is complete
-  only if they match. No once-a-day lock on Gear.
+  only if they match, so `Furnace` has no `resultManufacturer` column. No once-a-day lock on Gear.
 - Level: `lastLevel` throws when the last cell of column A is not a number, so the page refuses to
   load. A function cell in column A is refused by the writer. The note goes on the last step row only.
 - Overcore: `findOvercores` returns nothing when RosterLog has no baseline, or the date is on or before

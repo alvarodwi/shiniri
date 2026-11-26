@@ -2,6 +2,17 @@
 
 NIKKE progress logged into Google Sheets, plus a stats page that turns the logged data into one-line facts.
 
+## Furnace
+
+**Furnace attempt**:
+One use of Manufacturer Arms Furnace, which consumes two sacrifices and gives one gear piece.
+
+**Target**:
+The manufacturer the viewer chooses before a furnace attempt. The result always has it.
+
+**Sacrifice**:
+A gear piece consumed by a furnace attempt.
+
 ## Stats
 
 **Fact**:

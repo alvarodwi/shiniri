@@ -18,25 +18,24 @@ export function isCardComplete(card: GearCard, source: GearSource): boolean {
   return card.manufacturer === card.target && card.sacrifices.every(isItemComplete)
 }
 
+// Class, manufacturer, slot, in the order both gear tabs use. Expects a complete item.
+const gearCells = (i: GearItem): Cell[] => [i.classType!, i.manufacturer!, i.slot!]
+
 // Columns A-E of Gear. Expects a complete item.
 export const t9ManuRow = (date: string, sourceType: string, item: GearItem): Cell[] => [
   date,
   sourceType,
-  item.classType!,
-  item.manufacturer!,
-  item.slot!,
+  ...gearCells(item),
 ]
 
-// How the Furnace tab writes one gear, e.g. "Abnormal-Supporter-Helmet".
-export const gearCode = (i: GearItem): string => `${i.manufacturer}-${i.classType}-${i.slot}`
-
-// Columns A-E of Furnace.
+// Columns A-J of Furnace.
 export const furnaceRow = (date: string, card: GearCard): Cell[] => [
   date,
   card.target!,
-  gearCode(card.sacrifices[0]),
-  gearCode(card.sacrifices[1]),
-  gearCode(card),
+  ...gearCells(card.sacrifices[0]),
+  ...gearCells(card.sacrifices[1]),
+  card.classType!,
+  card.slot!,
 ]
 
 // Expects complete cards (see isCardComplete).

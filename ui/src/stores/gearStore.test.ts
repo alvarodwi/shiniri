@@ -15,7 +15,7 @@ function fakeApi() {
     "'AuditLog'!A:A": [['savedAt']],
     "'Gear'!A1:E1": [[...GEAR_TAB.headers]],
     "'Gear'!A:A": [['date'], ['x']],
-    "'Furnace'!A1:E1": [[...FURNACE_TAB.headers]],
+    "'Furnace'!A1:J1": [[...FURNACE_TAB.headers]],
     "'Furnace'!A:A": [['date'], ['x'], ['x']],
   }
   return {
@@ -60,15 +60,20 @@ describe('gearStore', () => {
     const data = api.batchUpdateValues.mock.calls[0][1]
     expect(data.map((d) => d.range)).toEqual([
       "'Gear'!A3:E3",
-      "'Furnace'!A4:E4",
+      "'Furnace'!A4:J4",
       "'AuditLog'!A2:D2",
     ])
     expect(data[1].rows[0]).toEqual([
       DATE,
       'Pilgrim',
-      'Abnormal-Supporter-Boots',
-      'Abnormal-Supporter-Boots',
-      'Pilgrim-Defender-Torso',
+      'Supporter',
+      'Abnormal',
+      'Boots',
+      'Supporter',
+      'Abnormal',
+      'Boots',
+      'Defender',
+      'Torso',
     ])
   })
 
