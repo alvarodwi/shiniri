@@ -232,6 +232,9 @@ _Avoid_: Prompt
 A value the viewer picks to narrow a fact, such as a boss or a range preset. Each fact declares its own options, which may include "any". A filter has no default.
 _Avoid_: Arg, argument, parameter
 
+**Date range**:
+The filter that limits a fact to a stretch of game days: any period, a range preset, one year, or the viewer's own from and to dates.
+
 **Range preset**:
 A named date range resolved against the game day, such as "last week" or "this month".
 _Avoid_: Relative date, date shortcut
