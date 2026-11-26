@@ -149,8 +149,21 @@ _Avoid_: Mileage exchange
 **Rerun banner**:
 A later banner for a NIKKE who has had one before. Its pulls are often free.
 
+**Mold**:
+An inventory box opened for a chance at an SSR, several at a time if wanted. Its odds depend on its type: Purple 21%, HQ 61% (Yellow, now retired, had the same), manufacturer 50%, Perfect 100%.
+
+**Open**:
+Using one mold. It is the mold's counterpart of a pull.
+_Avoid_: Mold pull
+
+**Bust**:
+A mold open that gave no SSR. An HQ bust also gives 12 mold shards; 50 shards make one HQ Perfect Mold.
+
+**Manufacturer 50/50**:
+An open of a Pilgrim, Elysion, Missilis or Tetra mold that is not Perfect. A win gives an SSR.
+
 **Luck rate**:
-The share of pulls that gave an SSR. Every SSR counts, duplicates included.
+The share of pulls, or mold opens, that gave an SSR. Every SSR counts, duplicates included.
 
 **Dry run**:
 Consecutive pulls from whole pull sessions that gave no SSR. The time between two SSRs is a separate measure, the SSR wait.
