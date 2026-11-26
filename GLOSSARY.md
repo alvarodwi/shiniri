@@ -98,6 +98,14 @@ A generic tier 9 piece of equipment, dropped only in Special Interception.
 **Manufacturer gear**:
 A tier 9 piece of equipment tied to a manufacturer, dropped in either mode.
 
+**Gear piece**:
+One piece of equipment, however the viewer got it.
+_Avoid_: Item, drop
+
+**Box**:
+A source of gear pieces outside interception, which the viewer opens. Its result is random, locked to one manufacturer, or chosen by the viewer.
+_Avoid_: Run, pull
+
 **Gear drop**:
 A run that gave equipment. In Anomaly Interception it is manufacturer gear from a boss other than Kraken; in Special Interception it is T9 gear or manufacturer gear.
 _Avoid_: Equipment day
