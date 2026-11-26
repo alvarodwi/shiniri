@@ -16,6 +16,8 @@ Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`.
 
 ## Checks
 
+- Once per clone: `git config core.hooksPath .githooks`. The pre-commit hook then checks commits
+  that touch `ui/`.
 - Web app, from `ui/`: `yarn format && yarn lint && yarn check && yarn build && yarn test`. For
   changes that write to the sheet, also log a few runs against a **copy** of the journal and
   confirm the rows land directly below the existing data, with nothing else changed.
