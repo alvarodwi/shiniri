@@ -2,6 +2,21 @@
 
 NIKKE progress logged into Google Sheets, plus a stats page that turns the logged data into one-line facts.
 
+## Solo Raid
+
+**Season**:
+One Solo Raid event, against one boss.
+
+**Rank**:
+The viewer's final standing in a season, as a top percentage or, near the top, a placement. Lower is better, and any placement counts as top 0%.
+
+**Weakness**:
+The element the season's boss is weak to.
+_Avoid_: Element
+
+**Frame**:
+The reward for a season, decided by rank: tier 3 for top 3% or better, tier 2 for top 10% or better, tier 1 otherwise. Not playing a season gives none.
+
 ## Furnace
 
 **Furnace attempt**:
