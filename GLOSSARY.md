@@ -80,7 +80,7 @@ A gear piece consumed by a furnace attempt.
 ## Gacha
 
 **Limited NIKKE**:
-A NIKKE obtainable from the gacha only during particular banners. A **collaboration limited** one is Abnormal (every Abnormal NIKKE is limited); a **seasonal limited** one is any other limited NIKKE.
+A NIKKE obtainable from the gacha only during particular banners. A **collaboration limited** one is Abnormal (every Abnormal NIKKE is limited); a **seasonal limited** one is any other limited NIKKE. Having a Pilgrim Limited banner does not make a NIKKE limited.
 
 **Overspec NIKKE**:
 Any Pilgrim NIKKE, or one of the few from another manufacturer that the game ranks with them, such as `Rapi: Red Hood` or `Anis: Star`.
@@ -104,6 +104,35 @@ _Avoid_: Batch
 
 **Social pull**:
 A pull paid with social points, which cost nothing to earn. Its pool has no Pilgrim or limited NIKKE and its SSR rate is 2%, half that of other pulls.
+
+**Event pull**:
+A pull on a rate-up banner, paid with gems or tickets. 300 gems, one ticket and one pull are equal. Its SSR rate is 4%.
+
+**Rate-up**:
+The NIKKE an event banner favours: 1% of pulls on a Pilgrim Limited banner, whatever the NIKKE's manufacturer, and 2% on any other.
+_Avoid_: Target
+
+**Spook**:
+An SSR from an event pull that is not the rate-up. A Pilgrim spook is usually welcome.
+
+**Chase**:
+All the pull sessions spent on one rate-up during one banner. A banner lasts at most about a month.
+
+**Greed**:
+Pulling on in a chase for extra copies after the session that gave the first one.
+
+**MLB**:
+A NIKKE at four copies, its last limit break.
+
+**Core 7**:
+A NIKKE at eleven copies, the most that count.
+
+**Spark**:
+Exchanging 200 gold mileage for a NIKKE. Pulls on event banners earn gold mileage, which carries over between banners and can be saved up.
+_Avoid_: Mileage exchange
+
+**Rerun banner**:
+A later banner for a NIKKE who has had one before. Its pulls are often free.
 
 **Luck rate**:
 The share of pulls that gave an SSR. Every SSR counts, duplicates included.
