@@ -82,8 +82,24 @@ A gear piece consumed by a furnace attempt.
 **Limited NIKKE**:
 A NIKKE obtainable from the gacha only during particular banners. A **collaboration limited** one is Abnormal (every Abnormal NIKKE is limited); a **seasonal limited** one is any other limited NIKKE. Having a Pilgrim Limited banner does not make a NIKKE limited.
 
+**Pull**:
+One draw from a gacha banner.
+
+**Pull session**:
+One or more pulls from the same source done in one sitting, logged together. A game day can have several, usually when pulls in the morning and the afternoon were not combined.
+_Avoid_: Batch
+
+**Social pull**:
+A pull paid with social points, which cost nothing to earn. Its pool has no overspec or limited NIKKE and its SSR rate is 2%, half that of other pulls.
+
+**Event pull**:
+A pull on a rate-up banner, paid with gems or tickets. 300 gems, one ticket and one pull are equal. Its SSR rate is 4%.
+
+**Ordinary pull**:
+A pull on the ordinary banner, paid with gems or tickets at the event pull prices, except that the first pull of a day can be bought for 150 gems. Its pool is the social pool plus the non-limited overspec NIKKE, and its SSR rate is 4%. It has no rate-up, and earns silver mileage instead of gold.
+
 **Overspec NIKKE**:
-Any Pilgrim NIKKE, or one of the few from another manufacturer that the game ranks with them, such as `Rapi: Red Hood` or `Anis: Star`.
+Any Pilgrim NIKKE, or one of the few from another manufacturer that the game ranks with them, such as `Rapi: Red Hood` or `Anis: Star`. A Pilgrim spook or a Pilgrim drought counts any overspec NIKKE.
 
 **Release date**:
 The day a NIKKE or costume first became obtainable: the start of its own banner, event or Liberation batch. This can be later than the date of the patch note that announces it. A rerun never changes it.
@@ -95,18 +111,14 @@ A NIKKE given out by an event instead of recruited on a banner, such as `Kilo` o
 **Liberation NIKKE**:
 A NIKKE obtained through Liberation missions rather than recruitment. They arrive in batches: `Guilty`, `Sin` and `Quency` first, then `Nihilister`.
 
-**Pull**:
-One draw from a gacha banner.
+**Wishlist**:
+Up to 20 NIKKE chosen to narrow the ordinary banner's pool: five each from Elysion, Missilis, Tetra and the overspec group. An overspec NIKKE goes in the overspec group, never in its manufacturer's.
 
-**Pull session**:
-One or more pulls from the same source done in one sitting, logged together. A game day can have several, usually when pulls in the morning and the afternoon were not combined.
-_Avoid_: Batch
+**Gem session**:
+An ordinary pull session paid at least partly with gems, the 150-gem pull included.
 
-**Social pull**:
-A pull paid with social points, which cost nothing to earn. Its pool has no Pilgrim or limited NIKKE and its SSR rate is 2%, half that of other pulls.
-
-**Event pull**:
-A pull on a rate-up banner, paid with gems or tickets. 300 gems, one ticket and one pull are equal. Its SSR rate is 4%.
+**Gem splurge**:
+A game day with at least one gem session. Gems are normally kept for event pulls, so it is out of the ordinary.
 
 **Rate-up**:
 The NIKKE an event banner favours: 1% of pulls on a Pilgrim Limited banner, whatever the NIKKE's manufacturer, and 2% on any other.
@@ -126,6 +138,9 @@ A NIKKE at four copies, its last limit break.
 
 **Core 7**:
 A NIKKE at eleven copies, the most that count.
+
+**Silver mileage**:
+Mileage earned by ordinary pulls. It exchanges for fewer NIKKE than gold mileage does: never the current rate-up, and Noah is the only Pilgrim.
 
 **Spark**:
 Exchanging 200 gold mileage for a NIKKE. Pulls on event banners earn gold mileage, which carries over between banners and can be saved up.
