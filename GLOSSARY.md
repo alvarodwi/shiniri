@@ -95,6 +95,31 @@ A NIKKE given out by an event instead of recruited on a banner, such as `Kilo` o
 **Liberation NIKKE**:
 A NIKKE obtained through Liberation missions rather than recruitment. They arrive in batches: `Guilty`, `Sin` and `Quency` first, then `Nihilister`.
 
+**Pull**:
+One draw from a gacha banner.
+
+**Pull session**:
+One or more pulls from the same source done in one sitting, logged together. A game day can have several, usually when pulls in the morning and the afternoon were not combined.
+_Avoid_: Batch
+
+**Social pull**:
+A pull paid with social points, which cost nothing to earn. Its pool has no Pilgrim or limited NIKKE and its SSR rate is 2%, half that of other pulls.
+
+**Luck rate**:
+The share of pulls that gave an SSR. Every SSR counts, duplicates included.
+
+**Dry run**:
+Consecutive pulls from whole pull sessions that gave no SSR. The time between two SSRs is a separate measure, the SSR wait.
+
+**Hoard**:
+A stretch of days with no pull from a source.
+
+**Surprise package**:
+A game day on which fewer than ten social pulls gave an SSR.
+
+**Trait**:
+A NIKKE's manufacturer, class, burst, element or weapon.
+
 ## Stats
 
 **Fact**:
