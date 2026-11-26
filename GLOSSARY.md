@@ -139,6 +139,9 @@ A NIKKE at four copies, its last limit break.
 **Core 7**:
 A NIKKE at eleven copies, the most that count.
 
+**Untracked copy**:
+A copy a NIKKE has whose date and source were never logged. Always one of the earliest ones.
+
 **Silver mileage**:
 Mileage earned by ordinary pulls. It exchanges for fewer NIKKE than gold mileage does: never the current rate-up, and Noah is the only Pilgrim.
 
@@ -160,6 +163,15 @@ A retired milestone reward on the ordinary banner, exchanged for a NIKKE from a 
 
 **Rerun banner**:
 A later banner for a NIKKE who has had one before. Its pulls are often free.
+
+**Freebie**:
+A copy handed over with no chance involved, such as an anniversary's welfare unit or a welfare pass reward.
+
+**Free pull**:
+A no-cost pull on a rate-up banner, mostly during an anniversary. Only those that gave an SSR are logged, so they have no luck rate.
+
+**Guaranteed recruit**:
+A one-off from the game that promises an SSR, whether or not it costs gems: the tutorial, a step-up or a selector box. A step-up can give SSRs beyond the guarantee.
 
 **Mold**:
 An inventory box opened for a chance at an SSR, several at a time if wanted. Its odds depend on its type: Purple 21%, HQ 61% (Yellow, now retired, had the same), manufacturer 50%, Perfect 100%.
