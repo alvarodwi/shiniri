@@ -31,20 +31,40 @@ A game day on which a manufacturer tower accepts clears. Elysion opens Tuesday, 
 **Boss floor**:
 Every tenth floor of a tower, which is always a boss fight.
 
-## Solo Raid
+## Raids
 
 **Season**:
-One Solo Raid event, against one boss.
+One Solo Raid or Union Raid event. A Solo Raid season has one boss; a Union Raid season has several and lasts a week.
 
 **Rank**:
 The viewer's final standing in a season, as a top percentage or, near the top, a placement. Lower is better, and any placement counts as top 0%.
 
 **Weakness**:
-The element the season's boss is weak to.
+The element a raid boss is weak to.
 _Avoid_: Element
 
 **Frame**:
 The reward for a season, decided by rank: tier 3 for top 3% or better, tier 2 for top 10% or better, tier 1 otherwise. Not playing a season gives none.
+
+**Hit**:
+One Union Raid attack on a boss. A member has three per game day.
+_Avoid_: Run, attempt
+
+**Normal mode**:
+The first part of a Union Raid season, with low-HP bosses taken first come, first served. Clearing it opens hard mode, and hitting in it is not mandatory.
+
+**Hard mode**:
+The part of a Union Raid season where the union wears bosses down together. Levels 1 to 3 have five bosses each; level 4 follows, with the fifth boss at unlimited HP.
+
+**Step**:
+A boss's position, one to five, within a Union Raid level.
+_Avoid_: Stage
+
+**Final hit**:
+The hit that defeats a Union Raid boss.
+
+**Double team**:
+A member spending two of one day's hits on the same boss. A **triple team** spends all three. It does not mean several members attacking one boss.
 
 ## Furnace
 
