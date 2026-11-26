@@ -76,6 +76,15 @@ _Avoid_: Random fact, re-roll
 **Shuffle**:
 The button that rolls a new card.
 
+## Progress
+
+**Level jump**:
+Two or more synchro level milestones reached on the same game day. A milestone is every fifth level.
+
+**Snapshot**:
+The account's state recorded once per game day, normally after the daily missions are done. If they never are, it is recorded just before the day ends.
+_Avoid_: Profile row, daily row
+
 ## Interception
 
 **Anomaly Interception**:
