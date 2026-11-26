@@ -2,6 +2,21 @@
 
 NIKKE progress logged into Google Sheets, plus a stats page that turns the logged data into one-line facts.
 
+## Campaign
+
+**Story stage**:
+A campaign stage that must be cleared to progress.
+_Avoid_: Main stage
+
+**Side stage**:
+A SUB or EX stage, which does not block progress.
+
+**Jumped chapter**:
+A Normal chapter where some story stages were passed over without being cleared.
+
+**Skipped stage**:
+A story stage passed over in a jumped chapter.
+
 ## Solo Raid
 
 **Season**:
