@@ -319,3 +319,11 @@ A costume, costume gacha, event pass or mission pass purchase, counted at its fu
 
 **Pass lapse**:
 A day, after the first monthly pass, that no monthly pass covers. Each pass covers 30 days, and passes stack without limit.
+
+## Costumes
+
+**Owned costume**:
+A costume the account has, however it was got. One bought on a rerun counts like any other.
+
+**Pass costume**:
+A costume first offered through an event pass or mission pass. One not owned is a skipped pass costume.
