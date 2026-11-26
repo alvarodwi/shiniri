@@ -17,6 +17,20 @@ A Normal chapter where some story stages were passed over without being cleared.
 **Skipped stage**:
 A story stage passed over in a jumped chapter.
 
+## Tower
+
+**Tribe tower**:
+The tower that is open every day, with no limit on clears.
+
+**Manufacturer tower**:
+The Elysion, Missilis, Tetra or Pilgrim tower. It allows three clears on each of its open days and none otherwise.
+
+**Open day**:
+A game day on which a manufacturer tower accepts clears. Elysion opens Tuesday, Friday and Sunday; Missilis Wednesday, Saturday and Sunday; Tetra Monday, Thursday and Sunday; Pilgrim Wednesday and Sunday.
+
+**Boss floor**:
+Every tenth floor of a tower, which is always a boss fight.
+
 ## Solo Raid
 
 **Season**:
