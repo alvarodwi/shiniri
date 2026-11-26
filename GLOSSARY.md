@@ -145,6 +145,9 @@ A copy past Core 7. It does nothing for the NIKKE and is only worth 6000 spare b
 **Pain level**:
 How much an overcore stings, from 1 to 7, set by where the copy came from: the more deliberate or costly the source, the higher. Being a Pilgrim adds nothing.
 
+**Wasted exchange**:
+An exchange, liberations aside, that a later overcore of the same NIKKE showed to be one copy too many. One overcore wastes at most one exchange.
+
 **Untracked copy**:
 A copy a NIKKE has whose date and source were never logged. Always one of the earliest ones.
 
@@ -234,7 +237,7 @@ A named date range resolved against the game day, such as "last week" or "this m
 _Avoid_: Relative date, date shortcut
 
 **Answer**:
-The value computed for one fact under one set of filters. It is one finding, which may carry its count or date, never a list or a chart. Zero is a value; a fact with nothing to say gives no answer.
+The value computed for one fact under one set of filters. It is one finding, which may carry its count or date, or be a comma-separated list of names when the names are the finding; never a chart. Zero is a value; a fact with nothing to say gives no answer.
 _Avoid_: Result, output
 
 **Card**:
