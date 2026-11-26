@@ -62,7 +62,7 @@ What the viewer sees: one fact's question with its filters filled in and its ans
 _Avoid_: Tile, widget, panel
 
 **Category**:
-A group of facts about one subject the viewer can choose from before choosing a fact, such as Pulls or Gear. A fact has exactly one category, which follows what the fact counts, not the tab it reads.
+A group of facts about one subject the viewer can choose from before choosing a fact, such as Pulls or Gear. A fact has exactly one category, which follows what the fact counts, not the tab it reads. Counting runs, including runs that dropped gear, is Interception; Gear is about the pieces themselves.
 _Avoid_: Section, topic
 
 **Pick sheet**:
@@ -76,19 +76,37 @@ _Avoid_: Random fact, re-roll
 **Shuffle**:
 The button that rolls a new card.
 
-## Anomaly Interception
+## Interception
+
+**Anomaly Interception**:
+The current interception mode. The viewer logs each of its runs on its own.
+
+**Special Interception**:
+The earlier interception mode, replaced by Anomaly Interception. Its history is closed and is logged per game day, with bosses on a fixed five-day rotation.
 
 **Run**:
-One Anomaly Interception attempt against one boss.
+One interception attempt against one boss, in either mode.
 _Avoid_: Attempt, battle
 
 **Module drop**:
-A run that gave at least one module. Its size is the number of modules that run gave.
+A run that gave at least one module. Its size is the number of modules that run gave, which in Special Interception is always one.
 _Avoid_: Module day
 
+**T9 gear**:
+A generic tier 9 piece of equipment, dropped only in Special Interception.
+
+**Manufacturer gear**:
+A tier 9 piece of equipment tied to a manufacturer, dropped in either mode.
+
 **Gear drop**:
-A run against a boss other than Kraken that gave equipment.
+A run that gave equipment. In Anomaly Interception it is manufacturer gear from a boss other than Kraken; in Special Interception it is T9 gear or manufacturer gear.
 _Avoid_: Equipment day
+
+**Unguaranteed run**:
+An Anomaly Interception run against a boss other than Kraken below stage 9, which may or may not give manufacturer gear.
+
+**Empty run**:
+A Special Interception run that gave nothing tracked.
 
 **Double reward day**:
 A game day with twice the usual number of runs.
