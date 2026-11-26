@@ -139,6 +139,12 @@ A NIKKE at four copies, its last limit break.
 **Core 7**:
 A NIKKE at eleven copies, the most that count.
 
+**Overcore**:
+A copy past Core 7. It does nothing for the NIKKE and is only worth 6000 spare body labels.
+
+**Pain level**:
+How much an overcore stings, from 1 to 7, set by where the copy came from: the more deliberate or costly the source, the higher. Being a Pilgrim adds nothing.
+
 **Untracked copy**:
 A copy a NIKKE has whose date and source were never logged. Always one of the earliest ones.
 
