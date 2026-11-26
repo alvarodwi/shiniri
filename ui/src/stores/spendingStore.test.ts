@@ -6,7 +6,7 @@ import { useSpendingStore } from './spendingStore'
 import { NIKKE_DATABASE_TAB, SPENDING_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 
-const DB = "'NikkeDatabase'!A1:J"
+const DB = "'NikkeDatabase'!A1:K"
 const HISTORY = "'Spending'!A1:G"
 
 function fakeApi(history: unknown[][] = []) {

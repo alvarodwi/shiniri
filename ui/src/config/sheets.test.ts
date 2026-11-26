@@ -153,6 +153,7 @@ describe('tab specs', () => {
         'weapon',
         'resourceId',
         'releaseDate',
+        'limited',
       ],
     })
   })

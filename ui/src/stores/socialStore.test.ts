@@ -7,7 +7,7 @@ import { useSocialStore } from './socialStore'
 import { NIKKE_DATABASE_TAB, SOCIAL_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 
-const DB = "'NikkeDatabase'!A1:J"
+const DB = "'NikkeDatabase'!A1:K"
 
 function fakeApi() {
   const values: Record<string, string[][]> = {

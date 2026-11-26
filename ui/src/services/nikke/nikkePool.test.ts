@@ -15,6 +15,7 @@ const nikke = (name: string, rarity: string, manufacturer: string): Nikke => ({
   weapon: '',
   resourceId: '',
   releaseDate: '',
+  limited: false,
 })
 
 const all = [

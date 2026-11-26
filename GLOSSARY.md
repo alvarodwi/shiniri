@@ -2,6 +2,11 @@
 
 NIKKE progress logged into Google Sheets, plus a stats page that turns the logged data into one-line facts.
 
+## Gacha
+
+**Limited NIKKE**:
+A NIKKE obtainable from the gacha only during particular banners. A **collaboration limited** one is Abnormal (every Abnormal NIKKE is limited); a **seasonal limited** one is any other limited NIKKE.
+
 ## Furnace
 
 **Furnace attempt**:

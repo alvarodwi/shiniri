@@ -40,6 +40,7 @@ const nikke = (name: string, manufacturer: string): Nikke => ({
   weapon: '',
   resourceId: '',
   releaseDate: '',
+  limited: false,
 })
 const nikkes = [nikke('Rapi', 'ELYSION'), nikke('Noah', 'PILGRIM')]
 

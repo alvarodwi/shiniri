@@ -26,9 +26,14 @@ def entry(code, name, order):
 def test_row_shape():
     rows, notes = nikke_rows([entry(5005, "Emma", 10001)])
     assert rows == [
-        [5005, "Emma", "SSR", "ELYSION", "Supporter", "Step1", "Fire", "MG", 90, ""]
+        [5005, "Emma", "SSR", "ELYSION", "Supporter", "Step1", "Fire", "MG", 90, "", False]
     ]
     assert notes == []
+
+
+def test_abnormal_is_limited():
+    rows, _ = nikke_rows([{**entry(1, "A", 10), "corporation": "ABNORMAL"}])
+    assert rows[0][-1] is True
 
 
 def test_sorted_by_order_missing_order_last():
@@ -64,14 +69,14 @@ def test_sync_writes_only_missing(store):
     api = FakeSheets(
         {
             **AUDIT,
-            "'NikkeDatabase'!A1:J1": [list(HEADERS)],
+            "'NikkeDatabase'!A1:K1": [list(HEADERS)],
             "'NikkeDatabase'!A:A": [["nameCode"], [1]],
         }
     )
     assert sync_nikke_database(store, api, timestamp="ts") == "NikkeDatabase +1"
     [[(target, rows), (_, [audit])]] = api.batches
     assert (
-        target == "'NikkeDatabase'!A3:J3"
+        target == "'NikkeDatabase'!A3:K3"
         and rows[0][0] == 2
         and audit[1] == "cli-nikke-database"
     )
@@ -82,7 +87,7 @@ def test_sync_nothing_missing_no_write(store):  # also covers a missing raw file
     api = FakeSheets(
         {
             **AUDIT,
-            "'NikkeDatabase'!A1:J1": [list(HEADERS)],
+            "'NikkeDatabase'!A1:K1": [list(HEADERS)],
             "'NikkeDatabase'!A:A": [["nameCode"]],
         }
     )
@@ -97,7 +102,7 @@ def test_sync_notes_skipped(store):
     api = FakeSheets(
         {
             **AUDIT,
-            "'NikkeDatabase'!A1:J1": [list(HEADERS)],
+            "'NikkeDatabase'!A1:K1": [list(HEADERS)],
             "'NikkeDatabase'!A:A": [["nameCode"]],
         }
     )
@@ -112,7 +117,7 @@ def test_sync_header_mismatch_is_the_line(store):
     api = FakeSheets(
         {
             **AUDIT,
-            "'NikkeDatabase'!A1:J1": [["Name"]],
+            "'NikkeDatabase'!A1:K1": [["Name"]],
             "'NikkeDatabase'!A:A": [["Name"]],
         }
     )

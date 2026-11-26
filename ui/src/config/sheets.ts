@@ -60,6 +60,7 @@ export const NIKKE_DATABASE_TAB: TabSpec = {
     'weapon',
     'resourceId',
     'releaseDate',
+    'limited',
   ],
 }
 

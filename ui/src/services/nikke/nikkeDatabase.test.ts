@@ -15,7 +15,7 @@ const headers = [...NIKKE_DATABASE_TAB.headers]
 describe('toNikkes', () => {
   it('maps every column in header order', () => {
     const rows = [
-      ['5001', 'Rapi', 'SSR', 'ELYSION', 'Attacker', 'Step3', 'Fire', 'AR', '10', '45000'],
+      ['5001', 'Rapi', 'SSR', 'ELYSION', 'Attacker', 'Step3', 'Fire', 'AR', '10', '45000', 'TRUE'],
     ]
     expect(toNikkes(rows)).toEqual([
       {
@@ -29,6 +29,7 @@ describe('toNikkes', () => {
         weapon: 'AR',
         resourceId: '10',
         releaseDate: '2023-03-15',
+        limited: true,
       },
     ])
   })
@@ -41,6 +42,22 @@ describe('toNikkes', () => {
     expect(full.releaseDate).toBe('')
     expect(short.weapon).toBe('')
     expect(short.releaseDate).toBe('')
+  })
+
+  it('reads only TRUE as limited', () => {
+    const rows = ['TRUE', 'true', 'FALSE', 'false', '', 'yes'].map((limited) => [
+      ...['5001', 'Rapi', '', '', '', '', '', '', '', ''],
+      limited,
+    ])
+    expect(toNikkes([...rows, ['5002', 'Anis']]).map((n) => n.limited)).toEqual([
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+    ])
   })
 
   it('trims cells and skips rows with a blank nameCode or name', () => {

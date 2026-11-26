@@ -16,6 +16,7 @@ HEADERS = (
     "weapon",
     "resourceId",
     "releaseDate",
+    "limited",
 )
 
 
@@ -52,6 +53,7 @@ def nikke_rows(nikkes: list) -> tuple[list[list], list[str]]:
             ((n.get("shot_id") or {}).get("element") or {}).get("weapon_type", ""),
             n.get("resource_id", ""),
             "",
+            n.get("corporation") == "ABNORMAL",  # seasonal limited is fixed by hand
         ]
         for n in kept
     ]

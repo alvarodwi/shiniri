@@ -7,7 +7,7 @@ import { useSpareBodyStore } from './spareBodyStore'
 import { NIKKE_DATABASE_TAB, EXCHANGE_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 
-const DB = "'NikkeDatabase'!A1:J"
+const DB = "'NikkeDatabase'!A1:K"
 const dbRow = (code: string, name: string, manufacturer: string) => [
   code,
   name,

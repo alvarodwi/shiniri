@@ -16,13 +16,25 @@ export type Nikke = {
   weapon: string
   resourceId: string
   releaseDate: string
+  limited: boolean
 }
 
 // Data rows only (no header). Blank or short rows are skipped or padded, never a crash.
 export function toNikkes(rows: string[][]): Nikke[] {
   return rows.flatMap((row) => {
-    const [nameCode, name, rarity, manufacturer, cls, burst, element, weapon, resourceId, date] =
-      NIKKE_DATABASE_TAB.headers.map((_, i) => String(row[i] ?? '').trim())
+    const [
+      nameCode,
+      name,
+      rarity,
+      manufacturer,
+      cls,
+      burst,
+      element,
+      weapon,
+      resourceId,
+      date,
+      ltd,
+    ] = NIKKE_DATABASE_TAB.headers.map((_, i) => String(row[i] ?? '').trim())
     if (!nameCode || !name) return []
     const releaseDate = cellToIsoDate(date)
     return [
@@ -37,6 +49,7 @@ export function toNikkes(rows: string[][]): Nikke[] {
         weapon,
         resourceId,
         releaseDate,
+        limited: ltd.toUpperCase() === 'TRUE',
       },
     ]
   })

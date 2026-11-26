@@ -102,6 +102,7 @@ edits rows (see `../../CLAUDE.md`).
 - `NikkeDatabase` is written on every check, not tied to the daily row, so a restarted `watch` fills it
   at once. Rows go in `order`; a missing or non-integer `order` sorts last; the first of a repeated
   `name_code` wins; skipped entries are logged as `entry <index>`.
+- `limited` is written `TRUE` for `ABNORMAL`, else `FALSE`. The owner flips seasonal limited NIKKEs by hand.
 - `RosterLog` names come from the sheet's `NikkeDatabase`, because the owner renames collab names there.
   An empty `characters` list is a failure, not "owns nothing". Do not pull gacha between the first check
   of a game day and the day's end, or `DupeTracker` shows a missed log.

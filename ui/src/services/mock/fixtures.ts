@@ -101,8 +101,8 @@ export const MOCK_SHEETS = sheets([
     [44, '2026-10-15', 'Gravedigger', 'Fire', 11234567890, '8.40%', 'new team'],
   ]),
   tab(NIKKE_DATABASE_TAB, [
-    [5001, 'Rapi', 'SSR', 'ELYSION', 'Attacker', 'Step3', 'Fire', 'AR', 10, 45000],
-    [5002, 'Anis', 'SR', 'TETRA', 'Supporter', 'Step1', 'Electronic', 'SG', 11, 45000],
+    [5001, 'Rapi', 'SSR', 'ELYSION', 'Attacker', 'Step3', 'Fire', 'AR', 10, 45000, false],
+    [5002, 'Anis', 'SR', 'TETRA', 'Supporter', 'Step1', 'Electronic', 'SG', 11, 45000, false],
     [
       5003,
       'Asuka Shikinami Langley',
@@ -114,9 +114,10 @@ export const MOCK_SHEETS = sheets([
       'AR',
       312,
       '',
+      true,
     ],
-    [5004, 'New Nikke', 'SSR', 'MISSILIS', 'Defender', 'Step2', 'Water', 'MG', 999, ''],
-    [5005, 'Noah', 'SSR', 'PILGRIM', 'Defender', 'Step2', 'Wind', 'RL', 13, 45000],
+    [5004, 'New Nikke', 'SSR', 'MISSILIS', 'Defender', 'Step2', 'Water', 'MG', 999, '', false],
+    [5005, 'Noah', 'SSR', 'PILGRIM', 'Defender', 'Step2', 'Wind', 'RL', 13, 45000, false],
   ]),
   tab(COSTUME_DATABASE_TAB, [
     [
