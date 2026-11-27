@@ -172,3 +172,15 @@ were never logged; those end up as `?`.
   )))
 )
 ```
+
+## CostumeDatabase
+
+### `priceUsd`
+
+Column I, formula in `I2` (the owner's column, right of the contract columns; pasted by the owner 2026-11-27).
+`source` (E) decides the price. Anything not listed, blank included, is `Free`, so the column mixes numbers
+and text. Typing a value below `I2` breaks the whole column: change `source` or the formula instead.
+
+```
+=ARRAYFORMULA(IF(A2:A="", "", IF(E2:E="Costume Gacha", 59.94, IF(E2:E="Cash Shop", 14.99, IF((E2:E="Mission Pass")+(E2:E="Event Pass"), 19.99, "Free")))))
+```
