@@ -11,6 +11,7 @@ from shiniri_cli.union_sheet import (
     append_seasons,
     locked,
     roster_rows,
+    season_rows,
     sync_union,
     union_rows,
 )
@@ -19,7 +20,7 @@ AUDIT = {
     "'AuditLog'!A1:D1": [["savedAt", "form", "ranges", "rows"]],
     "'AuditLog'!A:A": [["savedAt"]],
 }
-LAST = {"union": "P", "roster": "F"}
+LAST = {"union": "P", "roster": "F", "season": "H"}
 
 
 def sheet(kind, col_a, headers=None):
@@ -190,21 +191,29 @@ def test_one_tab_error_keeps_the_other(union_store, monkeypatch):
             **AUDIT,
             **sheet("union", [["season"]], ["season", "wrong"]),
             **sheet("roster", [["season"]]),
+            **sheet("season", [["season"]]),
         }
     )
     text = asyncio.run(sync_union(union_store, None, api, timestamp="ts", now=99999))
     assert text.startswith("UnionRaid: UnionRaid headers changed") and text.endswith(
-        " · UnionRoster +2"
+        " · UnionRoster +2 · UnionSeason +2"
     )
 
 
 def test_fetch_error_still_writes_stored(union_store, monkeypatch):
     _no_fetch(monkeypatch, httpx.ConnectError("down"))
     api = FakeSheets(
-        {**AUDIT, **sheet("union", [["season"]]), **sheet("roster", [["season"]])}
+        {
+            **AUDIT,
+            **sheet("union", [["season"]]),
+            **sheet("roster", [["season"]]),
+            **sheet("season", [["season"]]),
+        }
     )
     text = asyncio.run(sync_union(union_store, None, api, timestamp="ts", now=99999))
-    assert text == "UnionRaid +2 (fetch: ConnectError) · UnionRoster +2 (fetch: ConnectError)"
+    assert text == " · ".join(
+        f"{tab} +2 (fetch: ConnectError)" for tab in union_sheet.TABS.values()
+    )
 
 
 def test_season_missing_from_raid_list_is_not_locked(union_store):
@@ -260,7 +269,12 @@ def test_no_reference_files_holds_every_union_season(union_store):
         (union_store.raw_dir / f"{name}.json").unlink()
     u = build_union(union_store, None, 0)
     api = FakeSheets(
-        {**AUDIT, **sheet("union", [["season"]]), **sheet("roster", [["season"]])}
+        {
+            **AUDIT,
+            **sheet("union", [["season"]]),
+            **sheet("roster", [["season"]]),
+            **sheet("season", [["season"]]),
+        }
     )
     assert append_seasons(
         api, "union", {n: union_rows(u, n) for n in locked(u)}, timestamp="ts"
@@ -274,7 +288,47 @@ def test_held_count_in_summary(union_store, monkeypatch):
     _no_fetch(monkeypatch)
     (union_store.raw_dir / "nikke_list_en.json").unlink()
     api = FakeSheets(
-        {**AUDIT, **sheet("union", [["season"]]), **sheet("roster", [["season"]])}
+        {
+            **AUDIT,
+            **sheet("union", [["season"]]),
+            **sheet("roster", [["season"]]),
+            **sheet("season", [["season"]]),
+        }
     )
     text = asyncio.run(sync_union(union_store, None, api, timestamp="ts", now=99999))
-    assert text == "UnionRaid +0 (held 2) · UnionRoster +2"
+    assert text == "UnionRaid +0 (held 2) · UnionRoster +2 · UnionSeason +2"
+
+
+def _season_row(store, level_info):
+    _edit_s46(store, level={"level_info": level_info})
+    [row] = season_rows(build_union(store, None, 0), 46)
+    return row
+
+
+def test_season_rows(union_store):
+    assert HEADERS["season"] == (
+        "season",
+        "startDate",
+        "endDate",
+        "mode",
+        "level",
+        "bossesDown",
+        "hpLeft",
+        "damageDealt",
+    )
+    # season 46's real window: 03:00 WIB 30 Oct to 02:59:59 WIB 5 Nov
+    union_store.save_raw(
+        "raid_list", [{"id": 1000046, "start_ts": 1793304000, "end_ts": 1793822399}]
+    )
+    dates = [46, "2026-10-30", "2026-11-04"]
+    boss = lambda hp: {"current_hp": str(hp)}
+    left = [boss(0), boss(5), boss(0), boss(7), boss(1)]
+    for difficulty, level, bosses, want in (
+        (2, 3, left, ["hard", 3, 2, 13, ""]),
+        (1, 4, left, ["normal", 4, 2, 13, ""]),
+        (2, 4, [boss(1027483050281)], ["hard", 4, "", "", 1027483050281]),
+        (2, 2, [], ["hard", 2, "", "", ""]),
+    ):
+        info = {"difficulty": difficulty, "level": level, "boss_info": bosses}
+        assert _season_row(union_store, [info]) == dates + want
+    assert _season_row(union_store, []) == dates + [""] * 5

@@ -21,7 +21,7 @@ edits rows (see `../../CLAUDE.md`).
 - Day and time: `game_day`, `is_last_check`, `next_check`, `wib_timestamp`, `WIB`, `RESET`.
 - Sheet steps (each returns a log line):
   - `sync_clears` in `clear_sheet.py`: `Campaign` and `Tower`.
-  - `sync_union` in `union_sheet.py`: `UnionRaid` and `UnionRoster`.
+  - `sync_union` in `union_sheet.py`: `UnionRaid`, `UnionRoster` and `UnionSeason`.
   - `sync_nikke_database` in `nikke_sheet.py`: `NikkeDatabase`.
   - `sync_roster_log` in `roster_sheet.py`: `RosterLog`.
   - `sync_costume_database` in `costume_sheet.py`: `CostumeDatabase`.
@@ -99,6 +99,10 @@ edits rows (see `../../CLAUDE.md`).
 - A union season is written once, after `locked()` (its end plus an hour). A season missing from
   `raid_list` has no end time and is never written. `UnionRoster` `source` is `api` when the season file
   has `members`, else `hits` with blank level and synchro level.
+- `UnionSeason` has one row per season (`season_rows`). `startDate` and `endDate` are game days.
+  `bossesDown` and `hpLeft` cover the bosses of the level reached; on hard level 4 (one endless boss)
+  they are blank and `damageDealt` is filled. Unusable level data leaves the progress cells blank.
+  A season held from `UnionRaid` still gets its row.
 - `NikkeDatabase` is written on every check, not tied to the daily row, so a restarted `watch` fills it
   at once. Rows go in `order`; a missing or non-integer `order` sorts last; the first of a repeated
   `name_code` wins; skipped entries are logged as `entry <index>`.

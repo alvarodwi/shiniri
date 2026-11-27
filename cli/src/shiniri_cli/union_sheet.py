@@ -1,15 +1,17 @@
-"""UnionRaid and UnionRoster tabs: each locked season written once, one block per season, keyed on column A."""
+"""UnionRaid, UnionRoster and UnionSeason tabs: each locked season written once, one block per season, keyed on column A."""
 
 from collections.abc import Callable
+from datetime import datetime
 
 import httpx
 
 from .fetch import AuthError
+from .profile import WIB, game_day
 from .sheets import SheetsApi, SheetsError, column_a, int_ids, write_rows
 from .store import Store, unknown_nikkes
-from .union import UnionData, build_union, fetch_union, is_final
+from .union import MODES, UnionData, build_union, fetch_union, is_final
 
-TABS = {"union": "UnionRaid", "roster": "UnionRoster"}
+TABS = {"union": "UnionRaid", "roster": "UnionRoster", "season": "UnionSeason"}
 FORM = "cli-union"
 HEADERS = {
     "union": (
@@ -31,6 +33,16 @@ HEADERS = {
         "slot5",
     ),
     "roster": ("season", "memberId", "nickname", "level", "synchroLevel", "source"),
+    "season": (
+        "season",
+        "startDate",
+        "endDate",
+        "mode",
+        "level",
+        "bossesDown",
+        "hpLeft",
+        "damageDealt",
+    ),
 }
 
 
@@ -93,6 +105,23 @@ def roster_rows(u: UnionData, n: int) -> list[list]:
     return [[n, _text(o), _text(name), "", "", "hits"] for o, name in last.items()]
 
 
+def season_rows(u: UnionData, n: int) -> list[list]:
+    s = u.seasons[n]
+    info = (s["level"].get("level_info") or [{}])[0]
+    mode, level = MODES.get(info.get("difficulty"), ""), info.get("level") or ""
+    hp = [int(b.get("current_hp") or 0) for b in info.get("boss_info") or []]
+    down = left = dealt = ""
+    if mode and level and hp:
+        if (
+            mode == "hard" and level == 4
+        ):  # one endless boss: current_hp is damage dealt
+            dealt = hp[0]
+        else:
+            down, left = hp.count(0), sum(hp)
+    days = [game_day(datetime.fromtimestamp(s[k], WIB)) for k in ("start_ts", "end_ts")]
+    return [[n, *days, mode, level, down, left, dealt]]
+
+
 def append_seasons(
     api: SheetsApi,
     kind: str,
@@ -135,7 +164,7 @@ async def sync_union(
     log: Callable[[str], None] = lambda _: None,
 ) -> str:
     """Refresh the stored seasons, then write the locked seasons each tab is missing. Never
-    raises: a failed fetch still writes what's stored, and one tab's failure never stops the other."""
+    raises: a failed fetch still writes what's stored, and one tab's failure never stops the others."""
     notes = []
     try:
         await fetch_union(store, client, now)
@@ -153,6 +182,7 @@ async def sync_union(
         rows = {
             "union": {n: union_rows(u, n) for n in done},
             "roster": {n: roster_rows(u, n) for n in done},
+            "season": {n: season_rows(u, n) for n in done},
         }
     except Exception as e:
         return f"Union: {type(e).__name__}: {e}{note}"

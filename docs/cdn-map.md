@@ -34,7 +34,7 @@ both `.png` and `.webp`. `cli/tools/assets.py` keeps the CDN webp for `si`, and 
 | `equip/equip_option_table_v2-{lang}.json` | 2026-11-18 | gear option lines |
 | `equip/favorite_rare_map.json` | 2026-11-21 | favorite item ids by rarity (R, SR, SSR) |
 | `guild/guild_emblem.json` | 2026-11-21 | 78 union emblems: `id`, `grade`, `resource_id` |
-| `raid/raid_list.json` | 2026-11-21 | solo raid seasons |
+| `raid/raid_list.json` | 2026-11-21 | union raid seasons |
 | `scene/{lang}/scene_list_{lang}.json` | 2026-11-18 | scenes |
 | `scene/{lang}/sudden_list_{lang}.json` | 2026-11-18 | sudden events |
 | `stage/stage_list.json` | 2026-11-18 | campaign stages |

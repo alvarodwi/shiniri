@@ -77,7 +77,7 @@ CLI:
   The CLI reads grid metadata once per `HttpSheets` instance (`HttpSheets._grid`), so a tab
   added by hand mid-run is not seen until the next instance (each `watch` check makes a new one). Why: `docs/decisions/0001-audit-row-in-the-same-batch.md`.
 - Tab and header names are the renamed ones (`Anomaly`, `Gear`, `LevelLog`, `SoloRaid`, `Furnace`,
-  `Mold`, `Exchange`, CLI `UnionRaid`/`UnionRoster`). Old names survive only as code identifiers
+  `Mold`, `Exchange`, CLI `UnionRaid`/`UnionRoster`/`UnionSeason`). Old names survive only as code identifiers
   (`SpareBody.vue`, `moldsStore`). `ui/src/config/sheets.test.ts` pins every `TabSpec`, so a header
   rename updates it. The live sheet still has legacy values the code no longer writes: old `AllPulls`
   source values (`Molds`, `SpareBody`, `Other`, matched by the owner's `SWITCH` formula) and old

@@ -65,3 +65,11 @@ _Avoid_: Random fact, re-roll
 
 **Shuffle**:
 The button that rolls a new card.
+
+## Union Raid
+
+**Union raid season**:
+One run of Union Raid, spanning a few consecutive game days.
+
+**Raid progress**:
+How far the union got in a season: the mode and level it reached, and what was left on that level. **HP left** is the total over that level's bosses. Hard level 4 has a single endless boss, so there the measure is **damage dealt** instead.
