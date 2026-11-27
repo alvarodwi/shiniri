@@ -157,7 +157,7 @@ export const ANOMALY_FACTS: Fact[] = [
   {
     id: 'anomaly-first-run',
     category: 'Interception',
-    title: 'First attempt',
+    title: 'First run',
     question: 'When did I first fight {boss}?',
     filters: [boss],
     reads: reads('boss'),
@@ -254,7 +254,7 @@ export const ANOMALY_FACTS: Fact[] = [
         gearDrops(c, v, today).map((r) =>
           r.manufacturer && r.class && r.slot ? `${r.manufacturer} ${r.class} ${r.slot}` : '',
         ),
-        'drop',
+        'piece',
       ),
   },
   {
@@ -267,7 +267,7 @@ export const ANOMALY_FACTS: Fact[] = [
     compute: (c, v, today) =>
       topWithCount(
         gearDrops(c, v, today).map((r) => r.manufacturer),
-        'drop',
+        'piece',
       ),
   },
   {
@@ -280,7 +280,7 @@ export const ANOMALY_FACTS: Fact[] = [
     compute: (c, v, today) =>
       topWithCount(
         gearDrops(c, v, today).map((r) => r.class),
-        'drop',
+        'piece',
       ),
   },
   {
