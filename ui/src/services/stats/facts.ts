@@ -1,4 +1,5 @@
 import type { TabSpec } from '@/config/sheets'
+import { ANOMALY_FACTS } from '@/services/stats/anomalyFacts'
 
 // A fact is the code-defined catalog entry; see docs/decisions/0008. `reads` names the tab and the
 // header-named columns it needs; compute gets those columns (cells below the header) per tab name.
@@ -52,5 +53,5 @@ export const fillQuestion = (
     return text && space + text
   })
 
-// Filled per tab; see format.ts and rules.ts for how a compute writes its answer.
-export const FACTS: Fact[] = []
+// One file per tab; see format.ts and rules.ts for how a compute writes its answer.
+export const FACTS: Fact[] = [...ANOMALY_FACTS]

@@ -8,7 +8,8 @@ browser from raw rows read with `getValues`. Nothing is written, so the writer c
 untouched, and the CLI does not read facts. All in `ui/`. Vocabulary is in `GLOSSARY.md`; the why is
 in `docs/decisions/0008-stats-computed-in-the-client.md`.
 
-This doc does not list the facts. `FACTS` in `ui/src/services/stats/facts.ts` is the catalog.
+This doc does not list the facts. `FACTS` in `ui/src/services/stats/facts.ts` is the catalog, spread
+from one file per tab (`anomalyFacts.ts`, with its test beside it).
 
 ## Public surface
 
@@ -53,7 +54,8 @@ and the number of rows is the whole tab. Compute filters blanks itself.
 
 ## How to add a fact
 
-1. Add an object to `FACTS` in `facts.ts`. Reuse the `TabSpec` constants from `config/sheets.ts`
+1. Add an object to the tab's file (a new `<tab>Facts.ts` is spread into `FACTS` in `facts.ts` and
+   imports only types from it, so there is no cycle). Reuse the `TabSpec` constants from `config/sheets.ts`
    in `reads`; use the exact header text from the sheet (ask when unsure).
 2. Declare only the columns `compute` uses. Each one costs a read the first time its tab is used.
 3. Format the answer with `format.ts`; use `rules.ts` for ties, superlatives and per-day grouping.
@@ -63,7 +65,8 @@ and the number of rows is the whole tab. Compute filters blanks itself.
 5. For options derived from data, give `options` as a function of `cols`. These are available once
    the tab has loaded, which the store guarantees before it asks.
 6. Add a case to `statsStore.test.ts` only if the fact needs behaviour the store tests do not
-   already cover. No other file changes: the picker, the roll and the page read `FACTS`.
+   already cover. Test its `compute` in the tab's test file. The picker, the roll and the page read
+   `FACTS`, so nothing else changes.
 
 A new tab or header is a sheet change the owner makes by hand. Say so when a fact needs one.
 
