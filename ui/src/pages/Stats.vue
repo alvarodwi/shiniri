@@ -25,7 +25,7 @@ onUnmounted(() => {
     <section v-if="store.card.status !== 'idle'" aria-live="polite" class="rule border p-4">
       <h3 class="font-semibold">{{ store.card.fact.title }}</h3>
       <p class="ink-soft text-sm">
-        {{ fillQuestion(store.card.fact.question, store.card.values) }}
+        {{ fillQuestion(store.card.fact, store.card.values) }}
       </p>
       <div
         v-if="store.card.fact.filters && 'options' in store.card"

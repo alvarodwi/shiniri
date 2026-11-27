@@ -5,7 +5,7 @@ import { useStatsStore } from './statsStore'
 
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import type { Fact } from '@/services/stats/facts'
-import { ANY_TIME, RANGE_PRESETS, inRange } from '@/services/stats/ranges'
+import { ANY_PERIOD, RANGE_PRESETS, inRange } from '@/services/stats/ranges'
 
 const TAB = { spreadsheetId: 's', tab: 'T' }
 const GRID = [
@@ -199,7 +199,7 @@ describe('statsStore', () => {
   describe('range presets', () => {
     const rangeFact = fact({
       question: 'Q {range}?',
-      filters: [{ id: 'range', label: 'Range', options: [ANY_TIME, ...RANGE_PRESETS] }],
+      filters: [{ id: 'range', label: 'Range', options: [ANY_PERIOD, ...RANGE_PRESETS] }],
       reads: [{ tab: TAB, columns: ['date'] }],
       compute: (c, { range }, today) => String(c.T.date.filter(inRange(range, today)).length),
     })
@@ -229,7 +229,7 @@ describe('statsStore', () => {
       expect(await count('last week', NOW)).toBe('2')
       expect(await count('this month', NOW)).toBe('6')
       expect(await count('last month', NOW)).toBe('1')
-      expect(await count('any time', NOW)).toBe('7')
+      expect(await count('any period', NOW)).toBe('7')
     })
     it('falls on the previous game day between midnight UTC and the 20:00 UTC reset', async () => {
       const api = dates(['2026-11-22', '2026-11-23'])
@@ -251,7 +251,7 @@ describe('statsStore', () => {
       ).toBe('1')
     })
     it('treats serial-number and ISO-text date cells the same', async () => {
-      for (const r of ['this week', 'last week', 'this month', 'last month', 'any time'])
+      for (const r of ['this week', 'last week', 'this month', 'last month', 'any period'])
         expect(await count(r, NOW, dates(DAYS, true))).toBe(await count(r, NOW, dates(DAYS)))
     })
     it('rolls a range preset like any other option', async () => {

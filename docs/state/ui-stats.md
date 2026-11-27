@@ -13,12 +13,13 @@ This doc does not list the facts. `FACTS` in `ui/src/services/stats/facts.ts` is
 ## Public surface
 
 - `ui/src/services/stats/facts.ts`: the types (`Fact`, `Filter`, `Columns`, `Values`, `Answer`,
-  `Category`), `CATEGORIES` (the picker's order), `FACTS`, and `fillQuestion`, which replaces each `{filterId}` in a question with the chosen value
-  (`…` while unchosen).
+  `Category`), `CATEGORIES` (the picker's order), `FACTS`, and `fillQuestion`, which fills each
+  `{filterId}` in a fact's question with the chosen value's question text (`…` while unchosen).
 - `ui/src/services/stats/format.ts`: how answers write dates, months, counts, large numbers,
   durations, percents, signed changes and money. `rules.ts`: ties to the earliest row (`firstMax`),
   `topWithCount`, and the game day of a date cell (`cellGameDay`, `groupByGameDay`).
-- `ui/src/services/stats/ranges.ts`: `RANGE_PRESETS`, `ANY_TIME` and `inRange`.
+- `ui/src/services/stats/ranges.ts`: the Date range filter (`dateRange`, `customRange`), `RANGE_PRESETS`,
+  `ANY_PERIOD` and `inRange`.
 - `ui/src/services/stats/loader.ts`: `createLoader()`, the header-and-column reads and the cache.
   `roll.ts`: `rollValues`, the random pick of every filter. Both have tests beside them.
 - `ui/src/stores/statsStore.ts`: `useStatsStore`, the card (`show`, `retry`, `setFilter`, `roll`,
@@ -55,8 +56,9 @@ and the number of rows is the whole tab. Compute filters blanks itself.
    in `reads`; use the exact header text from the sheet (ask when unsure).
 2. Declare only the columns `compute` uses. Each one costs a read the first time its tab is used.
 3. Format the answer with `format.ts`; use `rules.ts` for ties, superlatives and per-day grouping.
-4. For a date filter, use `[ANY_TIME, ...RANGE_PRESETS]` as options and `inRange(range, today)` as
-   the predicate over the date column. Do not compute dates by hand.
+4. For a date filter, add `dateRange(cols => <date cells>)` to `filters`, with `{ quick: false }`
+   on finished history, and use `inRange(values.range, today)` as the predicate over the date column.
+   Do not compute dates by hand.
 5. For options derived from data, give `options` as a function of `cols`. These are available once
    the tab has loaded, which the store guarantees before it asks.
 6. Add a case to `statsStore.test.ts` only if the fact needs behaviour the store tests do not
@@ -100,13 +102,22 @@ A new tab or header is a sheet change the owner makes by hand. Say so when a fac
 - `Stats.vue` calls `reset()` (card back to `idle`) and `closePicker()` on unmount, so nothing carries
   between visits.
 
-## Range presets
+## Filter text and the Date range
 
-`this week`, `last week`, `this month` and `last month`, plus `any time`. They resolve against the
-game day (`gameDay(now)`, passed to `compute` as `today`), never the device clock directly. Weeks
-start on Monday and months are calendar months. `inRange` is a predicate over a raw date cell:
-a cell is placed by `cellGameDay`: blank cells are never in range, `any time` included; serial
-numbers, ISO text and WIB timestamps work; anything else is out of range. An unknown preset throws, which becomes an `error` card.
+An option's value is its chip text. A filter's `say(value)` gives the question text where it differs
+(`any boss` on the chip, nothing in the question); an empty text drops the slot and its space.
+
+The Date range (`kind: 'dateRange'`, id `range`) offers `any period`, the range presets (Quick,
+hidden with `quick: false`) and `in <year>` for each year in the fact's date cells. It also takes a
+custom value outside its options, `from..to` built by `customRange`; `to` is left empty when it is
+today, and the question then reads `since <date>`, otherwise `from <date> to <date>`. Rolls and the
+Random button draw from the options, so never a custom range.
+
+Presets resolve against the game day (`gameDay(now)`, passed to `compute` as `today`), never the
+device clock directly. Weeks start on Monday and months are calendar months. `inRange` is a predicate
+over a raw date cell: a cell is placed by `cellGameDay`: blank cells are never in range, `any period`
+included; serial numbers, ISO text and WIB timestamps work; anything else is out of range. An unknown
+range throws, which becomes an `error` card.
 
 `show`, `setFilter`, `roll` and the pick functions take an optional `now` (and `random`, `api`,
 `facts`) so tests inject them.

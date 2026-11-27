@@ -20,11 +20,14 @@ export const CATEGORIES = [
 export type Category = (typeof CATEGORIES)[number]
 
 // A filter has no default. Options are listed by the fact or derived from the loaded columns; "any"
-// is an ordinary option a fact lists where it makes sense.
+// is an ordinary option a fact lists where it makes sense. An option's value is its chip text; `say`
+// gives its question text where that differs ('' drops the slot).
 export type Filter = {
   id: string
   label: string
   options: string[] | ((cols: Columns) => string[])
+  say?: (value: string) => string
+  kind?: 'dateRange' // built by dateRange(); also takes a custom range outside its options
 }
 export type Values = Record<string, string>
 export type Fact = {
@@ -37,8 +40,17 @@ export type Fact = {
   compute: (cols: Columns, values: Values, today: string) => Answer // today = game day, YYYY-MM-DD
 }
 
-export const fillQuestion = (q: string, values: Values) =>
-  q.replace(/\{(\w+)\}/g, (_, id) => values[id] ?? '…')
+export const fillQuestion = (
+  { question, filters }: Pick<Fact, 'question' | 'filters'>,
+  values: Values,
+) =>
+  // A dropped slot takes the space before it along.
+  question.replace(/( ?)\{(\w+)\}/g, (_, space, id) => {
+    const value = values[id]
+    const say = filters?.find((f) => f.id === id)?.say
+    const text = value === undefined ? '…' : say ? say(value) : value
+    return text && space + text
+  })
 
 // Filled per tab; see format.ts and rules.ts for how a compute writes its answer.
 export const FACTS: Fact[] = []
