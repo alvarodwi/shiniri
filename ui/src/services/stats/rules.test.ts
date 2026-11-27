@@ -19,6 +19,7 @@ describe('stats rules', () => {
     )
     expect(topWithCount(['Tetra'], 'drop')).toBe('Tetra, 1 drop')
     expect(topWithCount(['', ''], 'drop')).toBeNull()
+    expect(topWithCount(['a', 'a'], 'copy', 'copies')).toBe('a, 2 copies')
   })
   it('takes the game day of a date cell, shifting only timestamps', () => {
     expect(cellGameDay('2024-08-22')).toBe('2024-08-22')
@@ -29,6 +30,7 @@ describe('stats rules', () => {
     expect(cellGameDay(45526 + 2 / 24)).toBe('2024-08-21') // serial 02:00
     expect(cellGameDay('')).toBeNull()
     expect(cellGameDay('soon')).toBeNull()
+    expect(cellGameDay('2024-08-22 25:00')).toBeNull()
   })
   it('groups rows by game day, oldest day first', () => {
     expect(groupByGameDay(['2024-08-23', '', '2024-08-22', '2024-08-23 01:00:00'])).toEqual([

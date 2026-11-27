@@ -1,7 +1,7 @@
 import { cellGameDay } from '@/services/stats/rules'
 
 // Range presets resolve against the game day (`today`, YYYY-MM-DD from gameDay): weeks start on
-// Monday, months are calendar months. Cells are sheet serial numbers or ISO text; both work.
+// Monday, months are calendar months. cellGameDay places a cell.
 export const RANGE_PRESETS = ['this week', 'last week', 'this month', 'last month']
 export const ANY_TIME = 'any time'
 

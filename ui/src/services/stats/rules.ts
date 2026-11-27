@@ -1,4 +1,4 @@
-import { cellToIsoDate } from '@/services/anomaly/anomalyRows'
+import { SHEETS_EPOCH, cellToIsoDate } from '@/services/anomaly/anomalyRows'
 import { formatPlural } from '@/services/stats/format'
 import { gameDay } from '@/utils/gameDay'
 
@@ -12,15 +12,13 @@ export function firstMax<T>(items: T[], score: (item: T) => number): T | undefin
 }
 
 // "Tetra, 14 drops": the most frequent non-blank cell; no answer when all are blank.
-export function topWithCount(cells: unknown[], unit: string): string | null {
+export function topWithCount(cells: unknown[], unit: string, plural?: string): string | null {
   const counts = new Map<string, number>()
   for (const c of cells)
     if (c !== '' && c != null) counts.set(String(c), (counts.get(String(c)) ?? 0) + 1)
   const top = firstMax([...counts], ([, n]) => n)
-  return top ? `${top[0]}, ${formatPlural(top[1], unit)}` : null
+  return top ? `${top[0]}, ${formatPlural(top[1], unit, plural)}` : null
 }
-
-const SHEETS_EPOCH = Date.UTC(1899, 11, 30)
 
 // The game day of a raw date cell. A plain date (text or serial) already is one; a WIB timestamp
 // (text, or a serial with a time) is converted. Anything else is null.
@@ -33,7 +31,9 @@ export function cellGameDay(cell: unknown): string | null {
   const text = cellToIsoDate(String(cell))
   const [, day, time] = text.match(/^(\d{4}-\d{2}-\d{2})(?: (\d{2}:\d{2}(?::\d{2})?))?$/) ?? []
   if (!day) return null
-  return time ? gameDay(new Date(`${day}T${time}+07:00`)) : day
+  if (!time) return day
+  const at = new Date(`${day}T${time}+07:00`)
+  return Number.isNaN(at.getTime()) ? null : gameDay(at) // a hand-typed "25:00" must not throw
 }
 
 // [day, row indexes] per game day, oldest first, so ties between days go to the earliest.

@@ -63,7 +63,7 @@ export function applyToRun(
   )
 }
 
-const SHEETS_EPOCH = Date.UTC(1899, 11, 30)
+export const SHEETS_EPOCH = Date.UTC(1899, 11, 30)
 
 // Column A holds real dates (serial numbers when read unformatted) or ISO text in older rows.
 export function cellToIsoDate(value: string): string {

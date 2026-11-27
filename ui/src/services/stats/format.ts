@@ -7,8 +7,8 @@ export const formatMonth = (day: string) =>
 export const formatDate = (day: string) => `${Number(day.slice(8, 10))} ${formatMonth(day)}`
 
 export const formatCount = (n: number) => n.toLocaleString('en-US')
-export const formatPlural = (n: number, unit: string) =>
-  `${formatCount(n)} ${unit}${n === 1 ? '' : 's'}`
+export const formatPlural = (n: number, unit: string, plural = `${unit}s`) =>
+  `${formatCount(n)} ${n === 1 ? unit : plural}`
 
 const large = new Intl.NumberFormat('en-US', { notation: 'compact', maximumSignificantDigits: 3 })
 export const formatLarge = (n: number) => large.format(n)

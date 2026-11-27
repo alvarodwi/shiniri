@@ -28,6 +28,7 @@ describe('stats answer formatting', () => {
     expect(formatCount(1839)).toBe('1,839')
     expect(formatPlural(1, 'level')).toBe('1 level')
     expect(formatPlural(1839, 'drop')).toBe('1,839 drops')
+    expect(formatPlural(61, 'boss', 'bosses')).toBe('61 bosses')
   })
   it('shortens large numbers to three digits, uppercase', () => {
     expect(formatLarge(16_700_000_000)).toBe('16.7B')
