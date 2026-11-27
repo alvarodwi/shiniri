@@ -1,4 +1,4 @@
-import { OVERCORE_LINES, PILGRIM_LINE } from '@/config/overcoreLines'
+import { OVERCORE_LINES, OVERSPEC_LINE } from '@/config/overcoreLines'
 import { ALL_PULLS_TAB, ROSTER_LOG_TAB } from '@/config/sheets'
 import type { TabSpec } from '@/config/sheets'
 import { asText, cellToIsoDate } from '@/services/anomaly/anomalyRows'
@@ -105,8 +105,8 @@ export function overcoreRows(
   ])
 }
 
-const isPilgrim = (name: string, nikkes: Nikke[]): boolean =>
-  makerOf(name, nikkes)?.toUpperCase() === 'PILGRIM'
+const isOverspec = (name: string, nikkes: Nikke[]): boolean =>
+  nikkes.some((n) => n.name === name && n.overspec)
 
 export function remark(
   found: Overcore[],
@@ -116,15 +116,15 @@ export function remark(
   rand: () => number = Math.random,
 ): string | null {
   if (!found.length) return null
-  // The line always fits the source (a mold is never "bought"); a Pilgrim adds PILGRIM_LINE instead
+  // The line always fits the source (a mold is never "bought"); an overspec adds OVERSPEC_LINE instead
   // of borrowing the next level's line.
   const level = painLevel(from, detail) as keyof typeof OVERCORE_LINES
-  const pilgrim = found.some((f) => isPilgrim(f.name, nikkes))
+  const overspec = found.some((f) => isOverspec(f.name, nikkes))
   const who = found.map((f) => `${f.name} C${f.copy - 4}`)
   const list = who.length > 1 ? `${who.slice(0, -1).join(', ')} and ${who.at(-1)}` : who[0]
   const lines = OVERCORE_LINES[level]
   const line = lines[Math.floor(rand() * lines.length)].replace('{who}', list)
-  return pilgrim ? `${line} ${PILGRIM_LINE}` : line
+  return overspec ? `${line} ${OVERSPEC_LINE}` : line
 }
 
 async function readTab(api: SheetsApi, spec: TabSpec): Promise<string[][]> {

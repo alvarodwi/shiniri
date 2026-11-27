@@ -9,7 +9,7 @@ import {
   remark,
 } from './overcore'
 
-import { OVERCORE_LINES, PILGRIM_LINE } from '@/config/overcoreLines'
+import { OVERCORE_LINES, OVERSPEC_LINE } from '@/config/overcoreLines'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import type { Nikke } from '@/services/nikke/nikkeDatabase'
 import { HeaderMismatchError } from '@/services/sheets/tabWriter'
@@ -41,7 +41,7 @@ const nikke = (name: string, manufacturer: string): Nikke => ({
   resourceId: '',
   releaseDate: '',
   limited: false,
-  overspec: false,
+  overspec: manufacturer === 'PILGRIM',
 })
 const nikkes = [nikke('Rapi', 'ELYSION'), nikke('Noah', 'PILGRIM')]
 
@@ -124,10 +124,10 @@ describe('overcore', () => {
     ])
   })
 
-  it('remark: the source level line, every overcore named, Pilgrim line added', () => {
-    // A Pilgrim from a Perfect Mold keeps the mold line (level 5), never Exchange's "bought" line.
+  it('remark: the source level line, every overcore named, overspec line added', () => {
+    // An overspec from a Perfect Mold keeps the mold line (level 5), never Exchange's "bought" line.
     const r = remark([{ name: 'Noah', copy: 12 }], 'Mold', 'Pilgrim Perfect Mold', nikkes, () => 0)
-    expect(r).toBe(`${OVERCORE_LINES[5][0].replace('{who}', 'Noah C8')} ${PILGRIM_LINE}`)
+    expect(r).toBe(`${OVERCORE_LINES[5][0].replace('{who}', 'Noah C8')} ${OVERSPEC_LINE}`)
     expect(
       remark(
         [
@@ -141,12 +141,12 @@ describe('overcore', () => {
         () => 0,
       ),
     ).toBe(
-      `${OVERCORE_LINES[7][0].replace('{who}', 'Rapi C8, Rapi C9 and Noah C8')} ${PILGRIM_LINE}`,
+      `${OVERCORE_LINES[7][0].replace('{who}', 'Rapi C8, Rapi C9 and Noah C8')} ${OVERSPEC_LINE}`,
     )
     expect(remark([], 'Extra', '', nikkes)).toBeNull()
   })
 
-  it('remark: unknown Nikke gets no Pilgrim line', () => {
+  it('remark: unknown Nikke gets no overspec line', () => {
     expect(remark([{ name: 'Ghost', copy: 12 }], 'Event', '', nikkes, () => 0)).toBe(
       OVERCORE_LINES[3][0].replace('{who}', 'Ghost C8'),
     )

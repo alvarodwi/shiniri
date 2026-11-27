@@ -72,7 +72,7 @@ describe('mock sheet with the real stores', () => {
     expect(store.remark).toContain('Rapi C8')
   })
 
-  it('level 5 + Pilgrim line: Pilgrim Perfect Mold Noah', async () => {
+  it('level 5 + overspec line: Pilgrim Perfect Mold Noah', async () => {
     const api = createMockSheetsApi(MOCK_SHEETS)
     const added = overcoredWrites(api)
     const store = useMoldsStore()
@@ -82,6 +82,6 @@ describe('mock sheet with the real stores', () => {
     await store.save(api)
     expect(store.status).toBe('saved')
     expect(added()).toEqual([[gameDay(), 'Mold', "'Noah", 'Pilgrim', '']])
-    expect(store.remark).toMatch(/Noah C8.*And she's a Pilgrim\.$/)
+    expect(store.remark).toMatch(/Noah C8.*And she's overspec\.$/)
   })
 })

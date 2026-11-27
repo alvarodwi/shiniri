@@ -6,7 +6,7 @@ import type { Nikke } from '@/services/nikke/nikkeDatabase'
 import type { SpareBodyEntry } from '@/types/spareBody'
 
 const nikke = (name: string, rarity: string, manufacturer: string) =>
-  ({ name, rarity, manufacturer }) as Nikke
+  ({ name, rarity, manufacturer, overspec: manufacturer === 'Pilgrim' }) as Nikke
 const db = [
   nikke('Modernia', 'SSR', 'Pilgrim'),
   nikke('Asuka', 'SSR', 'ABNORMAL'),

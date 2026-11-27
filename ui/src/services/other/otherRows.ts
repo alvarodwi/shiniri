@@ -8,7 +8,7 @@ import type { Cell } from '@/types/sheet'
 
 // Abnormal comes only from collab banners and gold mileage, never from Extra's sources.
 export const otherPool = (nikkes: Nikke[]): Nikke[] =>
-  ssrPool(nikkes, { pilgrim: true, abnormal: false })
+  ssrPool(nikkes, { overspec: true, abnormal: false })
 
 // Columns A-I of Other, or null while a field is missing or invalid. Only fields the type uses are
 // written, so stale form state never reaches the sheet.

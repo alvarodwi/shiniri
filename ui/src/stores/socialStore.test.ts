@@ -70,6 +70,8 @@ describe('socialStore', () => {
       'AR',
       '12',
       '',
+      '',
+      manu === 'Pilgrim' ? 'TRUE' : 'FALSE',
     ]
     api.values[DB].push(
       row('5003', 'Anis', 'SR', 'TETRA'),

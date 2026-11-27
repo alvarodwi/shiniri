@@ -5,9 +5,9 @@ import type { Cell } from '@/types/sheet'
 import { MONTHLY, MONTHS, PLATFORMS, SPENDING_TYPES } from '@/types/spending'
 import type { SpendingEntry } from '@/types/spending'
 
-// Costumes and passes exist for any SSR, collab and Pilgrim included.
+// Costumes and passes exist for any SSR, collab and overspec included.
 export const spendingPool = (nikkes: Nikke[]): Nikke[] =>
-  ssrPool(nikkes, { pilgrim: true, abnormal: true })
+  ssrPool(nikkes, { overspec: true, abnormal: true })
 
 // One logged purchase, as read back from the sheet (prices as text, for the form's inputs).
 export type Purchase = {

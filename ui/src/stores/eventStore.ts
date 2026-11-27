@@ -40,9 +40,9 @@ export const useEventStore = defineStore('event', {
   getters: {
     isDirty: (state) => isEntryDirty(state.entry, newEntry()),
     row: (state) => toRow(state.entry),
-    // Pilgrim can come out of any event banner; Abnormal only out of a collaboration one.
+    // Overspec can come out of any event banner; Abnormal only out of a collaboration one.
     pool: (state) =>
-      ssrPool(state.nikkes, { pilgrim: true, abnormal: state.entry.rateUpType === COLLAB_TYPE }),
+      ssrPool(state.nikkes, { overspec: true, abnormal: state.entry.rateUpType === COLLAB_TYPE }),
     canSave(): boolean {
       return (
         this.row !== null &&

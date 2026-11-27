@@ -19,6 +19,8 @@ const dbRow = (code: string, name: string, manufacturer: string) => [
   'AR',
   '12',
   '',
+  '',
+  manufacturer === 'Pilgrim' ? 'TRUE' : 'FALSE',
 ]
 
 function fakeApi() {

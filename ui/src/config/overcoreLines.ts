@@ -10,4 +10,4 @@ export const OVERCORE_LINES: Record<1 | 2 | 3 | 4 | 5 | 6 | 7, readonly string[]
   7: ['Gold Mileage, spent on {who}. Nobody did this to you.'],
 }
 
-export const PILGRIM_LINE = "And she's a Pilgrim."
+export const OVERSPEC_LINE = "And she's overspec."

@@ -4,15 +4,18 @@ import { ssrPool } from '@/services/nikke/nikkePool'
 import type { MoldsEntry, MoldType } from '@/types/molds'
 import type { Cell } from '@/types/sheet'
 
-const MAKERS = ['pilgrim', 'missilis', 'elysion', 'tetra']
+const MAKERS = ['missilis', 'elysion', 'tetra']
 
 export const isPerfect = (t: MoldType): boolean => t.includes('Perfect')
 
-// The SSRs a mold can give: one manufacturer's for the manufacturer molds, else the mixed pool.
+// The SSRs a mold can give: every overspec one for Pilgrim, one manufacturer's non-overspec for the
+// other manufacturer molds, else the mixed pool.
 export function moldPool(nikkes: Nikke[], t: MoldType): Nikke[] {
   const maker = t.split(' ')[0].toLowerCase()
-  if (!MAKERS.includes(maker)) return ssrPool(nikkes, { pilgrim: false, abnormal: false })
-  return nikkes.filter((n) => n.rarity === 'SSR' && n.manufacturer.toLowerCase() === maker)
+  if (maker === 'pilgrim') return nikkes.filter((n) => n.rarity === 'SSR' && n.overspec)
+  const plain = ssrPool(nikkes, { overspec: false, abnormal: false })
+  if (!MAKERS.includes(maker)) return plain
+  return plain.filter((n) => n.manufacturer.toLowerCase() === maker)
 }
 
 // Columns A-F of Molds, or null while a field is missing or invalid. ssr is the number of names, so

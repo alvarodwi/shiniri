@@ -28,9 +28,9 @@ export const useSocialStore = defineStore('social', {
   getters: {
     isDirty: (state) => isEntryDirty(state.entry, newEntry()),
     row: (state) => toRow(state.entry),
-    // totalSsr counts SSRs only. Abnormal (collab, event only) and Pilgrim (event and ordinary only)
+    // totalSsr counts SSRs only. Abnormal (collab, event only) and overspec (never social)
     // never come out of a social pull.
-    ssrNikkes: (state) => ssrPool(state.nikkes, { pilgrim: false, abnormal: false }),
+    ssrNikkes: (state) => ssrPool(state.nikkes, { overspec: false, abnormal: false }),
     canSave(): boolean {
       return (
         this.row !== null &&

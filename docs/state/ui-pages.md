@@ -60,7 +60,7 @@ Shared pieces:
 - Overcore: from copy 12 (past C7) each copy gets an `Overcore` row. The start copy comes from the sheet's
   `AllPulls` (`copy`) and `RosterLog` tabs, both read-only here. An error cell in `AllPulls`
   (`copy`) throws and aborts the save, so no row is skipped silently. `overcore.test.ts`.
-- Pools: Pilgrim and Abnormal are allowed per source (`ssrPool`): Event allows Abnormal only for a
+- Pools: overspec and Abnormal are allowed per source (`ssrPool`, from the `overspec` column, not `manufacturer`): Event allows Abnormal only for a
   collaboration banner, Social allows neither.
 - Spending: a purchase belongs to its WIB calendar day, not the game day. Prices are validated as
   whole rupiah and dollars with up to two decimals (`validIdr`, `validUsd`); separators are rejected so
@@ -68,9 +68,10 @@ Shared pieces:
 - Solo Raid damage is typed with locale separators; `parseDamage` accepts only whole groups of
   three, and `rankText` keeps two decimals at most, comma or dot.
 - Pull stores expose `isDirty` and `discard()` (see `ui-navigation.md`).
-- Pools by source: Event allows Pilgrim, and Abnormal only for the collaboration banner; Ordinary
-  allows Pilgrim, not Abnormal; Social allows neither; Spare Body Gold Mileage allows both, Silver
-  Mileage and Other allow Pilgrim only; a Union Chip gives only `LIBERATION_UNITS` (`Sin`, `Quency`,
+- Pools by source: Event allows overspec, and Abnormal only for the collaboration banner; Ordinary
+  allows overspec, not Abnormal; Social allows neither; Spare Body Gold Mileage allows both, Silver
+  Mileage and Other allow overspec but not Abnormal; the Pilgrim molds give every overspec SSR and the
+  other manufacturer molds none; a Union Chip gives only `LIBERATION_UNITS` (`Sin`, `Quency`,
   `Guilty`, `Nihilister`), by exact name (`types/spareBody.ts`). Changing the type or source prunes
   picks outside the new pool (`setRateUpType`, `setMoldType`).
 - `pulls()` (`services/gacha/pulls.ts`, shared by Event, Ordinary and Other): a blank currency is 0, gems
@@ -85,8 +86,8 @@ Shared pieces:
 - Level: `lastLevel` throws when the last cell of column A is not a number, so the page refuses to
   load. A function cell in column A is refused by the writer. The note goes on the last step row only.
 - Overcore: `findOvercores` returns nothing when RosterLog has no baseline, or the date is on or before
-  it. One remark is built from the worst level and names all the overcores in a save. A Pilgrim adds
-  `PILGRIM_LINE` and does not raise the level. Header errors from the reads name the tab.
+  it. One remark is built from the worst level and names all the overcores in a save. An overspec adds
+  `OVERSPEC_LINE` and does not raise the level. Header errors from the reads name the tab.
 - Anomaly: turning Double day off drops the edits made to runs 6 to 10. The sheet link and the
   "fix in the sheet" line are hidden below `sm` on purpose.
 - Costumes: reads `A1:Z` and finds the owner's `releaseDate` column by header text, right of column G.

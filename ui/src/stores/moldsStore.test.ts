@@ -19,6 +19,8 @@ const dbRow = (code: string, name: string, manufacturer: string) => [
   'AR',
   '12',
   '',
+  '',
+  manufacturer === 'Pilgrim' ? 'TRUE' : 'FALSE',
 ]
 
 function fakeApi() {
@@ -111,7 +113,7 @@ describe('moldsStore', () => {
     expect(data[1].rows).toEqual([['2026-11-21', 'Mold', "'Modernia", 'Pilgrim', '']])
     expect(data[2].rows[0][1]).toBe('Mold')
     expect(store.remark).toMatch(/C8/)
-    expect(store.remark).toMatch(/And she's a Pilgrim\.$/)
+    expect(store.remark).toMatch(/And she's overspec\.$/)
     expect(store.status).toBe('saved')
   })
 
