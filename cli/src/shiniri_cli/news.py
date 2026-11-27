@@ -1,5 +1,6 @@
-"""Official NIKKE news: raw responses under data/raw/json/news/ (the source of truth), a Markdown copy of
-each under data/parsed/news/, and each costume's first release date read from the patch notes."""
+"""Official NIKKE patch notes and developer's notes: raw responses under data/raw/json/news/ (the source of
+truth), a Markdown copy of each under data/parsed/news/, and each costume's first release date read from the
+patch notes. Other news is not downloaded."""
 
 import asyncio
 import re
@@ -30,7 +31,10 @@ MONTH = (
     r"\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?"
     r"|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b\.?"
 )
-PATCH_NOTE = re.compile(rf"\s*update on {MONTH} (\d{{1,2}})")
+# "Update on <Month Day>" with whatever tail, plus the 2022 note announced as "Notice on Server Update on ..."
+PATCH_NOTE = re.compile(rf"\s*(?:notice on server )?update on {MONTH} (\d{{1,2}})")
+DEV_NOTE = re.compile(r"developer.?s? notes?\b")
+TITLE_MONTH = re.compile(rf"{MONTH} (\d{{4}})")
 # The first date after "duration:" or "opening time:", never the end date after " to ".
 START = re.compile(
     rf"(?:duration|opening time) ?:(?:(?! to ).){{0,60}}?{MONTH} (\d{{1,2}})(?!\d)(?:, (\d{{4}}))?"
@@ -48,6 +52,65 @@ def _markdown(article: dict) -> str:
     return f"# {article.get('title', '')}\n\n{markdownify(html, heading_style='ATX')}"
 
 
+def _title(article: dict) -> str:
+    return " ".join(article["title"].split())
+
+
+def _published(article: dict) -> date:
+    return datetime.fromtimestamp(int(article["pub_timestamp"])).date()
+
+
+def wanted(title: str) -> bool:
+    title = " ".join(title.split()).lower()
+    return bool(PATCH_NOTE.match(title) or DEV_NOTE.search(title))
+
+
+def update_date(article: dict) -> date | None:
+    """The day a patch note is for; None for anything else."""
+    if m := PATCH_NOTE.match(_title(article).lower()):
+        try:
+            return _date(m[1], m[2], None, _published(article))
+        except ValueError:  # an impossible date such as June 31
+            pass
+    return None
+
+
+def markdown_names(articles: list[dict]) -> dict[str, str]:
+    """{content_id: file name}: "<update date> <title>.md" for a patch note, "Developer note - <Month Year>.md"
+    for a developer's note, with " (2)" on a repeat in publish order. Others get none."""
+    names, used = {}, {}
+    for a in sorted(articles, key=lambda a: (int(a["pub_timestamp"]), a["content_id"])):
+        if day := update_date(a):
+            stem = f"{day} {_title(a)}"
+        elif DEV_NOTE.search(_title(a).lower()):
+            m = TITLE_MONTH.search(_title(a).lower())
+            month = (
+                date(int(m[2]), MONTHS.index(m[1][:3]) + 1, 1) if m else _published(a)
+            )
+            stem = f"Developer note - {month:%B %Y}"
+        else:
+            continue
+        stem = re.sub(r'[\\/:*?"<>|]', "-", stem)  # the title is the server's text
+        used[stem] = n = used.get(stem, 0) + 1
+        names[a["content_id"]] = f"{stem} ({n}).md" if n > 1 else f"{stem}.md"
+    return names
+
+
+def _write_markdown(store: Store) -> None:
+    """Rebuild data/parsed/news/ from the stored files; any other .md there is removed."""
+    articles = {a["content_id"]: a for a in stored_articles(store)}
+    folder = markdown_dir(store)
+    kept = set()
+    for id_, name in markdown_names(list(articles.values())).items():
+        path, text = folder / name, _markdown(articles[id_])
+        kept.add(name)
+        if not path.exists() or path.read_text(encoding="utf-8") != text:
+            atomic_write(path, text)
+    for path in folder.glob("*.md"):
+        if path.name not in kept:
+            path.unlink()
+
+
 def stored_articles(store: Store) -> list[dict]:
     paths = sorted((store.raw_dir / "news").glob("*.json"))
     return [store.load_raw(f"news/{p.stem}") for p in paths]
@@ -62,8 +125,9 @@ async def _post(client: httpx.AsyncClient, name: str, body: dict) -> dict:
     return answer["data"]
 
 
-async def _listed_ids(client: httpx.AsyncClient, pause: float) -> list[str]:
-    ids: dict[str, None] = {}
+async def _listed(client: httpx.AsyncClient, pause: float) -> dict[str, str]:
+    """{content_id: title} across the three labels."""
+    found: dict[str, str] = {}
     for primary, secondary in LABELS:
         offset, total = 0, 1
         while offset < total:
@@ -83,11 +147,11 @@ async def _listed_ids(client: httpx.AsyncClient, pause: float) -> list[str]:
             items = data.get("info_content") or []
             if not items:
                 break
-            ids.update((str(i["content_id"]), None) for i in items)
+            found.update((str(i["content_id"]), str(i.get("title", ""))) for i in items)
             offset += len(items)
             total = int(data["total_num"])
             await asyncio.sleep(pause)
-    return list(ids)
+    return found
 
 
 async def update(
@@ -98,11 +162,16 @@ async def update(
     pause: float = 0.3,
     progress=None,
 ) -> tuple[int, int]:
-    """Download the articles not stored yet (all when `force`); (saved, failed). A failed list call raises."""
-    ids = await _listed_ids(client, pause)
-    if not ids:
+    """Download the wanted articles not stored yet (all of them when `force`); (saved, failed). A failed list
+    call raises."""
+    listed = await _listed(client, pause)
+    if not listed:
         raise ValueError("the news list is empty")
-    todo = [i for i in ids if force or store.load_raw(f"news/{i}") is None]
+    todo = [
+        i
+        for i, title in listed.items()
+        if wanted(title) and (force or store.load_raw(f"news/{i}") is None)
+    ]
     saved = failed = 0
     for n, id_ in enumerate(todo, 1):
         try:
@@ -110,6 +179,7 @@ async def update(
                 raise ValueError(f"bad content id {id_!r}")
             data = await _post(client, "GetContentInfoById", {"father_content_id": id_})
             int(data["pub_timestamp"]), data["title"], data["content"]
+            data["content_id"] = id_
             store.save_raw(f"news/{id_}", data)
             saved += 1
         except httpx.HTTPError, ValueError, KeyError, TypeError:
@@ -117,11 +187,7 @@ async def update(
         if progress:
             progress(n, len(todo))
         await asyncio.sleep(pause)
-    # Converted from the stored files, so an interrupted run is caught up here.
-    for path in (store.raw_dir / "news").glob("*.json"):
-        md = markdown_dir(store) / f"{path.stem}.md"
-        if force or not md.exists() or md.stat().st_mtime < path.stat().st_mtime:
-            atomic_write(md, _markdown(store.load_raw(f"news/{path.stem}")))
+    _write_markdown(store)  # from the stored files, so an interrupted run is caught up here
     return saved, failed
 
 
@@ -178,12 +244,14 @@ def _released(text: str, mention: re.Pattern, noted: date) -> date:
 def release_dates(
     articles: list[dict], costumes: list[tuple[int, str, str]]
 ) -> dict[int, tuple[str, str]]:
-    """(costumeId, nikke, costumeName) -> {costumeId: (releaseDate, articleTitle)}. The first article with
-    both names on one line decides. Blank when it is not a patch note, or does not announce the costume
-    (a bug fix, say): any later announcement would be a rerun."""
-    docs = []
-    for a in sorted(articles, key=lambda a: int(a["pub_timestamp"])):
-        docs.append((a, _norm(_markdown(a))))
+    """(costumeId, nikke, costumeName) -> {costumeId: (releaseDate, articleTitle)}. The first patch note with
+    both names on one line decides. Blank when it does not announce the costume (a bug fix, say): any later
+    announcement would be a rerun."""
+    docs = [
+        (a, noted, _norm(_markdown(a)))
+        for a in sorted(articles, key=lambda a: int(a["pub_timestamp"]))
+        if (noted := update_date(a))
+    ]
     out = {}
     for id_, nikke, costume in costumes:
         out[id_] = ("", "")
@@ -192,21 +260,18 @@ def release_dates(
         mention, needle = _mention(nikke, costume), _norm(costume)
         who = re.compile(rf"(?<!\w){re.escape(_head(_norm(nikke)))}(?!\w)")
         what = re.compile(rf"(?<!\w){re.escape(needle)}s?(?!\w)")
-        for a, text in docs:
+        for a, noted, text in docs:
             if needle not in text or not any(
                 what.search(line) and who.search(line) for line in text.split("\n")
             ):
                 continue
-            title = " ".join(a["title"].split())
             released = ""
-            if (m := PATCH_NOTE.match(title.lower())) and mention.search(text):
-                published = datetime.fromtimestamp(int(a["pub_timestamp"])).date()
+            if mention.search(text):
                 try:
-                    noted = _date(m[1], m[2], None, published)
                     released = _released(text, mention, noted).isoformat()
                 except ValueError:  # an impossible date such as June 31
                     pass
-            out[id_] = (released, title)
+            out[id_] = (released, _title(a))
             break
     return out
 

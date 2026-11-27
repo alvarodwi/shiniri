@@ -66,12 +66,51 @@ def test_year_rolls_over():
     assert date_of(notes)[0] == "2026-01-01"
 
 
-def test_first_mention_outside_patch_note_is_blank():
+def test_only_patch_notes_count_as_a_mention():
     notes = [
         article("Developer's Note", LISTED, "2026-03-01", "d"),
         article("Update on March 19", LISTED),
     ]
-    assert date_of(notes) == ("", "Developer's Note")
+    assert date_of(notes) == ("2026-03-19", "Update on March 19")
+
+
+@pytest.mark.parametrize(
+    "title, kept",
+    [
+        ("Update on November 19", True),
+        (" Update on December 7", True),
+        ("Update on March 30 [Updated on 7 April]", True),
+        ("Notice on Server Update on November 10", True),
+        ("July 2023 2nd Developer’s Note", True),
+        ("Developer's Notes", True),
+        ("Version Update on February 22", False),
+        ("February 5 Update Notice", False),
+        ("Optimization on December 8", False),
+        ("Apology and Update on Improvements", False),
+    ],
+)
+def test_wanted(title, kept):
+    assert news.wanted(title) is kept
+
+
+def test_markdown_names():
+    notes = [
+        article("Update on March 15", "", "2023-03-15", "b"),
+        article("Update on March 15", "", "2023-03-13", "a"),
+        article("July 2023 Developer's Note", "", "2023-07-13", "c"),
+        article("July 2023 2nd Developer’s Note", "", "2023-07-31", "d"),
+        article("3-6 Developer's Note", "", "2023-03-06", "e"),
+        article("Update on January 1/2", "", "2025-12-29", "f"),
+        article("Notice", "", "2025-12-29", "g"),
+    ]
+    assert news.markdown_names(notes) == {
+        "a": "2023-03-15 Update on March 15.md",
+        "b": "2023-03-15 Update on March 15 (2).md",
+        "c": "Developer note - July 2023.md",
+        "d": "Developer note - July 2023 (2).md",
+        "e": "Developer note - March 2023.md",
+        "f": "2026-01-01 Update on January 1-2.md",
+    }
 
 
 def test_an_earlier_unclear_mention_blanks_the_date():
@@ -110,7 +149,9 @@ def feed(details, calls, broken=()):
             page = list(details)[body["offset"] : body["offset"] + 1]  # one per page
             data = {
                 "total_num": str(len(details)),
-                "info_content": [{"content_id": i} for i in page],
+                "info_content": [
+                    {"content_id": i, "title": details[i]["title"]} for i in page
+                ],
             }
         else:
             id_ = body["father_content_id"]
@@ -129,22 +170,28 @@ def update(store, client, **kw):
 
 DETAILS = {
     "a1": article("Update on March 19", LISTED, id_="a1"),
-    "b2": article("Notice", p("Hello <strong>there</strong>"), id_="b2"),
+    "b2": article("Developer's Note", p("Hello <strong>there</strong>"), id_="b2"),
+    "c3": article("Sweepstakes Rules", p("No"), id_="c3"),
 }
 
 
 def test_update_downloads_unseen_once_and_writes_markdown(store):
     calls = []
     assert update(store, feed(DETAILS, calls)) == (2, 0)
-    assert sorted(calls) == ["a1", "b2"]  # three labels, one download each
-    assert "**there**" in (news.markdown_dir(store) / "b2.md").read_text("utf-8")
+    assert sorted(calls) == ["a1", "b2"]  # once across three labels, no other news
+    folder = news.markdown_dir(store)
+    assert sorted(p.name for p in folder.iterdir()) == [
+        "2026-03-19 Update on March 19.md",
+        "Developer note - March 2026.md",
+    ]
+    assert "**there**" in (folder / "Developer note - March 2026.md").read_text("utf-8")
     assert update(store, feed(DETAILS, calls)) == (0, 0) and len(calls) == 2
     assert update(store, feed(DETAILS, calls), force=True) == (2, 0)
 
 
 def test_update_counts_a_failed_article_and_keeps_the_rest(store):
     assert update(store, feed(DETAILS, [], broken={"a1"})) == (1, 1)
-    assert [a["title"] for a in news.stored_articles(store)] == ["Notice"]
+    assert [a["title"] for a in news.stored_articles(store)] == ["Developer's Note"]
 
 
 def test_update_rejects_an_id_that_is_not_a_file_name(store):

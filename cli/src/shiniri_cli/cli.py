@@ -32,7 +32,7 @@ COMMANDS: dict[str, tuple[str, str, list[str]]] = {
     "sync": ("sync", "re-download CDN reference files", ["sync"]),
     "news": (
         "news [--force]",
-        "archive official news and write costume release dates (--force re-downloads all)",
+        "archive patch and developer's notes, write costume release dates (--force re-downloads)",
         ["news", "news --force"],
     ),
     "cookie": ("cookie", "paste your Cookie header", ["cookie"]),

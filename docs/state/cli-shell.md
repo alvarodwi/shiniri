@@ -58,14 +58,17 @@ derived files under `cli/data/`, and the Union Raid fetch and query code that bo
   quick-cleared stage has no lineup to fetch. Code `300001` (`AUTH_CODE`) is an auth stop, never
   "uncleared".
 - Store files are written through `atomic_write`.
-- `news` downloads only ids it doesn't have (`--force`: all), once across the three labels, 0.3 s apart.
-  Raw responses are the source of truth; the Markdown is rebuilt from them. Any failed article means no
+- `news` keeps only patch notes (title starts `Update on <Month Day>`, or the 2022 `Notice on Server Update
+  on November 10`) and developer's notes, picked by the list titles (`wanted`). It downloads the ones it
+  doesn't have (`--force`: all), once across the three labels, 0.3 s apart. Any failed article means no
   CSV, because a gap could make a rerun look like a first release. `test_news.py`.
-- `releaseDate` is a costume's first release. The first article (by publish time) with the NIKKE's and the
-  costume's names on one line decides. It must be an "Update on <Month Day>" note that names them
-  together ("Nikke - Costume", "Nikke's costume, Costume"), else blank. A later start date stated in a
-  numbered section naming them wins over the title date. Year comes from the publish time.
-  `test_news.py`.
+- Raw responses (by content id) are the source of truth. `data/parsed/news/` is rebuilt from them as
+  `<update date> <title>.md` and `Developer note - <Month Year>.md`, ` (2)` on a repeat; any other `.md`
+  there is deleted (`markdown_names`).
+- `releaseDate` is a costume's first release. The first patch note (by publish time) with the NIKKE's and
+  the costume's names on one line decides. It must name them together ("Nikke - Costume", "Nikke's
+  costume, Costume"), else blank. A later start date stated in a numbered section naming them wins over
+  the title date. Year comes from the publish time. `test_news.py`.
 
 ## Owns
 
