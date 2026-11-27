@@ -10,6 +10,16 @@ A NIKKE obtainable from the gacha only during particular banners. A **collaborat
 **Overspec NIKKE**:
 Any Pilgrim NIKKE, or one of the few from another manufacturer that the game ranks with them, such as `Rapi: Red Hood` or `Anis: Star`.
 
+**Release date**:
+The day a NIKKE or costume first became obtainable: the start of its own banner, event or Liberation batch. This can be later than the date of the patch note that announces it. A rerun never changes it.
+_Avoid_: Update date, patch date
+
+**Free NIKKE**:
+A NIKKE given out by an event instead of recruited on a banner, such as `Kilo` or `Rapunzel: Sanctuary`.
+
+**Liberation NIKKE**:
+A NIKKE obtained through Liberation missions rather than recruitment. They arrive in batches: `Guilty`, `Sin` and `Quency` first, then `Nihilister`.
+
 ## Furnace
 
 **Furnace attempt**:
