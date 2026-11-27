@@ -130,11 +130,11 @@ async def sync_costume_database(
         rows, notes = costume_rows(store, names, equipped)
         have = int_ids(column_a(api, TAB))
         rows = [r for r in rows if r[0] not in have]
-        dated = ""
+        date_note = ""
         if rows:
-            dated = await _add_release_dates(store, rows)
+            date_note = await _add_release_dates(store, rows)
             write_rows(api, TAB, HEADERS, rows, form=FORM, timestamp=timestamp)
-        return f"{TAB} +{len(rows)}{dated}" + (
+        return f"{TAB} +{len(rows)}{date_note}" + (
             f" (skipped {', '.join(notes)})" if notes else ""
         )
     except SheetsError as e:

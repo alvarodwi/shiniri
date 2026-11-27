@@ -3,6 +3,7 @@ import json
 from datetime import UTC, datetime
 
 import httpx
+import pytest
 
 from shiniri_cli import news
 
@@ -37,6 +38,19 @@ def test_stated_start_date_wins():
         "* Sale duration: From April 1, 2026 to April 30, 2026",
     )
     assert date_of([article("Update on March 19", body)])[0] == "2026-03-26"
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "Sale duration: Jan 1, 2023 to Jan 31, 2023",
+        "Opening Time: from 00:00:00, January 1, 2023",
+    ],
+)
+def test_other_ways_of_stating_the_start(line):
+    body = LISTED + p("9.3 PUNKY STREET PASS", line, "Viper - Punky Street")
+    notes = [article("Update on December 29", body, "2022-12-25")]
+    assert date_of(notes)[0] == "2023-01-01"
 
 
 def test_first_release_not_rerun():

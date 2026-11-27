@@ -140,9 +140,10 @@ One-time setup:
    overclockLatest synchroLevel synchroSlots outpostLevel recyclePersonal recycleAttacker
    recycleDefender recycleSupporter recycleElysion recycleMissilis recycleTetra recyclePilgrim
    recycleAbnormal memoirs callLogs bgm data` (47 columns, A to AU)
-7. If you set `gacha_spreadsheet_id`, add two tabs to that sheet, each with this header row, in
+7. If you set `gacha_spreadsheet_id`, add three tabs to that sheet, each with this header row, in
    order: `NikkeDatabase` with `nameCode name rarity manufacturer class burst element weapon
-   resourceId releaseDate` (10 columns, A to J), and `AuditLog` with `savedAt form ranges rows`.
+   resourceId releaseDate` (10 columns, A to J), `CostumeDatabase` with `costumeId nikke costumeName
+   grade source image owned releaseDate` (8 columns, A to H), and `AuditLog` with `savedAt form ranges rows`.
 8. Start it with `./start.sh`, which runs `watch` in the background and refuses to start a second
    copy. Stop it with `./stop.sh`. The log is `data/watch.log`, linked to the newest of the last
    5 session logs in `data/logs/`. After a reboot, run `./start.sh` again.

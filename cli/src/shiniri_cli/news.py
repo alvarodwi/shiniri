@@ -24,14 +24,16 @@ HEADERS = {
 }
 LABELS = ((308, 494), (309, 496), (309, 892))  # IMPORTANT, NEWS, NOTICE
 PAGE = 50
-MONTHS = (
-    "january february march april may june july august september october november december"
-).split()
-MONTH = f"({'|'.join(MONTHS)})"
+MONTHS = "jan feb mar apr may jun jul aug sep oct nov dec".split()
+# Full or short: "January", "Jan", "Jan.", "Sept"
+MONTH = (
+    r"\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?"
+    r"|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b\.?"
+)
 PATCH_NOTE = re.compile(rf"\s*update on {MONTH} (\d{{1,2}})")
-# The first date after "duration:", never the end date after " to ".
+# The first date after "duration:" or "opening time:", never the end date after " to ".
 START = re.compile(
-    rf"duration ?:(?:(?! to ).){{0,60}}?\b{MONTH} (\d{{1,2}})(?!\d)(?:, (\d{{4}}))?"
+    rf"(?:duration|opening time) ?:(?:(?! to ).){{0,60}}?{MONTH} (\d{{1,2}})(?!\d)(?:, (\d{{4}}))?"
 )
 MISSION_START = re.compile(r"update at \d\d:\d\d (\d\d)/(\d\d)")  # 2022 notes
 HEADING = re.compile(r"(?m)^(?=\d{1,2}\.)")
@@ -130,11 +132,16 @@ def _norm(text: str) -> str:
     return "\n".join(" ".join(line.split()) for line in text.split("\n") if line.strip())
 
 
+def _head(name: str) -> str:
+    """"asuka" of "asuka: wille", "queen" of "queen (makoto)"."""
+    return re.split(r"(?=:| \()", name)[0]
+
+
 def _mention(nikke: str, costume: str) -> re.Pattern:
     """The NIKKE and the costume named together: "Nikke - Costume" or "Nikke's limited costume, Costume".
     The notes add surnames the game data lacks ("Jill Valentine", "Asuka Shikinami Langley: Wille")."""
     name, costume = _norm(nikke), _norm(costume)
-    head = re.split(r"(?=:| \()", name)[0]
+    head = _head(name)
     # "Queen (Makoto)" is "Queen (Makoto Niijima)" in the notes
     tail = re.escape(name[len(head) :]).replace(r"\)", r"(?: [a-z]+)?\)")
     who = rf"(?<!\w){re.escape(head)}(?: [a-z]+){{0,2}}?{tail}"
@@ -145,7 +152,7 @@ def _mention(nikke: str, costume: str) -> re.Pattern:
 
 
 def _date(month: str | int, day: str, year: str | None, near: date) -> date:
-    month = month if isinstance(month, int) else MONTHS.index(month) + 1
+    month = month if isinstance(month, int) else MONTHS.index(month[:3]) + 1
     if year:
         return date(int(year), month, int(day))
     # A December note can announce a January date, and the other way round.
@@ -183,7 +190,7 @@ def release_dates(
         if not nikke or not costume:
             continue
         mention, needle = _mention(nikke, costume), _norm(costume)
-        who = re.compile(rf"(?<!\w){re.escape(re.split(r'(?=:| \()', _norm(nikke))[0])}(?!\w)")
+        who = re.compile(rf"(?<!\w){re.escape(_head(_norm(nikke)))}(?!\w)")
         what = re.compile(rf"(?<!\w){re.escape(needle)}s?(?!\w)")
         for a, text in docs:
             if needle not in text or not any(
