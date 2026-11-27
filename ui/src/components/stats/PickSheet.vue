@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 
+import SearchList from '@/components/stats/SearchList.vue'
 import { CATEGORIES, FACTS } from '@/services/stats/facts'
 import { usePickerStore } from '@/stores/pickerStore'
 import { useStatsStore } from '@/stores/statsStore'
@@ -9,14 +10,7 @@ const stats = useStatsStore()
 const store = usePickerStore()
 const categories = CATEGORIES.filter((c) => FACTS.some((f) => f.category === c))
 const facts = computed(() => FACTS.filter((f) => !store.category || f.category === store.category))
-// Filter steps read the chosen fact's loaded card.
-const filter = computed(() => {
-  const c = stats.card
-  const step = store.sheet?.step
-  if (c.status === 'idle' || !step) return null
-  const f = c.fact.filters?.find((x) => x.id === step)
-  return f ? { ...f, options: 'options' in c ? (c.options[f.id] ?? []) : [] } : null
-})
+const pickTitle = (title: string) => store.pickFact(facts.value.find((f) => f.title === title)) // titles are unique per category
 const loading = computed(() => stats.card.status === 'loading')
 // Esc only fires from inside the dialog, so focus it on open and on every step (the clicked
 // button is replaced), and hand focus back to the opener on close.
@@ -56,13 +50,7 @@ const btn = 'btn-line text-left'
     >
       <div class="flex items-center justify-between">
         <h3 class="font-semibold">
-          {{
-            store.sheet.step === 'category'
-              ? 'Category'
-              : store.sheet.step === 'fact'
-                ? 'Fact'
-                : (filter?.label ?? 'Filter')
-          }}
+          {{ store.sheet.step === 'category' ? 'Category' : 'Fact' }}
         </h3>
         <button type="button" :class="btn" @click="store.closePicker()">Close</button>
       </div>
@@ -79,29 +67,9 @@ const btn = 'btn-line text-left'
           {{ c }}
         </button>
       </template>
-      <template v-else-if="store.sheet.step === 'fact'">
+      <template v-else>
         <button type="button" :class="btn" @click="store.pickFact()">Random</button>
-        <button
-          v-for="f in facts"
-          :key="f.id"
-          type="button"
-          :class="btn"
-          @click="store.pickFact(f)"
-        >
-          {{ f.title }}
-        </button>
-      </template>
-      <template v-else-if="filter">
-        <button type="button" :class="btn" @click="store.pickFilter(filter.id)">Random</button>
-        <button
-          v-for="o in filter.options"
-          :key="o"
-          type="button"
-          :class="btn"
-          @click="store.pickFilter(filter.id, o)"
-        >
-          {{ o }}
-        </button>
+        <SearchList :options="facts.map((f) => f.title)" label="facts" @pick="pickTitle" />
       </template>
     </div>
   </div>

@@ -23,10 +23,11 @@ This doc does not list the facts. `FACTS` in `ui/src/services/stats/facts.ts` is
 - `ui/src/services/stats/loader.ts`: `createLoader()`, the header-and-column reads and the cache.
   `roll.ts`: `rollValues`, the random pick of every filter. Both have tests beside them.
 - `ui/src/stores/statsStore.ts`: `useStatsStore`, the card (`show`, `retry`, `setFilter`, `roll`,
-  `reset`). `ui/src/stores/pickerStore.ts`: `usePickerStore`, the pick sheet. Each has a test file.
+  `reset`). `ui/src/stores/pickerStore.ts`: `usePickerStore`, the pick sheet and the card's filter panel. Each has a test file.
   The picker imports the card store, never the other way round.
 - `ui/src/pages/Stats.vue` renders the card. `ui/src/components/stats/PickSheet.vue` is the bottom
-  sheet for "Pick a fact". The route is `/stats` (see `ui-navigation.md`).
+  sheet for "Pick a fact". `FilterPanel.vue` edits one filter on the card, with
+  `DateRangeInput.vue` or `SearchList.vue` inside. The route is `/stats` (see `ui-navigation.md`).
 
 ## How a fact is defined
 
@@ -81,25 +82,32 @@ A new tab or header is a sheet change the owner makes by hand. Say so when a fac
 `card` is one of `idle`, `loading`, `pending`, `ready`, `empty`, `error`.
 
 - `pending`: the tab is loaded but not every filter is chosen. The card shows its filter chips
-  (`Label: …` for an unchosen one) and no answer. The options themselves appear only in the pick
-  sheet. Chips show only on cards that carry `options` (`pending`, `ready`, `empty`), not on
+  (`Label: …` for an unchosen one) and no answer. Chips show only on cards that carry `options` (`pending`, `ready`, `empty`), not on
   `loading` or `error`.
 - `ready` carries the `answer`. `empty` is a `null` answer ("No answer."). `0` is `ready`.
 - `error` carries a message. `show` catches any throw: a failed read, a missing header
   (`Tab X has no header "y".`), an unknown range preset. The error stays on that card only. The
   card offers Retry (`retry`), which calls `show` again with the same values and the same pick
   function, so a failed random roll picks its filters again.
-- Any card that is not loading has a Shuffle button, which calls `roll()` (all categories).
+- Any card that is not loading has a Shuffle button, which calls `picker.roll()` (all categories).
 - Random (`roll`) picks a fact, then picks every filter from its real options, ignoring the
   category. It never re-rolls on a `0` or an empty card. A filter with no options is left unchosen.
-- The pick sheet is a store-held `sheet.step`: `category`, `fact`, then one step per unchosen
-  filter. Each step has a Random option. A category only limits the fact step. Choosing a fact loads
-  its tab, so derived options exist for the filter steps. The sheet closes on the card, also when
-  the load failed. A filter chip calls `editFilter` to reopen the sheet at that step.
-  A double tap on a fact while loading is ignored.
-  The sheet focuses its dialog on open and on each step so Esc closes it, and returns focus to
-  the opener on close. There is no focus trap.
-- `Stats.vue` calls `reset()` (card back to `idle`) and `closePicker()` on unmount, so nothing carries
+- The pick sheet is a store-held `sheet.step`: `category`, then `fact`. Each step has a Random
+  option. A category only limits the fact step. Choosing a fact loads its tab, so derived options
+  exist for the filters, then the sheet closes, also when the load failed. A double tap on a fact
+  while loading is ignored. The sheet focuses its dialog on open and on each step so Esc closes it,
+  and returns focus to the opener on close. There is no focus trap.
+- Filters are edited on the card. `openFilter` is the filter whose panel shows: by itself the first
+  unchosen one, else the chip the viewer tapped, or none after Close. A first choice moves on to the
+  next unchosen filter, a change closes the panel, and every choice applies at once. The answer is
+  hidden while a panel is open. The panel has Random and Close; Esc closes it. `picker.roll()` is
+  the page's Shuffle: it forgets the panel state, then calls `stats.roll()`.
+- A list over 12 options (a filter's, or a category's fact titles) gets a search box above a
+  two-column scrolling grid (`SearchList`).
+- A Date range panel shows `any period`, Quick, Years and Custom. The From and To fields show the
+  current choice (`dateFields`), To never past today; `Use these dates` needs both. A custom value's
+  chip text comes from `chipText`.
+- `Stats.vue` calls `reset()` (card back to `idle`) and `picker.reset()` on unmount, so nothing carries
   between visits.
 
 ## Filter text and the Date range

@@ -255,8 +255,11 @@ A group of facts about one subject the viewer can choose from before choosing a 
 _Avoid_: Section, topic
 
 **Pick sheet**:
-The bottom sheet where the viewer builds a card: first a category, then a fact, then each filter not yet chosen. Every step also offers Random.
+The bottom sheet where the viewer chooses what to show: first a category, then a fact. Every step also offers Random. It ends at the fact.
 _Avoid_: Picker, modal, drawer
+
+**Filter panel**:
+The editor of one filter, on the card and set apart from it. It opens for each unchosen filter in turn, and from that filter's chip.
 
 **Roll**:
 Choosing a fact and every one of its filters at random, from all categories, then showing the card. A roll never repeats on a zero or an empty answer.

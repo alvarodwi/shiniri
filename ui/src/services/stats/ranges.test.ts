@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
 import { fillQuestion } from './facts'
-import { ANY_PERIOD, RANGE_PRESETS, customRange, dateRange, inRange } from './ranges'
+import {
+  ANY_PERIOD,
+  RANGE_PRESETS,
+  chipText,
+  customRange,
+  dateFields,
+  dateRange,
+  inRange,
+} from './ranges'
 import { rollValues } from './roll'
 
 const TODAY = '2026-11-25'
@@ -36,6 +44,27 @@ describe('customRange', () => {
   it('leaves the end open when To is today', () => {
     expect(customRange('2025-01-01', TODAY, TODAY)).toBe('2025-01-01..')
     expect(customRange('2025-01-01', '2025-02-01', TODAY)).toBe('2025-01-01..2025-02-01')
+  })
+})
+
+describe('dateFields', () => {
+  it('starts with To on today', () => {
+    expect(dateFields(undefined, TODAY)).toEqual(['', TODAY])
+    expect(dateFields(ANY_PERIOD, TODAY)).toEqual(['', TODAY])
+  })
+  it('follows a preset, year or custom range, never past today', () => {
+    expect(dateFields('last week', TODAY)).toEqual(['2026-11-16', '2026-11-22'])
+    expect(dateFields('this week', TODAY)).toEqual(['2026-11-23', TODAY])
+    expect(dateFields('in 2025', TODAY)).toEqual(['2025-01-01', '2025-12-31'])
+    expect(dateFields('2025-02-01..', TODAY)).toEqual(['2025-02-01', TODAY])
+  })
+})
+
+describe('chipText', () => {
+  it('words a custom range and keeps every other option', () => {
+    expect(chipText(ANY_PERIOD)).toBe(ANY_PERIOD)
+    expect(chipText('in 2025')).toBe('in 2025')
+    expect(chipText('2024-08-22..')).toBe('since 22 Aug 2024')
   })
 })
 

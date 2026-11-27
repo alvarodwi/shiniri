@@ -42,7 +42,10 @@ describe('pickerStore', () => {
     const inB = fact({ id: 'b', category: 'Raids', compute: () => '5' })
     const facts = [inA, inB]
 
-    it('walks category, fact, filter, then ends on a card', async () => {
+    const second = { id: 'g', label: 'G', options: ['x', 'y'] }
+    const two = fact({ id: 't', filters: [filter, second], compute: (_c, v) => v.f + v.g })
+
+    it('ends the sheet at the fact, then opens each unchosen filter in turn', async () => {
       const api = fakeApi()
       const s = usePickerStore()
       const stats = useStatsStore()
@@ -50,11 +53,14 @@ describe('pickerStore', () => {
       expect(s.sheet).toEqual({ step: 'category' })
       s.pickCategory('Gear')
       expect(s.sheet).toEqual({ step: 'fact' })
-      await s.pickFact(inA, api)
-      expect(s.sheet).toEqual({ step: 'f' })
-      await s.pickFilter('f', '2', api)
+      await s.pickFact(two, api)
       expect(s.sheet).toBeNull()
-      expect(stats.card).toMatchObject({ status: 'ready', answer: '2' })
+      expect(s.openFilter).toBe('f')
+      await s.pickFilter('f', '2', api)
+      expect(s.openFilter).toBe('g')
+      await s.pickFilter('g', 'x', api)
+      expect(s.openFilter).toBeNull()
+      expect(stats.card).toMatchObject({ status: 'ready', answer: '2x' })
     })
     it('ends on a card with all steps random', async () => {
       const s = usePickerStore()
@@ -64,8 +70,40 @@ describe('pickerStore', () => {
       s.pickCategory(undefined, facts, () => 0)
       await s.pickFact(undefined, api, facts, () => 0)
       await s.pickFilter('f', undefined, api, () => 0)
-      expect(s.sheet).toBeNull()
+      expect(s.openFilter).toBeNull()
       expect(stats.card).toMatchObject({ status: 'ready', values: { f: '1' }, answer: '1' })
+    })
+    it('stays closed after Close until a chip reopens it', async () => {
+      const api = fakeApi()
+      const s = usePickerStore()
+      await s.pickFact(two, api)
+      s.closeFilter()
+      expect(s.openFilter).toBeNull()
+      s.toggleFilter('g')
+      expect(s.openFilter).toBe('g')
+      s.toggleFilter('g')
+      expect(s.openFilter).toBeNull()
+    })
+    it('a new fact or a roll forgets the closed or reopened panel', async () => {
+      const api = fakeApi()
+      const s = usePickerStore()
+      await s.pickFact(two, api)
+      s.closeFilter()
+      await s.pickFact(two, api)
+      expect(s.openFilter).toBe('f')
+      s.toggleFilter('g')
+      await s.roll(api, [inB])
+      expect(s.openFilter).toBeNull()
+    })
+    it('opens the first filter after retrying a failed load', async () => {
+      const api = fakeApi()
+      api.getValues.mockRejectedValueOnce(new Error('boom'))
+      const s = usePickerStore()
+      const stats = useStatsStore()
+      await s.pickFact(inA, api)
+      expect(s.openFilter).toBeNull()
+      await stats.retry(api)
+      expect(s.openFilter).toBe('f')
     })
     it('random category limits the fact step to that category', async () => {
       const s = usePickerStore()
@@ -76,7 +114,7 @@ describe('pickerStore', () => {
       await s.pickFact(undefined, fakeApi(), facts, () => 0)
       expect(stats.card).toMatchObject({ fact: { id: 'b' }, status: 'ready', answer: '5' })
     })
-    it('a fact without filters closes the sheet on its card', async () => {
+    it('a fact without filters shows its answer', async () => {
       const s = usePickerStore()
       const stats = useStatsStore()
       s.openPicker()
@@ -95,15 +133,16 @@ describe('pickerStore', () => {
       expect(api.getValues).toHaveBeenCalled()
       expect(stats.card).toMatchObject({ status: 'pending', options: { f: ['1', '2', '0'] } })
     })
-    it('a chip reopens the sheet at its step; changing it recomputes', async () => {
+    it('a chip reopens a chosen filter; changing it recomputes and closes', async () => {
       const api = fakeApi()
       const s = usePickerStore()
       const stats = useStatsStore()
       await stats.show(inA, api, { f: '1' })
-      s.editFilter('f')
-      expect(s.sheet).toEqual({ step: 'f' })
+      expect(s.openFilter).toBeNull()
+      s.toggleFilter('f')
+      expect(s.openFilter).toBe('f')
       await s.pickFilter('f', '2', api)
-      expect(s.sheet).toBeNull()
+      expect(s.openFilter).toBeNull()
       expect(stats.card).toMatchObject({ status: 'ready', answer: '2' })
     })
     it('a roll ignores the picked category', async () => {

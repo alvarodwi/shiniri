@@ -44,6 +44,13 @@ function bounds(range: string, today: string): [string, string] {
   return from ? [from, to ?? today] : presetBounds(range, today)
 }
 
+// What the Custom from/to fields show for the current choice; `to` never goes past today.
+export function dateFields(range: string | undefined, today: string): [string, string] {
+  if (range === undefined || range === ANY_PERIOD) return ['', today]
+  const [from, to] = bounds(range, today)
+  return [from, to < today ? to : today]
+}
+
 // Predicate over a raw date cell. Blank cells are never in range, "any period" included.
 export function inRange(range: string, today: string): (cell: unknown) => boolean {
   const [from, to] = bounds(range, today)
@@ -59,6 +66,9 @@ function rangeText(range: string): string {
   if (!from) return range
   return to ? `from ${formatDate(from)} to ${formatDate(to)}` : `since ${formatDate(from)}`
 }
+
+// A custom value is not an option, so the chip words it like the question does.
+export const chipText = (range: string) => (CUSTOM.test(range) ? rangeText(range) : range)
 
 // The Date range filter. `dates` picks the fact's date cells, which give the years; `quick: false`
 // hides the presets (finished history).
