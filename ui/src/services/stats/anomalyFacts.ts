@@ -139,7 +139,7 @@ export const ANOMALY_FACTS: Fact[] = [
     reads: reads(),
     compute: (c, v, today) =>
       formatCount(
-        byDay(select(c, v, today)).filter(([, d]) => d.length === 6 || d.length === 10).length,
+        byDay(select(c, v, today)).filter(([, dayRuns]) => [6, 10].includes(dayRuns.length)).length,
       ),
   },
   {
@@ -150,7 +150,9 @@ export const ANOMALY_FACTS: Fact[] = [
     filters: [range],
     reads: reads('modules'),
     compute: (c, v, today) =>
-      formatCount(byDay(select(c, v, today)).filter(([, d]) => sumModules(d) === 0).length),
+      formatCount(
+        byDay(select(c, v, today)).filter(([, dayRuns]) => sumModules(dayRuns) === 0).length,
+      ),
   },
   {
     id: 'anomaly-first-run',
@@ -187,7 +189,9 @@ export const ANOMALY_FACTS: Fact[] = [
     filters: [boss, range],
     reads: reads('boss', 'modules'),
     compute: (c, v, today) => {
-      const days = byDay(select(c, v, today)).map(([day, d]) => [day, sumModules(d)] as const)
+      const days = byDay(select(c, v, today)).map(
+        ([day, dayRuns]) => [day, sumModules(dayRuns)] as const,
+      )
       const best = firstMax(days, ([, n]) => n)
       return best ? `${formatPlural(best[1], 'module')}, ${formatDate(best[0])}` : null
     },

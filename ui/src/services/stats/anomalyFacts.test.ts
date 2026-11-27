@@ -39,6 +39,8 @@ const ROWS: Row[] = [
 // Every run here: Ultra, below stage 9, no gear, no modules.
 const BARE: Row[] = [['2024-08-22', 'Ultra', 7, false, 0]]
 
+const BLANK_GEAR: Row[] = [['2024-08-22', 'Ultra', 9, true, 0, '', '', 'Helmet']]
+
 // [id, values, rows, expected]
 const CASES: [string, Record<string, string>, Row[], string | null][] = [
   ['runs', any, ROWS, '6'],
@@ -102,6 +104,12 @@ const CASES: [string, Record<string, string>, Row[], string | null][] = [
   ['class-share', { ...any, class: 'Defender' }, ROWS, '33'],
   ['class-share', { ...any, class: 'Supporter' }, ROWS, '0'],
   ['class-share', { ...any, class: 'Defender' }, BARE, null],
+  // A gear drop with blank class and manufacturer stays out of the Gear facts.
+  ['top-class', any, [...BLANK_GEAR, ...BLANK_GEAR, ROWS[1]], 'Attacker, 1 drop'],
+  ['top-piece', any, [...BLANK_GEAR, ...BLANK_GEAR, ROWS[1]], 'Tetra Attacker Helmet, 1 drop'],
+  ['manufacturer-share', { ...any, manufacturer: 'Tetra' }, [...BLANK_GEAR, ROWS[1]], '100'],
+  ['class-share', { ...any, class: 'Attacker' }, [...BLANK_GEAR, ROWS[1]], '100'],
+  ['best-day', any, [ROWS[1], ['2024-08-20', 'Ultra', 9, true, 2]], '2 modules, 20 Aug 2024'],
   ['unguaranteed-runs', any, ROWS, '3'],
   ['unguaranteed-runs', any, [ROWS[0]], '0'],
   ['lucky-runs', any, ROWS, '2'],
