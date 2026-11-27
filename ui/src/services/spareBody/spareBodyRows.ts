@@ -16,8 +16,8 @@ export function parseCopies(s: string): number | null {
 
 // The SSRs a spare body source can give; [] when it isn't a source the form offers.
 export function spareBodyPool(nikkes: Nikke[], source: string): Nikke[] {
-  if (source === 'Gold Mileage') return ssrPool(nikkes, { overspec: true, abnormal: true })
-  if (source === 'Silver Mileage') return ssrPool(nikkes, { overspec: true, abnormal: false })
+  if (source === 'Gold Mileage') return ssrPool(nikkes, { overspec: true, limited: true })
+  if (source === 'Silver Mileage') return ssrPool(nikkes, { overspec: true, limited: false })
   if (source === 'Union Chip') {
     return nikkes.filter(
       (n) => n.rarity === 'SSR' && (LIBERATION_UNITS as readonly string[]).includes(n.name),

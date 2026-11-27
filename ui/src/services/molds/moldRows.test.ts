@@ -5,8 +5,13 @@ import { isPerfect, moldPool, toRow } from './moldRows'
 import type { Nikke } from '@/services/nikke/nikkeDatabase'
 import type { MoldsEntry } from '@/types/molds'
 
-const nikke = (name: string, rarity: string, manufacturer: string, overspec = false) =>
-  ({ name, rarity, manufacturer, overspec }) as Nikke
+const nikke = (
+  name: string,
+  rarity: string,
+  manufacturer: string,
+  overspec = false,
+  limited = manufacturer === 'ABNORMAL',
+) => ({ name, rarity, manufacturer, overspec, limited }) as Nikke
 const db = [
   nikke('Elysion', 'SSR', 'ELYSION'),
   nikke('Modernia', 'SSR', 'Pilgrim', true),
@@ -14,6 +19,8 @@ const db = [
   nikke('Asuka', 'SSR', 'ABNORMAL'),
   nikke('Maxwell', 'SSR', 'Missilis'),
   nikke('Soda', 'SR', 'Tetra'),
+  nikke('Dorothy: Serendipity', 'SSR', 'Pilgrim', true, true),
+  nikke('Anne: Miracle Fairy', 'SSR', 'MISSILIS', false, true),
 ]
 const names = (t: Parameters<typeof moldPool>[1]) => moldPool(db, t).map((n) => n.name)
 
@@ -34,7 +41,7 @@ describe('moldPool', () => {
     expect(names('Tetra Mold')).toEqual([])
   })
 
-  it('gives every non-overspec, non-Abnormal SSR for mixed molds', () => {
+  it('gives every non-overspec, non-limited SSR for mixed molds', () => {
     for (const t of ['Yellow Mold', 'Purple Mold', 'HQ Mold', 'HQ Perfect Mold'] as const)
       expect(names(t)).toEqual(['Elysion', 'Maxwell'])
   })

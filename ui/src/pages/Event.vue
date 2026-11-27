@@ -25,9 +25,10 @@ onMounted(() => store.load())
         <label class="flex flex-col gap-1 text-sm">
           Date
           <input
-            v-model="store.entry.date"
+            :value="store.entry.date"
             type="date"
             class="focus rule-ink paper min-h-11 border px-2"
+            @input="store.setDate(($event.target as HTMLInputElement).value)"
           />
         </label>
         <label class="flex flex-col gap-1 text-sm">
@@ -51,7 +52,7 @@ onMounted(() => store.load())
           single
           :nikkes="store.pool"
           :model-value="store.entry.rateUpName ? [store.entry.rateUpName] : []"
-          @update:model-value="store.entry.rateUpName = $event[0] ?? ''"
+          @update:model-value="store.setRateUpName($event[0] ?? '')"
         />
       </section>
 
@@ -93,7 +94,7 @@ onMounted(() => store.load())
           <FieldLabel icon="i-ph-sparkle-duotone">SSR pulled</FieldLabel>
         </h3>
         <NikkePicker
-          :nikkes="store.pool"
+          :nikkes="store.listPool"
           :model-value="store.entry.names"
           :pinned="store.entry.rateUpName"
           @update:model-value="store.entry.names = $event"

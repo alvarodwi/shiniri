@@ -8,7 +8,13 @@ import { EVENT_TAB, NIKKE_DATABASE_TAB } from '@/config/sheets'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 
 const DB = "'NikkeDatabase'!A1:L"
-const dbRow = (code: string, name: string, manufacturer: string) => [
+const dbRow = (
+  code: string,
+  name: string,
+  manufacturer: string,
+  releaseDate = '',
+  limited = manufacturer === 'ABNORMAL',
+) => [
   code,
   name,
   'SSR',
@@ -18,8 +24,8 @@ const dbRow = (code: string, name: string, manufacturer: string) => [
   'Fire',
   'AR',
   '12',
-  '',
-  '',
+  releaseDate,
+  limited ? 'TRUE' : 'FALSE',
   manufacturer === 'Pilgrim' ? 'TRUE' : 'FALSE',
 ]
 
@@ -181,5 +187,70 @@ describe('eventStore discard', () => {
     store.discard()
     expect(store.entry.notes).toBe('')
     expect(store.isDirty).toBe(false)
+  })
+
+  describe('SSR list', () => {
+    // Seasonal limited units, one per rule: season, Pilgrim, and a release in the entry's own year.
+    async function seasonal() {
+      const api = fakeApi()
+      api.values[DB].push(
+        dbRow('5004', 'Anne', 'MISSILIS', '2022-12-15', true),
+        dbRow('5005', 'Marciana', 'ELYSION', '2025-07-09', true),
+        dbRow('5006', 'Brid', 'ELYSION', '2026-12-11', true),
+        [...dbRow('5007', 'Dorothy S', 'Pilgrim', '2025-07-17', true)],
+      )
+      const store = useEventStore()
+      await store.load(api)
+      store.setDate('2026-12-20')
+      return store
+    }
+    const list = (store: ReturnType<typeof useEventStore>) => store.listPool.map((n) => n.name)
+    const plain = ['Biscuit', 'Modernia']
+
+    it.each([
+      ['Regular', []],
+      ['Pilgrim Limited', []],
+      ['Collaboration Limited', []],
+      ['Winter Limited', ['Anne']],
+      ['Summer Limited', ['Marciana']],
+      ['Summer Pilgrim Limited', ['Dorothy S']],
+    ])('adds the earlier-year units of a %s banner', async (type, old) => {
+      const store = await seasonal()
+      store.setRateUpType(type)
+      expect(list(store)).toEqual([...plain, ...old])
+    })
+
+    it('offers the chosen rate-up, and no other limited unit', async () => {
+      const store = await seasonal()
+      store.setRateUpType('Collaboration Limited')
+      store.setRateUpName('Asuka')
+      expect(list(store)).toEqual(['Biscuit', 'Modernia', 'Asuka'])
+      store.setRateUpName('Brid')
+      expect(list(store)).toEqual(['Biscuit', 'Modernia', 'Brid'])
+    })
+
+    it('drops picks that the new rate-up, banner type or date no longer allows', async () => {
+      const store = await seasonal()
+      store.setRateUpType('Winter Limited')
+      store.setRateUpName('Brid')
+      for (const n of ['Brid', 'Anne', 'Biscuit']) store.add(n)
+      store.setRateUpName('')
+      expect(store.entry.names).toEqual(['Anne', 'Biscuit'])
+      store.setDate('2022-12-20')
+      expect(store.entry.names).toEqual(['Biscuit'])
+      store.setDate('2026-12-20')
+      store.add('Anne')
+      store.setRateUpType('Summer Limited')
+      expect(store.entry.names).toEqual(['Biscuit'])
+    })
+
+    it('keeps picks while the date is half typed', async () => {
+      const store = await seasonal()
+      store.setRateUpType('Winter Limited')
+      store.add('Anne')
+      store.setDate('')
+      store.setDate('0002-12-20')
+      expect(store.entry.names).toEqual(['Anne'])
+    })
   })
 })

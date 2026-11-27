@@ -8,12 +8,14 @@ const MAKERS = ['missilis', 'elysion', 'tetra']
 
 export const isPerfect = (t: MoldType): boolean => t.includes('Perfect')
 
-// The SSRs a mold can give: every overspec one for Pilgrim, one manufacturer's non-overspec for the
-// other manufacturer molds, else the mixed pool.
+// The SSRs a mold can give, never a limited one: every overspec one for Pilgrim, one manufacturer's
+// non-overspec for the other manufacturer molds, else the mixed pool.
 export function moldPool(nikkes: Nikke[], t: MoldType): Nikke[] {
   const maker = t.split(' ')[0].toLowerCase()
-  if (maker === 'pilgrim') return nikkes.filter((n) => n.rarity === 'SSR' && n.overspec)
-  const plain = ssrPool(nikkes, { overspec: false, abnormal: false })
+  if (maker === 'pilgrim') {
+    return ssrPool(nikkes, { overspec: true, limited: false }).filter((n) => n.overspec)
+  }
+  const plain = ssrPool(nikkes, { overspec: false, limited: false })
   if (!MAKERS.includes(maker)) return plain
   return plain.filter((n) => n.manufacturer.toLowerCase() === maker)
 }

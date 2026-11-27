@@ -70,7 +70,7 @@ describe('socialStore', () => {
       'AR',
       '12',
       '',
-      '',
+      manu === 'ABNORMAL' ? 'TRUE' : 'FALSE',
       manu === 'Pilgrim' ? 'TRUE' : 'FALSE',
     ]
     api.values[DB].push(

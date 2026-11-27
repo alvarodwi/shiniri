@@ -30,7 +30,7 @@ export const useSocialStore = defineStore('social', {
     row: (state) => toRow(state.entry),
     // totalSsr counts SSRs only. Abnormal (collab, event only) and overspec (never social)
     // never come out of a social pull.
-    ssrNikkes: (state) => ssrPool(state.nikkes, { overspec: false, abnormal: false }),
+    ssrNikkes: (state) => ssrPool(state.nikkes, { overspec: false, limited: false }),
     canSave(): boolean {
       return (
         this.row !== null &&

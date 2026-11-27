@@ -34,7 +34,7 @@ export const useOrdinaryStore = defineStore('ordinary', {
   getters: {
     isDirty: (state) => isEntryDirty(state.entry, newEntry()),
     row: (state) => toRow(state.entry),
-    pool: (state) => ssrPool(state.nikkes, { overspec: true, abnormal: false }),
+    pool: (state) => ssrPool(state.nikkes, { overspec: true, limited: false }),
     canSave(): boolean {
       return (
         this.row !== null &&

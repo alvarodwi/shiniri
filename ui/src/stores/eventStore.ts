@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 
 import { OVERCORE_TAB, EVENT_TAB } from '@/config/sheets'
+import { canDrop } from '@/services/event/eventPool'
 import { toRow } from '@/services/event/eventRows'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import { readNikkes } from '@/services/nikke/nikkeDatabase'
@@ -40,9 +41,16 @@ export const useEventStore = defineStore('event', {
   getters: {
     isDirty: (state) => isEntryDirty(state.entry, newEntry()),
     row: (state) => toRow(state.entry),
-    // Overspec can come out of any event banner; Abnormal only out of a collaboration one.
+    // The rate-up choices: any SSR, Abnormal only for a collaboration banner.
     pool: (state) =>
-      ssrPool(state.nikkes, { overspec: true, abnormal: state.entry.rateUpType === COLLAB_TYPE }),
+      ssrPool(state.nikkes, { overspec: true, limited: true }).filter(
+        (n) =>
+          state.entry.rateUpType === COLLAB_TYPE || n.manufacturer.toLowerCase() !== 'abnormal',
+      ),
+    listPool: (state) =>
+      ssrPool(state.nikkes, { overspec: true, limited: true }).filter((n) =>
+        canDrop(n, state.entry),
+      ),
     canSave(): boolean {
       return (
         this.row !== null &&
@@ -74,13 +82,33 @@ export const useEventStore = defineStore('event', {
       }
     },
 
-    // Leaving a collaboration banner removes Abnormal picks, so a stale one can't reach the sheet.
-    // It goes by manufacturer, not pool membership, so an unloaded database never wipes names.
+    // Picks the banner can't give are removed, so a stale one can't reach the sheet. It goes by the
+    // unit's own flags, not pool membership, so an unloaded database never wipes names.
+    prune() {
+      this.entry.names = this.entry.names.filter((name) => {
+        const n = this.nikkes.find((x) => x.name === name)
+        return !n || canDrop(n, this.entry)
+      })
+    },
+
+    // Leaving a collaboration banner also clears an Abnormal rate-up.
     setRateUpType(type: string) {
       this.entry.rateUpType = type
-      if (type === COLLAB_TYPE) return
-      this.entry.names = this.entry.names.filter((n) => !isAbnormal(this.nikkes, n))
-      if (isAbnormal(this.nikkes, this.entry.rateUpName)) this.entry.rateUpName = ''
+      if (type !== COLLAB_TYPE && isAbnormal(this.nikkes, this.entry.rateUpName)) {
+        this.entry.rateUpName = ''
+      }
+      this.prune()
+    },
+
+    setRateUpName(name: string) {
+      this.entry.rateUpName = name
+      this.prune()
+    },
+
+    // A date input emits '' or a year like 0002 while being typed; pruning waits for a real one.
+    setDate(date: string) {
+      this.entry.date = date
+      if (date >= '2022') this.prune()
     },
 
     add(name: string) {

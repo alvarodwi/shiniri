@@ -7,7 +7,7 @@ import type { SpendingEntry } from '@/types/spending'
 
 // Costumes and passes exist for any SSR, collab and overspec included.
 export const spendingPool = (nikkes: Nikke[]): Nikke[] =>
-  ssrPool(nikkes, { overspec: true, abnormal: true })
+  ssrPool(nikkes, { overspec: true, limited: true })
 
 // One logged purchase, as read back from the sheet (prices as text, for the form's inputs).
 export type Purchase = {

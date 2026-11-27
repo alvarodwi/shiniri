@@ -5,6 +5,7 @@ export const RATE_UP_TYPES = [
   'Regular',
   'Winter Limited',
   'Summer Limited',
+  'Summer Pilgrim Limited',
 ] as const
 
 // The only banner type whose pool includes Abnormal Nikkes.

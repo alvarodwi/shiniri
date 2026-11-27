@@ -60,20 +60,24 @@ Shared pieces:
 - Overcore: from copy 12 (past C7) each copy gets an `Overcore` row. The start copy comes from the sheet's
   `AllPulls` (`copy`) and `RosterLog` tabs, both read-only here. An error cell in `AllPulls`
   (`copy`) throws and aborts the save, so no row is skipped silently. `overcore.test.ts`.
-- Pools: overspec and Abnormal are allowed per source (`ssrPool`, from the `overspec` column, not `manufacturer`): Event allows Abnormal only for a
-  collaboration banner, Social allows neither.
 - Spending: a purchase belongs to its WIB calendar day, not the game day. Prices are validated as
   whole rupiah and dollars with up to two decimals (`validIdr`, `validUsd`); separators are rejected so
   `79.000` never lands as 79. The store checks the `Spending` headers when it reads history.
 - Solo Raid damage is typed with locale separators; `parseDamage` accepts only whole groups of
   three, and `rankText` keeps two decimals at most, comma or dot.
 - Pull stores expose `isDirty` and `discard()` (see `ui-navigation.md`).
-- Pools by source: Event allows overspec, and Abnormal only for the collaboration banner; Ordinary
-  allows overspec, not Abnormal; Social allows neither; Spare Body Gold Mileage allows both, Silver
-  Mileage and Other allow overspec but not Abnormal; the Pilgrim molds give every overspec SSR and the
-  other manufacturer molds none; a Union Chip gives only `LIBERATION_UNITS` (`Sin`, `Quency`,
-  `Guilty`, `Nihilister`), by exact name (`types/spareBody.ts`). Changing the type or source prunes
-  picks outside the new pool (`setRateUpType`, `setMoldType`).
+- Pools by source (`ssrPool`, from the `overspec` and `limited` columns): Ordinary, Other (Extra) and
+  Spare Body Silver Mileage allow overspec, not limited; Social allows neither; Spare Body Gold Mileage
+  and Spending allow both. The Pilgrim molds give every non-limited overspec SSR, the other molds none.
+  A Union Chip gives only `LIBERATION_UNITS` (`Sin`, `Quency`, `Guilty`, `Nihilister`), by exact name
+  (`types/spareBody.ts`). Changing the mold type or source prunes picks outside the new pool
+  (`setMoldType`, `setSource`).
+- Event has two pools. The rate-up one (`pool`) is every SSR, Abnormal (by `manufacturer`) only on a
+  collaboration banner. The SSR list (`listPool`, `canDrop` in `services/event/eventPool.ts`) is the
+  non-limited SSRs, the chosen rate-up, and on `Winter Limited`, `Summer Limited` and
+  `Summer Pilgrim Limited` banners the limited units of that season from earlier years, told by the
+  `releaseDate` month (December, June to August) and `overspec`. Changing the rate-up, type or date
+  prunes picks, by the unit's own flags, so an unloaded database wipes nothing.
 - `pulls()` (`services/gacha/pulls.ts`, shared by Event, Ordinary and Other): a blank currency is 0, gems
   must be a multiple of 300, and under 1 pull is `null`. Molds: `toRow` is `null` when names exceed the
   amount, and a Perfect mold needs names equal to the amount (`moldRows.ts`).

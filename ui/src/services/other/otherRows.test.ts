@@ -19,10 +19,10 @@ const entry = (over: Partial<OtherEntry> = {}): OtherEntry => ({
 })
 
 describe('otherPool', () => {
-  it('gives SSRs with overspec but not Abnormal', () => {
-    const n = (name: string, rarity: string, manufacturer: string) =>
-      ({ name, rarity, manufacturer, overspec: manufacturer === 'Pilgrim' }) as Nikke
-    const db = [n('A', 'SSR', 'Pilgrim'), n('B', 'SSR', 'ABNORMAL'), n('C', 'SR', 'Tetra')]
+  it('gives SSRs with overspec but no limited one', () => {
+    const n = (name: string, rarity: string, limited = false) =>
+      ({ name, rarity, limited, overspec: true }) as Nikke
+    const db = [n('A', 'SSR'), n('B', 'SSR', true), n('C', 'SR')]
     expect(otherPool(db).map((x) => x.name)).toEqual(['A'])
   })
 })

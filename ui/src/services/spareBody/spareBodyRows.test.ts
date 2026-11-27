@@ -5,8 +5,12 @@ import { parseCopies, spareBodyPool, toRows } from './spareBodyRows'
 import type { Nikke } from '@/services/nikke/nikkeDatabase'
 import type { SpareBodyEntry } from '@/types/spareBody'
 
-const nikke = (name: string, rarity: string, manufacturer: string) =>
-  ({ name, rarity, manufacturer, overspec: manufacturer === 'Pilgrim' }) as Nikke
+const nikke = (
+  name: string,
+  rarity: string,
+  manufacturer: string,
+  limited = manufacturer === 'ABNORMAL',
+) => ({ name, rarity, manufacturer, limited, overspec: manufacturer === 'Pilgrim' }) as Nikke
 const db = [
   nikke('Modernia', 'SSR', 'Pilgrim'),
   nikke('Asuka', 'SSR', 'ABNORMAL'),
@@ -15,6 +19,7 @@ const db = [
   nikke('Sin: Swift Bunny', 'SSR', 'Pilgrim'),
   nikke('Quency', 'SSR', 'Missilis'),
   nikke('Soda', 'SR', 'Tetra'),
+  nikke('Dorothy: Serendipity', 'SSR', 'Pilgrim', true),
 ]
 const pool = (s: string) => spareBodyPool(db, s).map((n) => n.name)
 
@@ -27,10 +32,12 @@ describe('spareBodyPool', () => {
       'Sin',
       'Sin: Swift Bunny',
       'Quency',
+      'Dorothy: Serendipity',
     ])
   })
-  it('leaves Abnormal out for Silver Mileage', () => {
+  it('leaves limited units out for Silver Mileage', () => {
     expect(pool('Silver Mileage')).not.toContain('Asuka')
+    expect(pool('Silver Mileage')).not.toContain('Dorothy: Serendipity')
     expect(pool('Silver Mileage')).toContain('Modernia')
   })
   it('gives only the exact liberation names for Union Chip', () => {

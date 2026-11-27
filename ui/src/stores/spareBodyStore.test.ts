@@ -19,7 +19,7 @@ const dbRow = (code: string, name: string, manufacturer: string) => [
   'AR',
   '12',
   '',
-  '',
+  manufacturer === 'ABNORMAL' ? 'TRUE' : 'FALSE',
   manufacturer === 'Pilgrim' ? 'TRUE' : 'FALSE',
 ]
 
