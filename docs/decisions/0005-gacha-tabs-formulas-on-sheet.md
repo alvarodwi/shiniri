@@ -9,7 +9,7 @@ views (AllPulls, DupeTracker, AcquisitionLog, Overcore history). Formulas: `../s
 - Derived views are formulas in the sheet. No code writes AllPulls, DupeTracker or AcquisitionLog.
   Code reads `AllPulls` `copy` only, to decide Overcore rows at save time (`overcore.ts`).
 - The owner keeps Stats, AcquisitionLog, NikkeRoster and DupeTracker by hand. shiniri never writes them.
-- Pools are SSR only. Overspec and Abnormal depend on the source (`ui-pages.md`).
+- Pools are SSR only. Overspec and limited depend on the source (`ui-pages.md`).
 
 ## Rejected
 - One config-driven form for every tab: columns and pool rules differ, so the abstraction would be

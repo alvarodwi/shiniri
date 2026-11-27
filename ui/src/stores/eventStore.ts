@@ -6,7 +6,7 @@ import { toRow } from '@/services/event/eventRows'
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import { readNikkes } from '@/services/nikke/nikkeDatabase'
 import type { Nikke } from '@/services/nikke/nikkeDatabase'
-import { ssrPool } from '@/services/nikke/nikkePool'
+import { isAbnormal, ssrPool } from '@/services/nikke/nikkePool'
 import { checkOvercores } from '@/services/overcore/overcore'
 import { writeTabsAtEnd } from '@/services/sheets/tabWriter'
 import { sheetsApi } from '@/stores/authStore'
@@ -25,9 +25,6 @@ const newEntry = (): EventEntry => ({
   notes: '',
 })
 
-const isAbnormal = (nikkes: Nikke[], name: string) =>
-  nikkes.some((n) => n.name === name && n.manufacturer.toLowerCase() === 'abnormal')
-
 export const useEventStore = defineStore('event', {
   state: () => ({
     entry: newEntry(),
@@ -44,8 +41,7 @@ export const useEventStore = defineStore('event', {
     // The rate-up choices: any SSR, Abnormal only for a collaboration banner.
     pool: (state) =>
       ssrPool(state.nikkes, { overspec: true, limited: true }).filter(
-        (n) =>
-          state.entry.rateUpType === COLLAB_TYPE || n.manufacturer.toLowerCase() !== 'abnormal',
+        (n) => state.entry.rateUpType === COLLAB_TYPE || !isAbnormal(n),
       ),
     listPool: (state) =>
       ssrPool(state.nikkes, { overspec: true, limited: true }).filter((n) =>
@@ -94,7 +90,10 @@ export const useEventStore = defineStore('event', {
     // Leaving a collaboration banner also clears an Abnormal rate-up.
     setRateUpType(type: string) {
       this.entry.rateUpType = type
-      if (type !== COLLAB_TYPE && isAbnormal(this.nikkes, this.entry.rateUpName)) {
+      if (
+        type !== COLLAB_TYPE &&
+        this.nikkes.some((n) => n.name === this.entry.rateUpName && isAbnormal(n))
+      ) {
         this.entry.rateUpName = ''
       }
       this.prune()
@@ -105,10 +104,9 @@ export const useEventStore = defineStore('event', {
       this.prune()
     },
 
-    // A date input emits '' or a year like 0002 while being typed; pruning waits for a real one.
     setDate(date: string) {
       this.entry.date = date
-      if (date >= '2022') this.prune()
+      this.prune()
     },
 
     add(name: string) {

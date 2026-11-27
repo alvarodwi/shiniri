@@ -8,6 +8,8 @@ export const RATE_UP_TYPES = [
   'Summer Pilgrim Limited',
 ] as const
 
+export type RateUpType = (typeof RATE_UP_TYPES)[number]
+
 // The only banner type whose pool includes Abnormal Nikkes.
 export const COLLAB_TYPE = 'Collaboration Limited'
 
