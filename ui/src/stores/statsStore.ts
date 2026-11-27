@@ -73,14 +73,10 @@ export const useStatsStore = defineStore('stats', () => {
   }
 
   // Random draws every filter from its real options and never re-rolls on 0 or an empty card.
-  const roll = (api?: SheetsApi, facts: Fact[] = FACTS, random = Math.random, now?: Date) =>
-    show(
-      facts[Math.floor(random() * facts.length)],
-      api,
-      {},
-      (options) => rollValues(options, random),
-      now,
-    )
+  async function roll(api?: SheetsApi, facts: Fact[] = FACTS, random = Math.random, now?: Date) {
+    const fact = facts[Math.floor(random() * facts.length)]
+    if (fact) await show(fact, api, {}, (options) => rollValues(options, random), now)
+  }
 
   // Back to a blank page; the read cache stays for the session.
   function reset() {

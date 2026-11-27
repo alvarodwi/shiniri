@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 import type { SheetsApi } from '@/services/google/sheetsApi'
 import { FACTS } from '@/services/stats/facts'
-import type { Fact } from '@/services/stats/facts'
+import type { Category, Fact } from '@/services/stats/facts'
 import { useStatsStore } from '@/stores/statsStore'
 
 // The pick sheet: one step at a time, ending on the card. `category` only limits the fact step;
@@ -15,7 +15,7 @@ const pickFrom = <T>(items: T[], random: () => number) => items[Math.floor(rando
 export const usePickerStore = defineStore('picker', () => {
   const stats = useStatsStore()
   const sheet = ref<{ step: Step } | null>(null)
-  const category = ref<string | null>(null)
+  const category = ref<Category | null>(null)
 
   function openPicker() {
     category.value = null
@@ -23,7 +23,7 @@ export const usePickerStore = defineStore('picker', () => {
   }
 
   // No category = random.
-  function pickCategory(name?: string, facts: Fact[] = FACTS, random = Math.random) {
+  function pickCategory(name?: Category, facts: Fact[] = FACTS, random = Math.random) {
     category.value = name ?? pickFrom([...new Set(facts.map((f) => f.category))], random)
     sheet.value = { step: 'fact' }
   }

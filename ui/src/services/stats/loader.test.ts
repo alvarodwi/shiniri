@@ -8,11 +8,11 @@ import type { Fact } from '@/services/stats/facts'
 const TAB = { spreadsheetId: 's', tab: 'T' }
 const fact: Fact = {
   id: 'f',
-  category: 'A',
+  category: 'Gear',
   title: 'Title',
   question: 'Q?',
   reads: [{ tab: TAB, columns: ['b'] }],
-  compute: () => 0,
+  compute: () => '0',
 }
 const api = (getValues: ReturnType<typeof vi.fn>) => ({ getValues }) as unknown as SheetsApi
 const ok = vi.fn(async (_id: string, range: string) =>

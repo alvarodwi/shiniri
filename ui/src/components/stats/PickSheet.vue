@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 
-import { FACTS } from '@/services/stats/facts'
+import { CATEGORIES, FACTS } from '@/services/stats/facts'
 import { usePickerStore } from '@/stores/pickerStore'
 import { useStatsStore } from '@/stores/statsStore'
 
 const stats = useStatsStore()
 const store = usePickerStore()
-const categories = [...new Set(FACTS.map((f) => f.category))]
+const categories = CATEGORIES.filter((c) => FACTS.some((f) => f.category === c))
 const facts = computed(() => FACTS.filter((f) => !store.category || f.category === store.category))
 // Filter steps read the chosen fact's loaded card.
 const filter = computed(() => {

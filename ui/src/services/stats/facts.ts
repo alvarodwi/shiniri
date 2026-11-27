@@ -1,11 +1,24 @@
-import { ANOMALY_TAB } from '@/config/sheets'
 import type { TabSpec } from '@/config/sheets'
-import { ANY_TIME, RANGE_PRESETS, inRange } from '@/services/stats/ranges'
 
 // A fact is the code-defined catalog entry; see docs/decisions/0008. `reads` names the tab and the
 // header-named columns it needs; compute gets those columns (cells below the header) per tab name.
 export type Columns = Record<string, Record<string, unknown[]>>
-export type Answer = number | string | null // null = no answer; 0 is a real answer
+export type Answer = string | null // null = no answer; "0" is a real answer
+// The picker lists categories in this order.
+export const CATEGORIES = [
+  'Interception',
+  'Gear',
+  'Progress',
+  'Raids',
+  'Modes',
+  'Pulls',
+  'Roster',
+  'Overcore',
+  'Database',
+  'Spending',
+] as const
+export type Category = (typeof CATEGORIES)[number]
+
 // A filter has no default. Options are listed by the fact or derived from the loaded columns; "any"
 // is an ordinary option a fact lists where it makes sense.
 export type Filter = {
@@ -16,7 +29,7 @@ export type Filter = {
 export type Values = Record<string, string>
 export type Fact = {
   id: string
-  category: string // topical group; the picker chooses a category before a fact
+  category: Category // topical group; the picker chooses a category before a fact
   title: string
   question: string // {filterId} is filled with the chosen value
   filters?: Filter[]
@@ -27,52 +40,5 @@ export type Fact = {
 export const fillQuestion = (q: string, values: Values) =>
   q.replace(/\{(\w+)\}/g, (_, id) => values[id] ?? '…')
 
-// Cells below the header: blank means '' or missing. Sheets can hand back either.
-const nonBlank = (col: unknown[]) => col.filter((c) => c !== '' && c != null)
-const distinct = (col: unknown[]) => [...new Set(nonBlank(col).map(String))]
-
-// Placeholder facts for the tracer; the real facts come in a later session.
-export const FACTS: Fact[] = [
-  {
-    id: 'anomaly-runs',
-    category: 'Runs',
-    title: 'Anomaly runs',
-    question: 'How many Anomaly runs have I logged?',
-    reads: [{ tab: ANOMALY_TAB, columns: ['date'] }],
-    compute: (cols) => nonBlank(cols[ANOMALY_TAB.tab].date).length,
-  },
-  {
-    id: 'anomaly-runs-by-boss',
-    category: 'Runs',
-    title: 'Anomaly runs by boss',
-    question: 'How many Anomaly runs have I logged against {boss}?',
-    filters: [
-      {
-        id: 'boss',
-        label: 'Boss',
-        options: (cols) => ['any boss', ...distinct(cols[ANOMALY_TAB.tab].boss)],
-      },
-    ],
-    reads: [{ tab: ANOMALY_TAB, columns: ['boss'] }],
-    compute: (cols, { boss }) =>
-      nonBlank(cols[ANOMALY_TAB.tab].boss).filter((b) => boss === 'any boss' || b === boss).length,
-  },
-  {
-    id: 'anomaly-runs-by-range',
-    category: 'Runs',
-    title: 'Anomaly runs by range',
-    question: 'How many Anomaly runs have I logged {range}?',
-    filters: [{ id: 'range', label: 'Range', options: [ANY_TIME, ...RANGE_PRESETS] }],
-    reads: [{ tab: ANOMALY_TAB, columns: ['date'] }],
-    compute: (cols, { range }, today) =>
-      cols[ANOMALY_TAB.tab].date.filter(inRange(range, today)).length,
-  },
-  {
-    id: 'anomaly-bosses-seen',
-    category: 'Bosses',
-    title: 'Bosses fought',
-    question: 'How many different Anomaly bosses have I fought?',
-    reads: [{ tab: ANOMALY_TAB, columns: ['boss'] }],
-    compute: (cols) => distinct(cols[ANOMALY_TAB.tab].boss).length,
-  },
-]
+// Filled per tab; see format.ts and rules.ts for how a compute writes its answer.
+export const FACTS: Fact[] = []

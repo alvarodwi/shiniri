@@ -12,9 +12,12 @@ This doc does not list the facts. `FACTS` in `ui/src/services/stats/facts.ts` is
 
 ## Public surface
 
-- `ui/src/services/stats/facts.ts`: the types (`Fact`, `Filter`, `Columns`, `Values`, `Answer`),
-  `FACTS`, and `fillQuestion`, which replaces each `{filterId}` in a question with the chosen value
+- `ui/src/services/stats/facts.ts`: the types (`Fact`, `Filter`, `Columns`, `Values`, `Answer`,
+  `Category`), `CATEGORIES` (the picker's order), `FACTS`, and `fillQuestion`, which replaces each `{filterId}` in a question with the chosen value
   (`…` while unchosen).
+- `ui/src/services/stats/format.ts`: how answers write dates, months, counts, large numbers,
+  durations, percents, signed changes and money. `rules.ts`: ties to the earliest row (`firstMax`),
+  `topWithCount`, and the game day of a date cell (`cellGameDay`, `groupByGameDay`).
 - `ui/src/services/stats/ranges.ts`: `RANGE_PRESETS`, `ANY_TIME` and `inRange`.
 - `ui/src/services/stats/loader.ts`: `createLoader()`, the header-and-column reads and the cache.
   `roll.ts`: `rollValues`, the random pick of every filter. Both have tests beside them.
@@ -28,7 +31,8 @@ This doc does not list the facts. `FACTS` in `ui/src/services/stats/facts.ts` is
 
 A `Fact` is a plain object in `FACTS`:
 
-- `id`, `category`, `title`. The picker chooses a category before a fact and lists titles.
+- `id`, `category`, `title`. `category` is one of `CATEGORIES`. The picker chooses a category
+  before a fact, shows only categories that have facts, and lists titles.
 - `question`: a sentence template with a `{filterId}` slot per filter.
 - `filters` (optional): each has `id`, `label` and `options`, either a string array or a function of
   the loaded columns (for options derived from the data). There is no default value. If "any"
@@ -40,7 +44,7 @@ A `Fact` is a plain object in `FACTS`:
   `spreadsheetId`, so nothing in the code enforces this.
 - `compute(cols, values, today)`: `cols[tabName][header]` is the column's cells below the header,
   `values` the chosen filter values, `today` the game day (`YYYY-MM-DD`). It returns an `Answer`:
-  a number or string, or `null` for no answer. `0` is a real answer.
+  a string built with `format.ts`, or `null` for no answer. `"0"` is a real answer.
 
 Cells arrive raw (`UNFORMATTED_VALUE`): blanks are `''`, dates are serial numbers or ISO text,
 and the number of rows is the whole tab. Compute filters blanks itself.
@@ -50,11 +54,12 @@ and the number of rows is the whole tab. Compute filters blanks itself.
 1. Add an object to `FACTS` in `facts.ts`. Reuse the `TabSpec` constants from `config/sheets.ts`
    in `reads`; use the exact header text from the sheet (ask when unsure).
 2. Declare only the columns `compute` uses. Each one costs a read the first time its tab is used.
-3. For a date filter, use `[ANY_TIME, ...RANGE_PRESETS]` as options and `inRange(range, today)` as
+3. Format the answer with `format.ts`; use `rules.ts` for ties, superlatives and per-day grouping.
+4. For a date filter, use `[ANY_TIME, ...RANGE_PRESETS]` as options and `inRange(range, today)` as
    the predicate over the date column. Do not compute dates by hand.
-4. For options derived from data, give `options` as a function of `cols`. These are available once
+5. For options derived from data, give `options` as a function of `cols`. These are available once
    the tab has loaded, which the store guarantees before it asks.
-5. Add a case to `statsStore.test.ts` only if the fact needs behaviour the store tests do not
+6. Add a case to `statsStore.test.ts` only if the fact needs behaviour the store tests do not
    already cover. No other file changes: the picker, the roll and the page read `FACTS`.
 
 A new tab or header is a sheet change the owner makes by hand. Say so when a fact needs one.
@@ -100,8 +105,8 @@ A new tab or header is a sheet change the owner makes by hand. Say so when a fac
 `this week`, `last week`, `this month` and `last month`, plus `any time`. They resolve against the
 game day (`gameDay(now)`, passed to `compute` as `today`), never the device clock directly. Weeks
 start on Monday and months are calendar months. `inRange` is a predicate over a raw date cell:
-blank cells are never in range, `any time` included; serial numbers and ISO text both work;
-anything else is out of range. An unknown preset throws, which becomes an `error` card.
+a cell is placed by `cellGameDay`: blank cells are never in range, `any time` included; serial
+numbers, ISO text and WIB timestamps work; anything else is out of range. An unknown preset throws, which becomes an `error` card.
 
 `show`, `setFilter`, `roll` and the pick functions take an optional `now` (and `random`, `api`,
 `facts`) so tests inject them.

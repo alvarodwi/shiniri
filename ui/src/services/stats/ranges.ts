@@ -1,4 +1,4 @@
-import { cellToIsoDate } from '@/services/anomaly/anomalyRows'
+import { cellGameDay } from '@/services/stats/rules'
 
 // Range presets resolve against the game day (`today`, YYYY-MM-DD from gameDay): weeks start on
 // Monday, months are calendar months. Cells are sheet serial numbers or ISO text; both work.
@@ -31,8 +31,7 @@ function presetBounds(preset: string, today: string): [string, string] {
 export function inRange(preset: string, today: string): (cell: unknown) => boolean {
   const [from, to] = preset === ANY_TIME ? ['', '￿'] : presetBounds(preset, today)
   return (cell) => {
-    if (cell === '' || cell == null) return false
-    const day = cellToIsoDate(String(cell))
-    return /^\d{4}-\d{2}-\d{2}$/.test(day) && day >= from && day <= to
+    const day = cellGameDay(cell)
+    return day !== null && day >= from && day <= to
   }
 }
