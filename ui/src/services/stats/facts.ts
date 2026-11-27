@@ -54,5 +54,5 @@ export const fillQuestion = (
     return text && space + text
   })
 
-// One file per tab; see format.ts and rules.ts for how a compute writes its answer.
+// Mostly one file per tab; see format.ts and rules.ts for how a compute writes its answer.
 export const FACTS: Fact[] = [...ANOMALY_FACTS, ...SPECIAL_FACTS]

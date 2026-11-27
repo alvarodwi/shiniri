@@ -1,5 +1,5 @@
 import { ANOMALY_TAB, SPECIAL_TAB } from '@/config/sheets'
-import { select as anomalyRuns } from '@/services/stats/anomalyFacts'
+import { distinct, select as anomalyRuns, sumModules } from '@/services/stats/anomalyFacts'
 import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
 import { formatCount, formatDate, formatPercent, formatPlural } from '@/services/stats/format'
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
@@ -65,10 +65,7 @@ function streak(list: Day[], match: (d: Day) => boolean): string | null {
 const boss: Filter = {
   id: 'boss',
   label: 'Boss',
-  options: (cols) => [
-    ANY_BOSS,
-    ...new Set(cols[tab].boss.map((c) => String(c ?? '')).filter(Boolean)),
-  ],
+  options: (cols) => [ANY_BOSS, ...distinct(cols[tab].boss)],
 }
 const drop: Filter = { id: 'drop', label: 'Drop', options: Object.keys(DROPS) }
 // Finished history: a preset would always be empty.
@@ -209,7 +206,7 @@ export const SPECIAL_FACTS: Fact[] = [
     reads: bothReads(['modules'], ['modules']),
     compute: (c, v, today) =>
       formatCount(
-        anomalyRuns(c, v, today).reduce((sum, r) => sum + r.modules, 0) +
+        sumModules(anomalyRuns(c, v, today)) +
           total(select(c, { ...v, drop: 'a module' }, today), 'drops'),
       ),
   },

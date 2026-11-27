@@ -52,7 +52,7 @@ const unguaranteed = (cols: Columns, values: Values, today: string) =>
 const hasSize = (size: string) => (r: Run) =>
   size === ANY_SIZE ? r.modules >= 1 : r.modules === Number(size)
 
-const sumModules = (list: Run[]) => list.reduce((sum, r) => sum + r.modules, 0)
+export const sumModules = (list: Run[]) => list.reduce((sum, r) => sum + r.modules, 0)
 
 // [day, runs] oldest first.
 const byDay = (list: Run[]) =>
@@ -64,7 +64,7 @@ const firstDay = (list: Run[]) => {
   return day ? formatDate(day) : null
 }
 
-const distinct = (cells: unknown[]) =>
+export const distinct = (cells: unknown[]) =>
   [...new Set(cells.map((c) => String(c ?? '')))].filter(Boolean)
 const bosses = (cols: Columns) => distinct(cols[tab].boss)
 const fromData = (id: string, label: string, options: (cols: Columns) => string[]): Filter => ({
