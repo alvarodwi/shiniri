@@ -51,10 +51,13 @@ One Union Raid attack on a boss. A member has three per game day.
 _Avoid_: Run, attempt
 
 **Normal mode**:
-The first part of a Union Raid season, with low-HP bosses taken first come, first served. Clearing it opens hard mode, and hitting in it is not mandatory.
+The first part of a Union Raid season, with low-HP bosses taken first come, first served. It lasts as many game days as clearing it takes, and hitting in it is not mandatory.
 
 **Hard mode**:
-The part of a Union Raid season where the union wears bosses down together. Levels 1 to 3 have five bosses each; level 4 follows, with the fifth boss at unlimited HP.
+The part of a Union Raid season where the union wears bosses down together. Levels 1 to 3 have five bosses each; level 4 follows, with the fifth boss at unlimited HP. It is the single game day after normal mode is cleared, and nobody can hit after it.
+
+**Raid progress**:
+How far the union got in a Union Raid season: the mode and level it reached, and what was left on that level. **HP left** is the total over that level's bosses. On hard level 4 the measure is **damage dealt** instead.
 
 **Step**:
 A boss's position, one to five, within a Union Raid level.
