@@ -8,6 +8,13 @@ export const ANOMALY_TAB: TabSpec = {
   headers: ['date', 'boss', 'stage', 'dropped', 'modules', 'class', 'manufacturer', 'dropType', ''],
 }
 
+// Read-only: finished history. An unheaded notes column sits to the right.
+export const SPECIAL_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
+  tab: 'Special',
+  headers: ['date', 'boss', 't9', 'modules', 't9Manu', 'empty'],
+}
+
 export const GEAR_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
   tab: 'Gear',

@@ -9,7 +9,8 @@ untouched, and the CLI does not read facts. All in `ui/`. Vocabulary is in `GLOS
 in `docs/decisions/0008-stats-computed-in-the-client.md`.
 
 This doc does not list the facts. `FACTS` in `ui/src/services/stats/facts.ts` is the catalog, spread
-from one file per tab (`anomalyFacts.ts`, with its test beside it).
+from one file per tab (`anomalyFacts.ts`, `specialFacts.ts`, with tests beside them). A fact that reads
+two tabs lives in one of their files (`interception-*` in `specialFacts.ts`).
 
 ## Public surface
 

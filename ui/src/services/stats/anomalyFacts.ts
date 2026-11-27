@@ -32,7 +32,11 @@ function runs(cols: Columns) {
 type Run = ReturnType<typeof runs>[number]
 
 // The runs in range, against the chosen boss when the fact has one.
-function select(cols: Columns, { boss = ANY_BOSS, range = ANY_PERIOD }: Values, today: string) {
+export function select(
+  cols: Columns,
+  { boss = ANY_BOSS, range = ANY_PERIOD }: Values,
+  today: string,
+) {
   const within = inRange(range, today)
   return runs(cols).filter((r) => within(r.date) && (boss === ANY_BOSS || r.boss === boss))
 }

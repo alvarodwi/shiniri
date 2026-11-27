@@ -17,6 +17,7 @@ import {
   SOLO_RAID_TAB,
   SPREADSHEETS,
   GEAR_TAB,
+  SPECIAL_TAB,
 } from '@/config/sheets'
 import type { TabSpec } from '@/config/sheets'
 import type { Cell } from '@/types/sheet'
@@ -57,6 +58,11 @@ export const MOCK_SHEETS = sheets([
     ['2026-11-17', 'Ultra', 9, true, 0, 'Attacker', 'Tetra', 'Helmet', ''],
     ['2026-11-18', 'Mirror Container', 8, false, 1, '', '', 'Gloves', ''],
     ['2026-11-18', 'Harvester', 9, true, 0, 'Defender', 'Elysion', 'Boots', 'first clear'],
+  ]),
+  tab(SPECIAL_TAB, [
+    ['2024-08-19', 'Alteisen', 1, 1, 0, 1],
+    ['2024-08-20', 'Gravedigger', 2, 0, 1, 0],
+    ['2024-08-21', 'Blacksmith', 3, 2, 0, 1],
   ]),
   tab(GEAR_TAB, [
     ['2026-11-16', 'Manufacturer Arms', 'Supporter', 'Missilis', 'Torso'],
