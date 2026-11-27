@@ -66,9 +66,12 @@ describe('toCostumes', () => {
     expect(toCostumes(rows).map((c) => c.costumeId)).toEqual(['3', '5'])
   })
 
-  it('reads releaseDate from the lookup column when present', () => {
-    const r = [...row('1', 'A', 'a'), '', '', '', 45000]
-    expect(toCostumes([r as string[]], 10)[0].releaseDate).toBe('2023-03-15')
+  it('reads releaseDate from column H, typed or as a date serial', () => {
+    const dated = (v: unknown) => [...row('1', 'A', 'a'), v] as string[]
+    expect(toCostumes([dated(45000), dated('2024-02-01')]).map((c) => c.releaseDate)).toEqual([
+      '2023-03-15',
+      '2024-02-01',
+    ])
     expect(toCostumes([row('1', 'A', 'a')])[0].releaseDate).toBe('')
   })
 })
@@ -131,13 +134,5 @@ describe('readCostumes', () => {
     const renamed = headers.map((h) => (h === 'nikke' ? 'Nikke' : h))
     const api = createMockSheetsApi({ [id]: { [tab]: [renamed, row('1', 'A', 'a')] } })
     await expect(readCostumes(api)).rejects.toBeInstanceOf(HeaderMismatchError)
-  })
-
-  it('finds releaseDate in column K', async () => {
-    const head = [...headers, '', '', '', 'releaseDate']
-    const api = createMockSheetsApi({
-      [id]: { [tab]: [head, [...row('1', 'A', 'a'), '', '', '', '2024-02-01']] },
-    })
-    expect((await readCostumes(api))[0].releaseDate).toBe('2024-02-01')
   })
 })

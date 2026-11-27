@@ -24,7 +24,8 @@ edits rows (see `../../CLAUDE.md`).
   - `sync_union` in `union_sheet.py`: `UnionRaid`, `UnionRoster` and `UnionSeason`.
   - `sync_nikke_database` in `nikke_sheet.py`: `NikkeDatabase`.
   - `sync_roster_log` in `roster_sheet.py`: `RosterLog`.
-  - `sync_costume_database` in `costume_sheet.py`: `CostumeDatabase`.
+  - `sync_costume_database` in `costume_sheet.py`: `CostumeDatabase`, with `releaseDate` from the news
+    archive (`news.py`, see `cli-shell.md`).
 - Reference files: `sync_reference` (`fetch.py`) and `fetch_roledata` (`roledata.py`), called by
   `refresh_reference`.
 - Run scripts: `cli/start.sh` and `cli/stop.sh`.
@@ -56,7 +57,10 @@ edits rows (see `../../CLAUDE.md`).
 - `RosterLog` appends only when a NIKKE's copy count differs from its last logged row.
   `CostumeDatabase` writes nothing when the roster call fails, because `owned` can never be
   corrected afterwards.
-- Cookies never reach the CDN: `refresh_reference` uses its own `httpx.AsyncClient()`.
+- The news archive is updated only when there is a costume to append (an empty archive means the full
+  download, a few minutes). If that fails, or any article fails, the rows are still written with a blank
+  `releaseDate` and the log says `no release dates: ...`. `test_costume_sheet.py`.
+- Cookies never reach the CDN or the news host: `refresh_reference` uses its own `httpx.AsyncClient()`.
 - Config files are re-read every check (`cookie.txt`, `sheets.json`, `service-account.json`), so a
   fixed config or refreshed cookie needs no restart.
 - Every write goes through `write_row` / `write_rows` (`cli/src/shiniri_cli/sheets.py`, see

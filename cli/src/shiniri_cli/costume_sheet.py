@@ -1,8 +1,10 @@
 """CostumeDatabase tab of the gacha sheet: every costume the tab doesn't have yet, keyed on column A
-(costumeId). `owned` is written once, at append time, from the costumes equipped on the account."""
+(costumeId). `owned` is written once, at append time, from the costumes equipped on the account; `releaseDate`
+comes from the news archive and stays blank when it cannot be told."""
 
 import httpx
 
+from . import news
 from .roledata import costume_entries, image_path, raw_name, resource_ids
 from .roster_sheet import database_names, fetch_characters
 from .sheets import SheetsApi, SheetsError, _checked, column_a, int_ids, write_rows
@@ -10,7 +12,16 @@ from .store import Store
 
 TAB = "CostumeDatabase"
 FORM = "cli-costume-database"
-HEADERS = ("costumeId", "nikke", "costumeName", "grade", "source", "image", "owned")
+HEADERS = (
+    "costumeId",
+    "nikke",
+    "costumeName",
+    "grade",
+    "source",
+    "image",
+    "owned",
+    "releaseDate",
+)
 
 # The text after "Obtained from " (lowercase, no trailing "."), confirmed by the owner. Anything not
 # listed stays blank for the owner to fill in by hand.
@@ -67,9 +78,31 @@ def costume_rows(
                     source_for(c.get("costume_description_locale") or ""),
                     image_path(c),
                     c["id"] in equipped,
+                    "",  # releaseDate: filled only for the rows about to be appended
                 ],
             )
     return [found[i] for i in sorted(found)], notes
+
+
+async def _add_release_dates(store: Store, rows: list[list]) -> str:
+    """Fill the last cell from the news archive; a note when that failed. Never raises: a blank date can be
+    typed in by hand, a missing row is worse."""
+    try:
+        async with httpx.AsyncClient() as client:  # no game cookies to the news host
+            _, failed = await news.update(store, client)
+        # A gap in the archive could make a rerun look like the first release.
+        if failed:
+            return f" (no release dates: {failed} articles failed)"
+        ids = {r[0] for r in rows}
+        dates = news.release_dates(
+            news.stored_articles(store),
+            [c for c in news.stored_costumes(store) if c[0] in ids],
+        )
+        for r in rows:
+            r[-1] = dates.get(r[0], ("", ""))[0]
+        return ""
+    except Exception as e:
+        return f" (no release dates: {type(e).__name__}: {e})"
 
 
 async def sync_costume_database(
@@ -97,9 +130,11 @@ async def sync_costume_database(
         rows, notes = costume_rows(store, names, equipped)
         have = int_ids(column_a(api, TAB))
         rows = [r for r in rows if r[0] not in have]
+        dated = ""
         if rows:
+            dated = await _add_release_dates(store, rows)
             write_rows(api, TAB, HEADERS, rows, form=FORM, timestamp=timestamp)
-        return f"{TAB} +{len(rows)}" + (
+        return f"{TAB} +{len(rows)}{dated}" + (
             f" (skipped {', '.join(notes)})" if notes else ""
         )
     except SheetsError as e:

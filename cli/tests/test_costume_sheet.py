@@ -1,8 +1,10 @@
 import asyncio
 
 import httpx
+import pytest
 from conftest import FakeSheets
 
+from shiniri_cli import news
 from shiniri_cli.costume_sheet import (
     HEADERS,
     costume_rows,
@@ -16,6 +18,32 @@ AUDIT = {
 }
 NAMES = {5185: "Marian: Queen"}
 DESC = "Marian: Queen costume.\nObtained from the Costume Gacha."
+
+
+@pytest.fixture(autouse=True)
+def archive(monkeypatch):
+    """No network: `news.update` answers with `calls["result"]`."""
+    calls = {"updates": 0, "result": (0, 0)}
+
+    async def update(store, client, **kw):
+        calls["updates"] += 1
+        if isinstance(calls["result"], Exception):
+            raise calls["result"]
+        return calls["result"]
+
+    monkeypatch.setattr(news, "update", update)
+    return calls
+
+
+def seed_note(store):
+    store.save_raw(
+        "news/a1",
+        {
+            "title": "Update on March 19",
+            "pub_timestamp": "1773619200",
+            "content": "<p>Marian: Queen - Last Affection</p>",
+        },
+    )
 
 
 def costume(id_=130007, rid=19, index=1, desc=DESC, **over):
@@ -49,6 +77,7 @@ def test_row_shape(store):
             "Costume Gacha",
             "character/mi/mi_c019_01_s.webp",
             True,
+            "",
         ]
     ]
     assert notes == [] and len(rows[0]) == len(HEADERS)
@@ -57,7 +86,7 @@ def test_row_shape(store):
 def test_owned_false_when_not_equipped(store):
     seed(store, [costume()])
     rows, _ = costume_rows(store, NAMES, set())
-    assert rows[0][-1] is False
+    assert rows[0][6] is False
 
 
 def test_unmapped_description_gives_blank_source(store):
@@ -107,7 +136,7 @@ def _sheet(*col_a, header=None):
     return FakeSheets(
         {
             **AUDIT,
-            "'CostumeDatabase'!A1:G1": [header or list(HEADERS)],
+            "'CostumeDatabase'!A1:H1": [header or list(HEADERS)],
             "'CostumeDatabase'!A:A": [["costumeId"], *[[v] for v in col_a]],
             "'NikkeDatabase'!A:B": [["nameCode", "nikke"], [5185, "Marian: Queen"]],
         }
@@ -122,11 +151,44 @@ def _sync(store, answer, api):
     return asyncio.run(go())
 
 
-def test_sync_appends_only_missing_ids(store):
+def seed_marian(store):
+    seed(store, [costume()])
+    store.save_raw(
+        "nikke_list_en",
+        [
+            {
+                "resource_id": 19,
+                "name_code": 5185,
+                "name_localkey": {"name": "Marian: Queen"},
+            }
+        ],
+    )
+    seed_note(store)
+
+
+def test_sync_writes_the_release_date(store, archive):
+    seed_marian(store)
+    api = _sheet()
+    assert _sync(store, ROSTER, api) == "CostumeDatabase +1"
+    assert api.batches[0][0][1][0][-1] == "2026-03-19"
+    assert archive["updates"] == 1
+
+
+@pytest.mark.parametrize("result", [(3, 1), httpx.ConnectError("down")])
+def test_sync_writes_a_blank_date_when_the_news_fetch_fails(store, archive, result):
+    seed_marian(store)
+    archive["result"] = result
+    api = _sheet()
+    line = _sync(store, ROSTER, api)
+    assert line.startswith("CostumeDatabase +1 (no release dates:")
+    assert api.batches[0][0][1][0][-1] == ""
+
+
+def test_sync_appends_only_missing_ids(store, archive):
     seed(store, [costume()])
     api = _sheet("130007")  # typed by hand as text
     assert _sync(store, ROSTER, api) == "CostumeDatabase +0"
-    assert api.batches == []
+    assert api.batches == [] and archive["updates"] == 0
 
 
 def test_sync_writes_one_block_with_audit(store):
@@ -134,8 +196,8 @@ def test_sync_writes_one_block_with_audit(store):
     api = _sheet()
     assert _sync(store, ROSTER, api) == "CostumeDatabase +1"
     [[(target, rows), (_, [audit])]] = api.batches
-    assert target == "'CostumeDatabase'!A2:G2"
-    assert rows[0][0] == 130007 and rows[0][-1] is True
+    assert target == "'CostumeDatabase'!A2:H2"
+    assert rows[0][0] == 130007 and rows[0][6] is True
     assert audit[1] == "cli-costume-database"
 
 

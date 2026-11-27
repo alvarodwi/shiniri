@@ -52,6 +52,7 @@ The main prompt holds the groups plus a few shared commands:
 | `clear [cmd]` | campaign & tower clears (below) |
 | `union [cmd]` | union raid (below) |
 | `sync` | re-download the CDN reference files |
+| `news [--force]` | archive the official news and write `data/exports/costume_release_dates.csv` (`--force` re-downloads everything) |
 | `cookie` | save your Cookie header |
 
 A group name alone switches to its prompt (`clear>`, `union>`) with its own `help`;
@@ -170,7 +171,8 @@ config/cookie.txt        your cookie (git-ignored)
 config/sheets.json       the Progression spreadsheet id (git-ignored)
 config/service-account.json  the Google service account key (git-ignored)
 data/daily.json          today's daily progress, the guard for the profile row
-data/raw/json/           what the server sent: the source of truth (union/ holds one file per raid season)
+data/raw/json/           what the server sent: the source of truth (union/ holds one file per raid season, news/ one per article)
+data/parsed/news/        each news article as Markdown (rebuilt from raw)
 data/parsed/csv/         campaign_clears.csv, tower_clears.csv, lineups.csv (rebuilt from raw)
 data/exports/            one CSV per search, grouped into campaign/, tower/ and all/
 src/shiniri_cli/         the code: store, queries, fetch, cli

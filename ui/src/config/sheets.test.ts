@@ -136,7 +136,16 @@ describe('tab specs', () => {
   it('CostumeDatabase', () => {
     expect(shape(COSTUME_DATABASE_TAB)).toEqual({
       tab: 'CostumeDatabase',
-      headers: ['costumeId', 'nikke', 'costumeName', 'grade', 'source', 'image', 'owned'],
+      headers: [
+        'costumeId',
+        'nikke',
+        'costumeName',
+        'grade',
+        'source',
+        'image',
+        'owned',
+        'releaseDate',
+      ],
     })
   })
   it('NikkeDatabase', () => {

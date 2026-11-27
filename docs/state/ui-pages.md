@@ -94,7 +94,7 @@ Shared pieces:
   `OVERSPEC_LINE` and does not raise the level. Header errors from the reads name the tab.
 - Anomaly: turning Double day off drops the edits made to runs 6 to 10. The sheet link and the
   "fix in the sheet" line are hidden below `sm` on purpose.
-- Costumes: reads `A1:Z` and finds the owner's `releaseDate` column by header text, right of column G.
+- Costumes: reads `A1:H`; `releaseDate` is column H, a date serial or typed text.
   `costumeImage` accepts only `character/mi/<name>.webp`. Cards render 24 at a time.
 - The mock sheet is keyed by spreadsheet id (`MOCK_SHEETS`), and a test checks the `SPREADSHEETS` ids
   are distinct. `vite.config.ts` pins test env ids so tests never read `.env.local`.
@@ -114,7 +114,7 @@ Nothing persistent. Entry state is in-memory Pinia state. The sheet is the only 
   a wrong id fails the header check.
 - `Anomaly` has a headerless column I (the note); its header list ends with `''`.
 - `NikkeDatabase` and `CostumeDatabase` are written by the CLI; the UI only reads them. The owner's
-  lookup columns (`releaseDate`, `priceUsd`) sit right of the checked headers.
+  own columns (`priceUsd`) sit right of the checked headers.
 - Overcore pain levels are fixed by source (`painLevel`): Social/Extra 1, Ordinary 2, Event 3,
   molds 2 to 5, Exchange 6 or 7.
 - `overcore.ts` has a `shortcut:` note: a backdated save uses "last copy + n", which may differ from

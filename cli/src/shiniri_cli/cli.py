@@ -15,6 +15,7 @@ from rich.console import Console
 from rich.markup import escape
 from rich.table import Table
 
+from . import news
 from . import union_queries as uq
 from .fetch import AuthError, load_cookie, make_client, save_cookie, sync_reference
 from .roledata import fetch_roledata
@@ -29,6 +30,11 @@ COMMANDS: dict[str, tuple[str, str, list[str]]] = {
         ["union", "union s45", "union missed s44"],
     ),
     "sync": ("sync", "re-download CDN reference files", ["sync"]),
+    "news": (
+        "news [--force]",
+        "archive official news and write costume release dates (--force re-downloads all)",
+        ["news", "news --force"],
+    ),
     "cookie": ("cookie", "paste your Cookie header", ["cookie"]),
     "help": (
         "help [group] [cmd]",
@@ -466,6 +472,30 @@ class App:
         self.out.print(f"[dim]{roledata_line}[/]")
         changed = {n for n, s in results.items() if s == "changed"}
         self.refresh(synced=changed)
+
+    def do_news(self, cmd: Command) -> None:
+        if cmd.args not in ([], ["--force"]):
+            raise QueryError("usage: " + COMMANDS["news"][0])
+
+        async def run(status):
+            async with httpx.AsyncClient() as client:
+                return await news.update(
+                    self.store,
+                    client,
+                    force=bool(cmd.args),
+                    progress=lambda n, total: status.update(f"article {n}/{total}"),
+                )
+
+        with self.out.status("listing news…") as status:
+            saved, failed = asyncio.run(run(status))
+        self.out.print(f"saved {saved} articles")
+        if failed:  # a gap could make a rerun look like the first release
+            self.out.print(f"[red]{failed} failed, no CSV written — run news again[/]")
+            return
+        if not news.stored_costumes(self.store):
+            raise QueryError("no costume data yet — run sync first")
+        path = news.write_release_csv(self.store)
+        self.out.print(f"[dim]{path.relative_to(self.store.root)}[/]")
 
 
 def fetch_colour(status: str) -> str:

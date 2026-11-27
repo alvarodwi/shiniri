@@ -255,11 +255,11 @@ def test_hits_quoted_and_forced_member_names(union_store):
 def test_clear_is_gone(store):
     app, out = make_app(store)
     app.execute("clear")
-    app.execute("n crown")
+    app.execute("nikke crown")
     text = out.export_text()
     assert (
         "unknown command 'clear'" in text
-        and "unknown command 'n'" in text
+        and "unknown command 'nikke'" in text
         and app.mode == "main"
     )
 

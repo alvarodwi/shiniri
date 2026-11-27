@@ -16,14 +16,12 @@ export type Costume = {
   releaseDate: string
 }
 
-// Data rows only (no header). `releaseDateCol` is the owner's lookup column, when the sheet has one.
-export function toCostumes(rows: string[][], releaseDateCol?: number): Costume[] {
+// Data rows only (no header).
+export function toCostumes(rows: string[][]): Costume[] {
   return rows.flatMap((row) => {
-    const [costumeId, nikke, costumeName, grade, source, image, owned] =
+    const [costumeId, nikke, costumeName, grade, source, image, owned, releaseDate] =
       COSTUME_DATABASE_TAB.headers.map((_, i) => String(row[i] ?? '').trim())
     if (!costumeId || !nikke) return []
-    const releaseDate =
-      releaseDateCol === undefined ? '' : cellToIsoDate(String(row[releaseDateCol] ?? ''))
     return [
       {
         costumeId,
@@ -33,7 +31,7 @@ export function toCostumes(rows: string[][], releaseDateCol?: number): Costume[]
         source,
         image,
         owned: owned.toUpperCase() === 'TRUE',
-        releaseDate,
+        releaseDate: cellToIsoDate(releaseDate),
       },
     ]
   })
@@ -41,17 +39,14 @@ export function toCostumes(rows: string[][], releaseDateCol?: number): Costume[]
 
 export async function readCostumes(api: SheetsApi): Promise<Costume[]> {
   const { spreadsheetId, tab } = COSTUME_DATABASE_TAB
-  // Unformatted, so a typed date is a serial number. Wide enough to reach the owner's lookup columns.
+  // Unformatted, so a date is a serial number.
   const [header = [], ...rows] = await api.getValues(
     spreadsheetId,
-    `'${tab.replace(/'/g, "''")}'!A1:Z`,
+    `'${tab.replace(/'/g, "''")}'!A1:H`,
     'UNFORMATTED_VALUE',
   )
   checkHeaders(COSTUME_DATABASE_TAB, header)
-  const col = header.findIndex(
-    (h, i) => i >= COSTUME_DATABASE_TAB.headers.length && String(h).trim() === 'releaseDate',
-  )
-  return toCostumes(rows, col < 0 ? undefined : col)
+  return toCostumes(rows)
 }
 
 // Appended rows follow the game's id order, so the newest costume is the last row.

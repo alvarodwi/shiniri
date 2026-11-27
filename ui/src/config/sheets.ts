@@ -65,12 +65,21 @@ export const NIKKE_DATABASE_TAB: TabSpec = {
   ],
 }
 
-// Read-only here: the cli writes it. The owner's lookup columns (releaseDate, priceUsd) sit to the right
-// of these, outside the header check.
+// Read-only here: the cli writes it. The owner's own columns (priceUsd) sit to the right of these, outside
+// the header check.
 export const COSTUME_DATABASE_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
   tab: 'CostumeDatabase',
-  headers: ['costumeId', 'nikke', 'costumeName', 'grade', 'source', 'image', 'owned'],
+  headers: [
+    'costumeId',
+    'nikke',
+    'costumeName',
+    'grade',
+    'source',
+    'image',
+    'owned',
+    'releaseDate',
+  ],
 }
 
 // totalSsr is the count of the names in ssrDetails; see services/social/socialRows.ts.

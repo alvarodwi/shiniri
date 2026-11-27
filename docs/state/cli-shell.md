@@ -9,7 +9,7 @@ derived files under `cli/data/`, and the Union Raid fetch and query code that bo
 ## Public surface
 
 - Shell: `main`, `App`, `COMMANDS`, `UNION_COMMANDS`, `GROUPS`, `parse_command` in `cli.py`. Main
-  commands: `union`, `sync`, `cookie`, `help`, `quit`. The only group is `union`: alone it enters
+  commands: `union`, `sync`, `news`, `cookie`, `help`, `quit`. The only group is `union`: alone it enters
   union mode, `union <cmd>` is a one-off, `back` leaves.
 - Union mode commands: `fetch`, `live`, `sN` / `season`, `hits`, `missed`, `normal`, `top`, `member`,
   `members`, `growth`, `boss`, `help`, `back` (`union_queries.py`).
@@ -19,6 +19,8 @@ derived files under `cli/data/`, and the Union Raid fetch and query code that bo
   `UnionData`, `FINAL_GRACE`, `SIZE_TRUST`.
 - Reference files: `sync_reference` and `cdn_url` in `fetch.py`, paths in `cli/config/sources.json`.
   Known CDN paths are in `docs/cdn-map.md`.
+- News: `update`, `release_dates`, `stored_articles`, `stored_costumes`, `write_release_csv` in
+  `news.py`. No cookie; its own HTTP client.
 - Cookie: `parse_cookie`, `save_cookie`, `load_cookie` in `fetch.py`.
 
 ## Invariants and rules
@@ -56,11 +58,19 @@ derived files under `cli/data/`, and the Union Raid fetch and query code that bo
   quick-cleared stage has no lineup to fetch. Code `300001` (`AUTH_CODE`) is an auth stop, never
   "uncleared".
 - Store files are written through `atomic_write`.
+- `news` downloads only ids it doesn't have (`--force`: all), once across the three labels, 0.3 s apart.
+  Raw responses are the source of truth; the Markdown is rebuilt from them. Any failed article means no
+  CSV, because a gap could make a rerun look like a first release. `test_news.py`.
+- `releaseDate` is a costume's first release. The first article (by publish time) with the NIKKE's and the
+  costume's names on one line decides. It must be an "Update on <Month Day>" note that names them
+  together ("Nikke - Costume", "Nikke's costume, Costume"), else blank. A later start date stated in a
+  numbered section naming them wins over the title date. Year comes from the publish time.
+  `test_news.py`.
 
 ## Owns
 
-`cli/data/` (gitignored): `raw/json/` (reference, `union/` seasons, clears, `roledata/`), `parsed/`
-(`union_hits.csv`), `exports/`, `state.json`, `.history` (shell history), plus the files in
+`cli/data/` (gitignored): `raw/json/` (reference, `union/` seasons, clears, `roledata/`, `news/`), `parsed/`
+(`union_hits.csv`, `news/*.md`), `exports/` (with `costume_release_dates.csv`), `state.json`, `.history` (shell history), plus the files in
 `cli-watch.md`. `cli/config/cookie.txt` is shared with the separate `ambil` tool, which refreshes it.
 
 ## Gotchas
