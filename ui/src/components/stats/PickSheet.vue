@@ -21,7 +21,9 @@ watch(
   () => store.sheet?.step,
   async (step, was) => {
     if (step === undefined) {
-      opener?.focus()
+      // A filter panel that opened under the sheet has already taken the focus; leave it there.
+      const at = document.activeElement
+      if (!at || at === document.body || dialog.value?.contains(at)) opener?.focus()
       opener = null
       return
     }

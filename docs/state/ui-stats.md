@@ -19,7 +19,7 @@ This doc does not list the facts. `FACTS` in `ui/src/services/stats/facts.ts` is
   durations, percents, signed changes and money. `rules.ts`: ties to the earliest row (`firstMax`),
   `topWithCount`, and the game day of a date cell (`cellGameDay`, `groupByGameDay`).
 - `ui/src/services/stats/ranges.ts`: the Date range filter (`dateRange`, `customRange`), `RANGE_PRESETS`,
-  `ANY_PERIOD` and `inRange`.
+  `ANY_PERIOD`, `inRange`, `dateFields` and `chipText`.
 - `ui/src/services/stats/loader.ts`: `createLoader()`, the header-and-column reads and the cache.
   `roll.ts`: `rollValues`, the random pick of every filter. Both have tests beside them.
 - `ui/src/stores/statsStore.ts`: `useStatsStore`, the card (`show`, `retry`, `setFilter`, `roll`,
@@ -96,16 +96,18 @@ A new tab or header is a sheet change the owner makes by hand. Say so when a fac
   option. A category only limits the fact step. Choosing a fact loads its tab, so derived options
   exist for the filters, then the sheet closes, also when the load failed. A double tap on a fact
   while loading is ignored. The sheet focuses its dialog on open and on each step so Esc closes it,
-  and returns focus to the opener on close. There is no focus trap.
+  and returns focus to the opener on close unless a filter
+  panel has taken it. There is no focus trap.
 - Filters are edited on the card. `openFilter` is the filter whose panel shows: by itself the first
   unchosen one, else the chip the viewer tapped, or none after Close. A first choice moves on to the
   next unchosen filter, a change closes the panel, and every choice applies at once. The answer is
   hidden while a panel is open. The panel has Random and Close; Esc closes it. `picker.roll()` is
   the page's Shuffle: it forgets the panel state, then calls `stats.roll()`.
 - A list over 12 options (a filter's, or a category's fact titles) gets a search box above a
-  two-column scrolling grid (`SearchList`).
+  two-column scrolling grid (`SearchList`). Esc in a non-empty search box only clears it.
 - A Date range panel shows `any period`, Quick, Years and Custom. The From and To fields show the
-  current choice (`dateFields`), To never past today; `Use these dates` needs both. A custom value's
+  current choice (`dateFields`), To never past today; `Use these dates` needs both, with From no later than To
+  or today. A custom value's
   chip text comes from `chipText`.
 - `Stats.vue` calls `reset()` (card back to `idle`) and `picker.reset()` on unmount, so nothing carries
   between visits.

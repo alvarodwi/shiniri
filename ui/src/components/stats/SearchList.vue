@@ -27,6 +27,7 @@ function onEnter(e: KeyboardEvent) {
     :placeholder="`Search ${options.length} ${label}`"
     :aria-label="`Search ${label}`"
     @keydown.enter="onEnter"
+    @keydown.esc="query && $event.stopPropagation()"
   />
   <div
     :class="
