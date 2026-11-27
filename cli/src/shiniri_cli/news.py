@@ -47,7 +47,7 @@ def markdown_dir(store: Store) -> Path:
     return store.root / "data" / "parsed" / "news"
 
 
-def _markdown(article: dict) -> str:
+def markdown(article: dict) -> str:
     html = re.sub(r"(?is)<(head|style|script)\b.*?</\1>", "", article.get("content") or "")
     return f"# {article.get('title', '')}\n\n{markdownify(html, heading_style='ATX')}"
 
@@ -102,7 +102,7 @@ def _write_markdown(store: Store) -> None:
     folder = markdown_dir(store)
     kept = set()
     for id_, name in markdown_names(list(articles.values())).items():
-        path, text = folder / name, _markdown(articles[id_])
+        path, text = folder / name, markdown(articles[id_])
         kept.add(name)
         if not path.exists() or path.read_text(encoding="utf-8") != text:
             atomic_write(path, text)
@@ -248,7 +248,7 @@ def release_dates(
     both names on one line decides. Blank when it does not announce the costume (a bug fix, say): any later
     announcement would be a rerun."""
     docs = [
-        (a, noted, _norm(_markdown(a)))
+        (a, noted, _norm(markdown(a)))
         for a in sorted(articles, key=lambda a: int(a["pub_timestamp"]))
         if (noted := update_date(a))
     ]

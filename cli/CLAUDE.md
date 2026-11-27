@@ -16,7 +16,7 @@ The sheet contract and development flow are in `../CLAUDE.md`. Paths here are re
   season, `nameCode`). `RosterLog` is the exception: it keys on `nameCode` plus `copies` (column A is
   always the date), so it appends when a count changes.
 - `tools/` holds dev-only scripts run from the owner's machine (`tools/assets.py` fills
-  `../ui/public/img/`; `tools/cdn.py` prints CDN URLs for asset paths). They are not part of the `shiniri_cli` package and `watch` never imports
+  `../ui/public/img/`; `tools/cdn.py` prints CDN URLs for asset paths; `tools/summarize.py` summarises patch notes with `claude -p`). They are not part of the `shiniri_cli` package and `watch` never imports
   them.
 
 ## Checks

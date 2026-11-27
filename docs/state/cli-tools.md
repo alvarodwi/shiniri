@@ -14,6 +14,8 @@ Scripts in `cli/tools/` that the owner runs by hand on their own machine. They a
 - `cli/tools/names.py`: read-only sweep of the gacha sheet. Reports names in the data tabs that are
   not in `NikkeDatabase`, and suggests the closest one. `COLUMNS` maps each tab to its name columns by
   header text.
+- `cli/tools/summarize.py`: `uv run python tools/summarize.py [--limit N] [--force]`. One `claude -p` call
+  per patch note, using `tools/summary_prompt.md` as the system prompt.
 - `cli/tools/cdn.py`: prints the CDN URL for each path given, using `cdn_url` from `fetch.py`.
 
 ## Invariants and rules
@@ -32,11 +34,15 @@ Scripts in `cli/tools/` that the owner runs by hand on their own machine. They a
   in the sheet, because `watch` keys on `nameCode` and never re-appends a renamed row.
 - The closest-match fallback tries a longest-prefix match (`name + " "`) before `difflib`, so a collab
   full name suggests the base name. Tabs missing from the sheet are skipped.
+- `summarize.py` takes patch notes newest first, only the later published note of two for one update date,
+  and never developer's notes. It runs `claude` in `--safe-mode` with no tools, in an empty directory,
+  because a note is web text. An existing summary is skipped unless `--force`; a failed or non-Markdown
+  answer writes nothing. `tests/test_summarize.py`.
 - `cdn.py` with no paths prints usage to stderr and exits 2. It makes no network call and checks no URL.
 
 ## Owns
 
-Nothing persistent. Images go to `ui/public/img/` and are committed to git (about 8 KB per NIKKE).
+`cli/data/summaries/` (gitignored; the owner propagates them). Images go to `ui/public/img/` and are committed to git (about 8 KB per NIKKE).
 
 ## Gotchas
 
