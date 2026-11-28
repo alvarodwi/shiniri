@@ -102,7 +102,7 @@ A pull on a rate-up banner, paid with gems or tickets. 300 gems, one ticket and 
 A pull on the ordinary banner, paid with gems or tickets at the event pull prices, except that the first pull of a day can be bought for 150 gems. Its pool is the social pool plus the non-limited overspec NIKKE, and its SSR rate is 4%. It has no rate-up, and earns silver mileage instead of gold.
 
 **Overspec NIKKE**:
-Any Pilgrim NIKKE, or one of the few from another manufacturer that the game ranks with them, such as `Rapi: Red Hood` or `Anis: Star`. A Pilgrim spook or a Pilgrim drought counts any overspec NIKKE.
+Any Pilgrim NIKKE, or one of the few from another manufacturer that the game ranks with them, such as `Rapi: Red Hood` or `Anis: Star`. A Pilgrim spook or a Pilgrim dry run counts any overspec NIKKE.
 
 **Release date**:
 The day a NIKKE or costume first became obtainable: the start of its own banner, event or Liberation batch. This can be later than the date of the patch note that announces it. A rerun never changes it.
