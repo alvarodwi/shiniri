@@ -18,11 +18,17 @@ import {
   sum,
 } from '@/services/stats/rules'
 import { SPENDING_TYPES } from '@/types/spending'
+import type { SpendingType } from '@/types/spending'
 
 const { tab } = SPENDING_TAB
 const ANY_TYPE = 'any type'
 const LAUNCH = '2022-11-04'
-const COSTUME_TYPES = ['Costume', 'Costume Gacha', 'Event Pass', 'Mission Pass']
+const COSTUME_TYPES: string[] = [
+  'Costume',
+  'Costume Gacha',
+  'Event Pass',
+  'Mission Pass',
+] satisfies SpendingType[]
 const PASS_DAYS = 30
 
 const text = (cell: unknown) => String(cell ?? '').trim()
@@ -81,8 +87,7 @@ const typeFilter = (options: string[], anyText = ''): Filter => ({
   options,
   say: (v) => (v === ANY_TYPE ? anyText : v),
 })
-const types: string[] = [...SPENDING_TYPES]
-const anyTypeOr = (anyText?: string) => typeFilter([ANY_TYPE, ...types], anyText)
+const anyTypeOr = (anyText?: string) => typeFilter([ANY_TYPE, ...SPENDING_TYPES], anyText)
 const anyType = anyTypeOr()
 const range = dateRange((cols) => cols[tab].date)
 
@@ -124,7 +129,7 @@ export const SPENDING_FACTS: Fact[] = [
     category: 'Spending',
     title: 'Money share',
     question: 'What % of my money went to {type} {range}?',
-    filters: [typeFilter(types), range],
+    filters: [typeFilter([...SPENDING_TYPES]), range],
     reads: reads('date', 'type', 'priceIdr'),
     compute: (c, v, today) => {
       const list = select(c, { range: v.range ?? ANY_PERIOD }, today)
@@ -178,9 +183,10 @@ export const SPENDING_FACTS: Fact[] = [
     question: 'How many days since my last {type} purchase?',
     filters: [anyType],
     reads: reads('date', 'type'),
+    // Purchases are dated by calendar day, which is ahead of the game day until 03:00.
     compute: (c, v, today) => {
       const last = days(select(c, v, today)).at(-1)
-      return last ? formatCount(daysBetween(last, today)) : null
+      return last ? formatCount(Math.max(0, daysBetween(last, today))) : null
     },
   },
   {
@@ -190,7 +196,12 @@ export const SPENDING_FACTS: Fact[] = [
     question: "What's the longest I've gone without buying {type}?",
     filters: [anyTypeOr('anything')],
     reads: reads('date', 'type'),
-    compute: (c, v, today) => longestGap(days(select(c, v, today)), today),
+    compute: (c, v, today) => {
+      const bought = days(select(c, v, today))
+      const last = bought.at(-1) ?? ''
+      // A purchase can be dated past the game day (see since-last), so the stretch ends no earlier.
+      return longestGap(bought, last > today ? last : today)
+    },
   },
   {
     id: 'spending-pass-lapse',

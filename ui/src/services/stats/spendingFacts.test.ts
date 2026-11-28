@@ -98,6 +98,15 @@ describe('spending facts', () => {
     expect(compute('dry-spell', tied, { type: 'Costume' })).toBe('10 days, from 8 Nov 2026')
   })
 
+  // A purchase is dated by calendar day, which is ahead of the game day until 03:00.
+  it('a purchase dated after today is 0 days ago, never negative', () => {
+    const rows = ROWS.slice(4, 5) // 8 Nov
+    expect(compute('since-last', rows, { type: 'any type' }, '2026-11-07')).toBe('0')
+    expect(compute('dry-spell', rows, { type: 'any type' }, '2026-11-07')).toBe(
+      '0 days, from 8 Nov 2026',
+    )
+  })
+
   it('pass-lapse stacks passes and counts uncovered days through today', () => {
     const pass = (day: string) => [day, '30-day supply', 'Monthly Pass', 1, 1, 'Apple']
     // covers 1 Jan to 30 Jan
