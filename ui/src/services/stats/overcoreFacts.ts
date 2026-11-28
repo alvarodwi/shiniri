@@ -5,7 +5,7 @@ import type { OvercoreSource } from '@/services/overcore/overcore'
 import { distinct } from '@/services/stats/anomalyFacts'
 import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
 import { formatCount, formatDate, formatPlural } from '@/services/stats/format'
-import { ATTRIBUTES, dated, hasTrait, traitOptions } from '@/services/stats/pullFacts'
+import { ATTRIBUTES, dated, anyTraitFilter, withTrait } from '@/services/stats/pullFacts'
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
 import { daysBetween, firstMax, gapsBetween, most, sum, topWithCount } from '@/services/stats/rules'
 
@@ -13,7 +13,6 @@ import { daysBetween, firstMax, gapsBetween, most, sum, topWithCount } from '@/s
 
 const TAB = OVERCORE_TAB.tab
 const ANY_SOURCE = 'any source'
-const ANY_TRAIT = 'any trait'
 const SOURCES: OvercoreSource[] = ['Social', 'Event', 'Ordinary', 'Mold', 'Exchange', 'Extra']
 
 const text = (cell: unknown) => String(cell ?? '').trim()
@@ -87,12 +86,7 @@ const source = (say?: Filter['say']): Filter => ({
   options: [ANY_SOURCE, ...SOURCES],
   say,
 })
-const trait: Filter = {
-  id: 'trait',
-  label: 'Trait',
-  options: (c) => [ANY_TRAIT, ...traitOptions(c, distinct(c[TAB].nikke.map(text)))],
-  say: (v) => (v === ANY_TRAIT ? '' : v),
-}
+const trait = anyTraitFilter((c) => distinct(c[TAB].nikke.map(text)))
 const noted: Filter = {
   id: 'nikke',
   label: 'NIKKE',
@@ -111,8 +105,8 @@ const traitReads = (...columns: string[]) => [
 ]
 
 const fromSource = (value: string) => (o: Overcore) => value === ANY_SOURCE || o.source === value
-const withTrait = (cols: Columns, value: string) => {
-  const has = value === ANY_TRAIT ? () => true : hasTrait(cols, value)
+const ofTrait = (cols: Columns, value: string) => {
+  const has = withTrait(cols, value)
   return (o: { nikke: string }) => has(o.nikke)
 }
 
@@ -176,7 +170,7 @@ export const OVERCORE_FACTS: Fact[] = [
       return formatCount(
         overcores(c)
           .filter(fromSource(v.source!))
-          .filter(withTrait(c, v.trait!))
+          .filter(ofTrait(c, v.trait!))
           .filter((o) => inside(o.day)).length,
       )
     },
@@ -190,7 +184,7 @@ export const OVERCORE_FACTS: Fact[] = [
     reads: traitReads('nikke'),
     // No date column, so ties follow the sheet's row order.
     compute: (c, v) => {
-      const has = withTrait(c, v.trait!)
+      const has = ofTrait(c, v.trait!)
       return topWithCount(
         c[TAB].nikke.map(text).filter((nikke) => has({ nikke })),
         'overcore',
@@ -205,7 +199,7 @@ export const OVERCORE_FACTS: Fact[] = [
     filters: [trait],
     reads: traitReads('date', 'nikke'),
     compute: (c, v) => {
-      const first = overcores(c).find(withTrait(c, v.trait!))
+      const first = overcores(c).find(ofTrait(c, v.trait!))
       return first ? `${first.nikke}, ${formatDate(first.day)}` : null
     },
   },

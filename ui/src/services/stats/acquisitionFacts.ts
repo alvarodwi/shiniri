@@ -2,7 +2,7 @@ import { ACQUISITION_LOG_TAB, NIKKE_DATABASE_TAB } from '@/config/sheets'
 import { distinct } from '@/services/stats/anomalyFacts'
 import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
 import { formatCount, formatDate, formatPlural } from '@/services/stats/format'
-import { ATTRIBUTES, hasTrait, traitOptions } from '@/services/stats/pullFacts'
+import { ATTRIBUTES, anyTraitFilter, withTrait } from '@/services/stats/pullFacts'
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
 import { cellGameDay, daysBetween, firstMax, topWithCount } from '@/services/stats/rules'
 
@@ -16,7 +16,6 @@ const STAGES: Record<string, string> = {
   ...Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((n) => [`c${n}`, `core ${n}`])),
 }
 const SLOTS = Object.keys(STAGES)
-const ANY_TRAIT = 'any trait'
 
 const text = (cell: unknown) => String(cell ?? '').trim()
 
@@ -77,12 +76,7 @@ const confidence: Filter = {
   label: 'Confidence',
   options: ['Perfect', 'Good', 'Approx', 'Unknown'],
 }
-const trait: Filter = {
-  id: 'trait',
-  label: 'Trait',
-  options: (c) => [ANY_TRAIT, ...traitOptions(c, distinct(c[TAB].nikke.map(text)))],
-  say: (v) => (v === ANY_TRAIT ? '' : v),
-}
+const trait = anyTraitFilter((c) => distinct(c[TAB].nikke.map(text)))
 
 const reads = (...columns: string[]) => [{ tab: ACQUISITION_LOG_TAB, columns }]
 const traitReads = (...columns: string[]) => [
@@ -92,7 +86,7 @@ const traitReads = (...columns: string[]) => [
 
 // The earliest core 7 among the NIKKE with the chosen trait.
 function firstMaxCore(cols: Columns, values: Values, recordedOnly: boolean) {
-  const wanted = values.trait === ANY_TRAIT ? () => true : hasTrait(cols, values.trait)
+  const wanted = withTrait(cols, values.trait)
   const list = roster(cols).flatMap((r) => {
     const max = r.at('c7')
     return max && wanted(r.nikke) && (!recordedOnly || r.confidence === 'Perfect')

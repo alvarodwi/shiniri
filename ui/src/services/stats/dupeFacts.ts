@@ -7,16 +7,23 @@ import {
 import { distinct } from '@/services/stats/anomalyFacts'
 import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
 import { formatCount, formatDate, formatPlural } from '@/services/stats/format'
-import { ATTRIBUTES, dated, hasTrait, traitOptions, traits } from '@/services/stats/pullFacts'
+import { ATTRIBUTES, dated, traits, anyTraitFilter, withTrait } from '@/services/stats/pullFacts'
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
-import { daysBetween, firstMax, median, most, topWithCount } from '@/services/stats/rules'
+import {
+  daysBetween,
+  firstMax,
+  groupByGameDay,
+  median,
+  most,
+  sum,
+  topWithCount,
+} from '@/services/stats/rules'
 
 // Facts on unused dupes: the computed DupeTracker tab for now, AllPulls joined to RosterLog for
 // what was used.
 
 const TRACKER = DUPE_TRACKER_TAB.tab
 const DB = NIKKE_DATABASE_TAB.tab
-const ANY_TRAIT = 'any trait'
 const NONE = 'None' // an empty tracker is a real answer
 const MAX_COPY = 11 // core 7
 
@@ -64,16 +71,11 @@ function usedInRange(cols: Columns, { range = ANY_PERIOD }: Values, today: strin
   return usedDupes(cols).filter((d) => inside(d.used))
 }
 function usedWithTrait(cols: Columns, values: Values) {
-  const wanted = values.trait === ANY_TRAIT ? () => true : hasTrait(cols, values.trait)
+  const wanted = withTrait(cols, values.trait)
   return usedDupes(cols).filter((d) => wanted(d.nikke))
 }
 
-const trait: Filter = {
-  id: 'trait',
-  label: 'Trait',
-  options: (c) => [ANY_TRAIT, ...traitOptions(c, distinct(c[DB].nikke.map(text)))],
-  say: (v) => (v === ANY_TRAIT ? '' : v),
-}
+const trait = anyTraitFilter((c) => distinct(c[DB].nikke.map(text)))
 const attribute: Filter = { id: 'attribute', label: 'Attribute', options: ATTRIBUTES }
 const usedRange = dateRange((c) => usedDupes(c).map((d) => d.used))
 
@@ -94,12 +96,9 @@ export const DUPE_FACTS: Fact[] = [
     filters: [trait],
     reads: [trackerReads(), traitRead],
     compute: (c, v) => {
-      const wanted = v.trait === ANY_TRAIT ? () => true : hasTrait(c, v.trait)
-      return formatCount(
-        holding(c)
-          .filter((h) => wanted(h.nikke))
-          .reduce((n, h) => n + h.unused, 0),
-      )
+      const wanted = withTrait(c, v.trait)
+      const held = holding(c).filter((h) => wanted(h.nikke))
+      return formatCount(sum(held, (h) => h.unused))
     },
   },
   {
@@ -221,11 +220,9 @@ export const DUPE_FACTS: Fact[] = [
     question: 'Which day did I use the most dupes?',
     reads: historyReads,
     compute: (c) => {
-      const days = new Map<string, number>()
-      for (const { used } of usedDupes(c).sort((a, b) => a.used.localeCompare(b.used)))
-        days.set(used, (days.get(used) ?? 0) + 1)
+      const used = usedDupes(c).map((d) => d.used)
       return most(
-        [...days].map(([day, n]) => ({ day, n })),
+        groupByGameDay(used).map(([day, rows]) => ({ day, n: rows.length })),
         (d) => formatDate(d.day),
       )
     },

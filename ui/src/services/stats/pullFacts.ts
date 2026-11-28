@@ -308,6 +308,17 @@ export function hasTrait(cols: Columns, label: string) {
   return (name: string) => maps.some((m) => m.get(name) === label)
 }
 
+// The "trait (with Any)" filter over the NIKKE `names` picks, and its matcher.
+const ANY_TRAIT = 'any trait'
+export const anyTraitFilter = (names: (cols: Columns) => string[]): Filter => ({
+  id: 'trait',
+  label: 'Trait',
+  options: (c) => [ANY_TRAIT, ...traitOptions(c, names(c))],
+  say: (v) => (v === ANY_TRAIT ? '' : v),
+})
+export const withTrait = (cols: Columns, label: string): ((name: string) => boolean) =>
+  label === ANY_TRAIT ? () => true : hasTrait(cols, label)
+
 const source = (options: string[]) => filter('source', 'Source', [ANY_SOURCE, ...options])
 const anySource = source(SOURCES)
 const pulledNikke = filter('nikke', 'NIKKE', (c) => distinct(c[ALL].nikke.map(text)))

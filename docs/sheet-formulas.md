@@ -2,7 +2,7 @@
 
 These formulas live only in the Google Sheet (the gacha spreadsheet). No code writes them. The code
 reads their output: `AllPulls` `copy` is read by `checkOvercores` (`ui/src/services/overcore/overcore.ts`),
-and the Stats facts read `AllPulls` and `AcquisitionLog`.
+and the Stats facts read `AllPulls`, `AcquisitionLog` and `DupeTracker`.
 The text below is copied from the 2026-11 specs, now archived in `plans/archive/`, so it is **the last
 known version, not the live one**. Check it against the sheet before relying on it.
 
