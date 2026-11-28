@@ -264,7 +264,7 @@ export const SOLO_RAID_FACTS: Fact[] = [
     id: 'soloraid-power-creep',
     category: 'Raids',
     title: 'Power creep',
-    question: 'How much has my average damage grown {period} over the period before?',
+    question: 'By what percent has my average damage grown {period} over the period before?',
     filters: [period],
     reads: reads('month', 'damage'),
     compute: (c, v) => {
