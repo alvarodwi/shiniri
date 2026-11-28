@@ -79,7 +79,7 @@ export const SOCIAL_FACTS: Fact[] = [
     ],
     compute: (c) => {
       const db = c[NIKKE_DATABASE_TAB.tab]
-      const flagged = (cell: unknown) => String(cell).toUpperCase() === 'TRUE'
+      const flagged = (cell: unknown) => String(cell).trim().toUpperCase() === 'TRUE'
       const pool = db.nikke.filter(
         (name, i) =>
           name && db.rarity[i] === 'SSR' && !flagged(db.limited[i]) && !flagged(db.overspec[i]),

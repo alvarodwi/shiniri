@@ -59,7 +59,7 @@ const DB = [
   ['Pepper', 'SSR', '', ''],
   ['Rapi', 'SR', false, false],
   ['Rupee: Winter Shopper', 'SSR', true, false],
-  ['Noah', 'SSR', false, 'TRUE'],
+  ['Noah', 'SSR', false, 'TRUE '], // hand-typed trailing space
 ]
 
 describe('social facts', () => {

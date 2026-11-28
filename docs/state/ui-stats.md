@@ -18,8 +18,8 @@ clear row and the computes both use; `clearRows.fixture.ts` is their test data. 
 `specialFacts.ts`, `gear-special-*` in `gearFacts.ts`, the combined Campaign facts in
 `towerFacts.ts`).
 
-The social facts read the gacha spreadsheet. The social pool of `social-missing` is every SSR in
-`NikkeDatabase` whose `overspec` and `limited` are not `TRUE`.
+The social facts read the gacha spreadsheet. `social-missing` reads `Social` and `NikkeDatabase`; its social pool
+is every SSR in `NikkeDatabase` whose `overspec` and `limited` are not `TRUE`.
 
 The union facts count own hits by the fixed nickname `VAROA`, except that the days of a mode come
 from every member's rows. Their `season` filter is its own (not a Date range), counts "last N" back
