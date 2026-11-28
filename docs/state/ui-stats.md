@@ -12,7 +12,8 @@ This doc does not list the facts. `FACTS` in `ui/src/services/stats/facts.ts` is
 mostly from one file per tab (`anomalyFacts.ts`, `specialFacts.ts`, `gearFacts.ts`,
 `furnaceFacts.ts`, `levelFacts.ts`, `profileFacts.ts`, `soloRaidFacts.ts`, `campaignFacts.ts`,
 `towerFacts.ts`, `unionRaidFacts.ts`, `socialFacts.ts`, `eventFacts.ts`, `ordinaryFacts.ts`, `moldFacts.ts`,
-`exchangeFacts.ts`, `extraFacts.ts`, `pullFacts.ts`, `acquisitionFacts.ts`, `overcoreFacts.ts`, with tests beside them). `clears.ts` holds what Campaign and Tower share: parsing a
+`exchangeFacts.ts`, `extraFacts.ts`, `pullFacts.ts`, `acquisitionFacts.ts`, `dupeFacts.ts`,
+`overcoreFacts.ts`, with tests beside them). `clears.ts` holds what Campaign and Tower share: parsing a
 clear row and the computes both use; `clearRows.fixture.ts` is their test data. `Profile`, `Campaign`,
 `Tower`, `UnionRaid` and `UnionSeason` are written by the CLI; `PROFILE_TAB`, `CAMPAIGN_TAB`,
 `TOWER_TAB`, `UNION_RAID_TAB` and `UNION_SEASON_TAB` mirror its headers and only stats read them. A fact that reads two tabs lives in one of their files (`interception-*` in
@@ -56,6 +57,12 @@ the same banner completed within 30 days of its last session. The two Overcore f
 `painLevel`. `Overcore` stores neither mold type nor exchange currency, so those come from the `Mold`
 or `Exchange` rows with the same day and NIKKE. If any overcore a pain fact looks at has no match, or
 matches with different levels, the fact has no answer. Blessed streak includes the current stretch.
+
+The Roster facts in `dupeFacts.ts` (gacha spreadsheet) are about unused dupes. The snapshot ones read
+the computed `DupeTracker` tab, count only positive `unused`, and answer `None` (the count `0`) when
+nothing is waiting. The history ones join `AllPulls` copies 2 to 11 (blank up to the `RosterLog`
+baseline) to the first `RosterLog` date whose `copies` reaches that copy; a date before the pull drops
+the dupe. Waits count used dupes only, and `{range}` applies to the date used.
 
 The Roster facts in `acquisitionFacts.ts` read `AcquisitionLog` (gacha spreadsheet), which a sheet
 formula builds; nothing is rebuilt from `AllPulls` or `RosterLog`. A slot from `firstCopy` to `c7` is

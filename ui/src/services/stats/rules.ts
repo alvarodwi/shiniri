@@ -96,6 +96,12 @@ export function streak<T extends { day: string }>(
   return best ? `${formatPlural(best.length, 'day')}, from ${formatDate(best.from)}` : null
 }
 
+export function median(numbers: number[]) {
+  const sorted = [...numbers].sort((a, b) => a - b)
+  const mid = sorted.length >> 1
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+}
+
 export const sum = <T>(list: T[], of: (item: T) => number) =>
   list.reduce((n, item) => n + of(item), 0)
 

@@ -30,7 +30,7 @@ import {
 import type { Clear } from '@/services/stats/clears'
 import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
 import { formatCount, formatDate, formatDuration, formatPlural } from '@/services/stats/format'
-import { firstMax } from '@/services/stats/rules'
+import { firstMax, median } from '@/services/stats/rules'
 
 const ANY_MODE = 'any mode'
 const ANY_CHAPTER = 'any chapter'
@@ -108,12 +108,6 @@ const exDelays = (list: Clear[]) =>
       : [],
   )
 const afterBoss = (list: Clear[]) => exDelays(list).filter((d) => d.ms > 0)
-function median(numbers: number[]) {
-  const sorted = [...numbers].sort((a, b) => a - b)
-  const mid = sorted.length >> 1
-  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
-}
-
 // Normal boss clear to Hard boss clear, by chapter.
 function catchUps(cols: Columns) {
   // by chapter: a catch-up tie goes to the lower one

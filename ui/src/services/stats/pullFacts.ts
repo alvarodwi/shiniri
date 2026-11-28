@@ -285,7 +285,7 @@ const byChance = <T extends { source: string }>(list: T[]) =>
   list.filter((a) => CHANCE_SOURCES.includes(a.source))
 
 // The trait of each NikkeDatabase NIKKE as answers word it.
-function traits(cols: Columns, attribute: string) {
+export function traits(cols: Columns, attribute: string) {
   const db = cols[DB]
   const label = (raw: string) => {
     if (attribute === 'manufacturer') return raw.charAt(0) + raw.slice(1).toLowerCase()

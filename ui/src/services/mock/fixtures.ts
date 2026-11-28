@@ -1,5 +1,6 @@
 import {
   ACQUISITION_LOG_TAB,
+  DUPE_TRACKER_TAB,
   ALL_PULLS_TAB,
   ANOMALY_TAB,
   CAMPAIGN_TAB,
@@ -408,6 +409,7 @@ export const MOCK_SHEETS = sheets([
     ['2026-10-20', 'Rapi', 'Event', false, '', false],
     ['2026-11-02', 'Rapi', 'Event', false, 11, false],
   ]),
+  tab(DUPE_TRACKER_TAB, [['Rapi', 10, 11, 1]]),
   // Row 2 numbers the slots, as the formula writes it.
   tab(ACQUISITION_LOG_TAB, [
     ['', '', '', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],

@@ -316,6 +316,13 @@ export const ROSTER_LOG_TAB: TabSpec = {
   headers: ['date', 'nameCode', 'nikke', 'copies'],
 }
 
+// Read-only here: a sheet formula builds it.
+export const DUPE_TRACKER_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
+  tab: 'DupeTracker',
+  headers: ['nikke', 'copies', 'expected', 'unused'],
+}
+
 // Read-only here: a sheet formula builds it. Row 2 numbers the copy slots (firstCopy to c7).
 export const ACQUISITION_LOG_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,

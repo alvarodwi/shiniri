@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   ACQUISITION_LOG_TAB,
+  DUPE_TRACKER_TAB,
   ALL_PULLS_TAB,
   ANOMALY_TAB,
   COSTUME_DATABASE_TAB,
@@ -184,6 +185,12 @@ describe('tab specs', () => {
     expect(shape(ROSTER_LOG_TAB)).toEqual({
       tab: 'RosterLog',
       headers: ['date', 'nameCode', 'nikke', 'copies'],
+    })
+  })
+  it('DupeTracker', () => {
+    expect(shape(DUPE_TRACKER_TAB)).toEqual({
+      tab: 'DupeTracker',
+      headers: ['nikke', 'copies', 'expected', 'unused'],
     })
   })
   it('AcquisitionLog', () => {

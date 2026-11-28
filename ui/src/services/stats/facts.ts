@@ -2,6 +2,7 @@ import type { TabSpec } from '@/config/sheets'
 import { ACQUISITION_FACTS } from '@/services/stats/acquisitionFacts'
 import { ANOMALY_FACTS } from '@/services/stats/anomalyFacts'
 import { CAMPAIGN_FACTS } from '@/services/stats/campaignFacts'
+import { DUPE_FACTS } from '@/services/stats/dupeFacts'
 import { EVENT_FACTS } from '@/services/stats/eventFacts'
 import { EXCHANGE_FACTS } from '@/services/stats/exchangeFacts'
 import { EXTRA_FACTS } from '@/services/stats/extraFacts'
@@ -91,5 +92,6 @@ export const FACTS: Fact[] = [
   ...EXTRA_FACTS,
   ...PULL_FACTS,
   ...ACQUISITION_FACTS,
+  ...DUPE_FACTS,
   ...OVERCORE_FACTS,
 ]
