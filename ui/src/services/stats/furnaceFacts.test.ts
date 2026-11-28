@@ -78,7 +78,8 @@ const CASES: [string, Record<string, string>, unknown[][], string | null][] = [
   ['top-class', any, ROWS, 'Attacker, 3 pieces'],
   ['top-class', any, TIED, 'Attacker, 1 piece'],
   ['top-class', none, ROWS, null],
-  ['top-slot', any, ROWS, 'Helmet, 3 pieces'], // tie with Torso: earliest row
+  ['top-slot', any, ROWS, 'Helmet, 3 pieces'],
+  ['top-slot', any, TIED, 'Helmet, 1 piece'], // tie: first sacrifice
   ['top-slot', none, ROWS, null],
   ['attempts', target('any manufacturer'), ROWS, '3'],
   ['attempts', target('Pilgrim'), ROWS, '2'],

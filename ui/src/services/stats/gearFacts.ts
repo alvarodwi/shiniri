@@ -27,7 +27,7 @@ const SOURCES: Record<string, string[]> = {
 const CLASS_CHOSEN = [box]
 const MANUFACTURER_CHOSEN = [box, furnace]
 
-const ANY = {
+export const ANY = {
   manufacturer: 'any manufacturer',
   class: 'any class',
   slot: 'any slot',

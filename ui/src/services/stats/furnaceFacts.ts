@@ -1,12 +1,14 @@
 import { FURNACE_TAB } from '@/config/sheets'
 import type { Columns, Fact, Values } from '@/services/stats/facts'
 import { formatCount } from '@/services/stats/format'
-import { kindFilters, kindName, manufacturerFilter, matches } from '@/services/stats/gearFacts'
+import { ANY, kindFilters, kindName, manufacturerFilter, matches } from '@/services/stats/gearFacts'
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
 import { topWithCount } from '@/services/stats/rules'
 
 const { tab } = FURNACE_TAB
-const ANY_TARGET = manufacturerFilter.options[0]
+// The one place a sacrifice header is spelled, so declared and read columns cannot drift.
+const sacrificeColumn = (n: number, part: 'manufacturer' | 'class' | 'slot') =>
+  `sacrifice${n}${part[0].toUpperCase()}${part.slice(1)}`
 
 // The attempts in range, in row order. Columns a fact did not declare read as blank.
 function attempts(cols: Columns, { range = ANY_PERIOD }: Values, today: string) {
@@ -16,16 +18,15 @@ function attempts(cols: Columns, { range = ANY_PERIOD }: Values, today: string) 
     if (!within(date)) return []
     const text = (name: string) => String(t[name]?.[i] ?? '')
     const sacrifices = [1, 2].map((n) => ({
-      manufacturer: text(`sacrifice${n}Manufacturer`),
-      class: text(`sacrifice${n}Class`),
-      slot: text(`sacrifice${n}Slot`),
+      manufacturer: text(sacrificeColumn(n, 'manufacturer')),
+      class: text(sacrificeColumn(n, 'class')),
+      slot: text(sacrificeColumn(n, 'slot')),
     }))
     return [
       {
         target: text('target'),
         sacrifices,
-        class: text('resultClass'),
-        slot: text('resultSlot'),
+        result: { class: text('resultClass'), slot: text('resultSlot') },
       },
     ]
   })
@@ -41,7 +42,7 @@ const top = (cells: string[]) => topWithCount(cells, 'piece')
 const returned = (cols: Columns, values: Values, today: string, parts: ('class' | 'slot')[]) =>
   formatCount(
     attempts(cols, values, today).filter((a) =>
-      a.sacrifices.some((s) => parts.every((p) => a[p] !== '' && s[p] === a[p])),
+      a.sacrifices.some((s) => parts.every((p) => a.result[p] !== '' && s[p] === a.result[p])),
     ).length,
   )
 
@@ -50,7 +51,7 @@ const target = { ...manufacturerFilter, id: 'target', label: 'Target' }
 
 const reads = (...columns: string[]) => [{ tab: FURNACE_TAB, columns: ['date', ...columns] }]
 const sacrificeColumns = (...parts: (keyof Sacrifice)[]) =>
-  [1, 2].flatMap((n) => parts.map((p) => `sacrifice${n}${p[0].toUpperCase()}${p.slice(1)}`))
+  [1, 2].flatMap((n) => parts.map((p) => sacrificeColumn(n, p)))
 const kindColumns = sacrificeColumns('class', 'manufacturer', 'slot')
 
 export const FURNACE_FACTS: Fact[] = [
@@ -114,7 +115,7 @@ export const FURNACE_FACTS: Fact[] = [
     reads: reads('target'),
     compute: (c, v, today) =>
       formatCount(
-        attempts(c, v, today).filter((a) => v.target === ANY_TARGET || a.target === v.target)
+        attempts(c, v, today).filter((a) => v.target === ANY.manufacturer || a.target === v.target)
           .length,
       ),
   },
