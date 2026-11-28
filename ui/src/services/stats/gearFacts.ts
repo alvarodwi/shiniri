@@ -34,7 +34,7 @@ const ANY = {
   boss: 'any boss',
 }
 
-const kindName = (manufacturer: string, cls: string, slot: string) =>
+export const kindName = (manufacturer: string, cls: string, slot: string) =>
   `${manufacturer} ${cls} ${slot}`
 
 // The dated pieces, oldest first; a day keeps its row order.
@@ -53,7 +53,7 @@ function pieces(cols: Columns) {
 }
 type Piece = ReturnType<typeof pieces>[number]
 
-const matches = (p: Piece, values: Values) =>
+export const matches = (p: Pick<Piece, 'manufacturer' | 'class' | 'slot'>, values: Values) =>
   (['manufacturer', 'class', 'slot'] as const).every(
     (key) => !values[key] || values[key] === ANY[key] || p[key] === values[key],
   )
@@ -110,7 +110,8 @@ const attribute = (
 const manufacturer = attribute('manufacturer', 'Manufacturer', MANUFACTURERS)
 const classType = attribute('class', 'Class', CLASS_TYPES)
 const slot = attribute('slot', 'Slot', SLOTS)
-const kindFilters = [manufacturer.any, classType.any, slot.any]
+export const manufacturerFilter = manufacturer.any
+export const kindFilters = [manufacturer.any, classType.any, slot.any]
 // "full any manufacturer any class sets" would not read, so "any" drops out of this question.
 const silentAny = (f: Filter, any: string): Filter => ({
   ...f,

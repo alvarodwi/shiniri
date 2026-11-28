@@ -1,5 +1,6 @@
 import type { TabSpec } from '@/config/sheets'
 import { ANOMALY_FACTS } from '@/services/stats/anomalyFacts'
+import { FURNACE_FACTS } from '@/services/stats/furnaceFacts'
 import { GEAR_FACTS } from '@/services/stats/gearFacts'
 import { SPECIAL_FACTS } from '@/services/stats/specialFacts'
 
@@ -56,4 +57,4 @@ export const fillQuestion = (
   })
 
 // Mostly one file per tab; see format.ts and rules.ts for how a compute writes its answer.
-export const FACTS: Fact[] = [...ANOMALY_FACTS, ...SPECIAL_FACTS, ...GEAR_FACTS]
+export const FACTS: Fact[] = [...ANOMALY_FACTS, ...SPECIAL_FACTS, ...GEAR_FACTS, ...FURNACE_FACTS]
