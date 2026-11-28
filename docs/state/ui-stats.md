@@ -13,7 +13,7 @@ mostly from one file per tab (`anomalyFacts.ts`, `specialFacts.ts`, `gearFacts.t
 `furnaceFacts.ts`, `levelFacts.ts`, `profileFacts.ts`, `soloRaidFacts.ts`, `campaignFacts.ts`,
 `towerFacts.ts`, `unionRaidFacts.ts`, `socialFacts.ts`, `eventFacts.ts`, `ordinaryFacts.ts`, `moldFacts.ts`,
 `exchangeFacts.ts`, `extraFacts.ts`, `pullFacts.ts`, `acquisitionFacts.ts`, `dupeFacts.ts`,
-`overcoreFacts.ts`, with tests beside them). `clears.ts` holds what Campaign and Tower share: parsing a
+`overcoreFacts.ts`, `rosterFacts.ts`, with tests beside them). `clears.ts` holds what Campaign and Tower share: parsing a
 clear row and the computes both use; `clearRows.fixture.ts` is their test data. `Profile`, `Campaign`,
 `Tower`, `UnionRaid` and `UnionSeason` are written by the CLI; `PROFILE_TAB`, `CAMPAIGN_TAB`,
 `TOWER_TAB`, `UNION_RAID_TAB` and `UNION_SEASON_TAB` mirror its headers and only stats read them. A fact that reads two tabs lives in one of their files (`interception-*` in
@@ -79,6 +79,10 @@ The sheet says `Electronic`; answers say `Electric`.
 Stage names come raw from the sheet (`46-40 HARD BOSS`, `SUB 2-1 STAGE`, `EX HARD STAGE`): story,
 side and boss stages are told apart by that text, and a boss floor is every tenth floor. The
 manufacturer towers' open weekdays and 3-clear daily limit are constants in `towerFacts.ts`.
+
+The Roster facts in `rosterFacts.ts` (gacha spreadsheet) read `RosterLog` joined to `NikkeDatabase`
+on `nameCode`, SSRs only. A NIKKE's state is its latest row; owned means it has one. Roster growth
+sums the rises in copies (a first row counts from 0), leaving out the earliest date, the baseline.
 
 ## Public surface
 

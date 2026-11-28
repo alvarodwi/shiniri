@@ -14,6 +14,7 @@ import { ORDINARY_FACTS } from '@/services/stats/ordinaryFacts'
 import { OVERCORE_FACTS } from '@/services/stats/overcoreFacts'
 import { PROFILE_FACTS } from '@/services/stats/profileFacts'
 import { PULL_FACTS } from '@/services/stats/pullFacts'
+import { ROSTER_FACTS } from '@/services/stats/rosterFacts'
 import { SOCIAL_FACTS } from '@/services/stats/socialFacts'
 import { SOLO_RAID_FACTS } from '@/services/stats/soloRaidFacts'
 import { SPECIAL_FACTS } from '@/services/stats/specialFacts'
@@ -94,4 +95,5 @@ export const FACTS: Fact[] = [
   ...ACQUISITION_FACTS,
   ...DUPE_FACTS,
   ...OVERCORE_FACTS,
+  ...ROSTER_FACTS,
 ]

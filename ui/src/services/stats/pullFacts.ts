@@ -309,7 +309,7 @@ export function hasTrait(cols: Columns, label: string) {
 }
 
 // The "trait (with Any)" filter over the NIKKE `names` picks, and its matcher.
-const ANY_TRAIT = 'any trait'
+export const ANY_TRAIT = 'any trait'
 export const anyTraitFilter = (names: (cols: Columns) => string[]): Filter => ({
   id: 'trait',
   label: 'Trait',
