@@ -7,7 +7,7 @@ import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
 import { formatCount, formatDate, formatPlural } from '@/services/stats/format'
 import { ATTRIBUTES, dated, hasTrait, traitOptions } from '@/services/stats/pullFacts'
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
-import { daysBetween, firstMax, most, sum, topWithCount } from '@/services/stats/rules'
+import { daysBetween, firstMax, gapsBetween, most, sum, topWithCount } from '@/services/stats/rules'
 
 // Facts on the Overcore tab. The two about wasted exchanges are in pullFacts.ts.
 
@@ -113,7 +113,7 @@ const traitReads = (...columns: string[]) => [
 const fromSource = (value: string) => (o: Overcore) => value === ANY_SOURCE || o.source === value
 const withTrait = (cols: Columns, value: string) => {
   const has = value === ANY_TRAIT ? () => true : hasTrait(cols, value)
-  return (o: Overcore) => has(o.nikke)
+  return (o: { nikke: string }) => has(o.nikke)
 }
 
 export const OVERCORE_FACTS: Fact[] = [
@@ -187,14 +187,15 @@ export const OVERCORE_FACTS: Fact[] = [
     title: 'Repeat offender',
     question: 'Which {trait} NIKKE has overcored most often?',
     filters: [trait],
-    reads: traitReads('date', 'nikke'),
-    compute: (c, v) =>
-      topWithCount(
-        overcores(c)
-          .filter(withTrait(c, v.trait!))
-          .map((o) => o.nikke),
+    reads: traitReads('nikke'),
+    // No date column, so ties follow the sheet's row order.
+    compute: (c, v) => {
+      const has = withTrait(c, v.trait!)
+      return topWithCount(
+        c[TAB].nikke.map(text).filter((nikke) => has({ nikke })),
         'overcore',
-      ),
+      )
+    },
   },
   {
     id: 'overcore-first',
@@ -215,11 +216,10 @@ export const OVERCORE_FACTS: Fact[] = [
     question: 'How many days was my longest blessed stretch without an overcore?',
     reads: reads('date'),
     compute: (c, _, today) => {
-      const days = overcores(c).map((o) => o.day)
-      const gaps = days.map((from, i) => {
-        const to = days[i + 1] ?? today
-        return { from, to, n: daysBetween(from, to) }
-      })
+      const gaps = gapsBetween(
+        overcores(c).map((o) => o.day),
+        today,
+      )
       return most(gaps, (g) => `${formatDate(g.from)} to ${formatDate(g.to)}`)
     },
   },

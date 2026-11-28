@@ -350,10 +350,9 @@ describe('wasted exchange facts', () => {
 })
 
 describe('combined pull facts', () => {
-  it('has the 22 Pulls facts, and Overcore is 12', () => {
+  it('has the 22 Pulls facts', () => {
     const own = FACTS.filter((f) => f.id.startsWith('pulls-'))
     expect(own).toHaveLength(22)
     expect(own.every((f) => f.category === 'Pulls')).toBe(true)
-    expect(FACTS.filter((f) => f.category === 'Overcore')).toHaveLength(12)
   })
 })

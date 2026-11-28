@@ -65,10 +65,16 @@ export const daysBetween = (from: string, to: string) => (Date.parse(to) - Date.
 export const addDays = (day: string, n: number) =>
   new Date(Date.parse(day) + n * DAY).toISOString().slice(0, 10)
 
+// Each day's step to the next, the last one running to today.
+export const gapsBetween = (days: string[], today: string) =>
+  days.map((from, i) => {
+    const to = days[i + 1] ?? today
+    return { from, to, n: daysBetween(from, to) }
+  })
+
 // "31 days, from 1 Jan 2026": the widest step between days, the one still running included.
 export function longestGap(days: string[], today: string) {
-  const gaps = days.map((from, i) => ({ from, n: daysBetween(from, days[i + 1] ?? today) }))
-  const best = firstMax(gaps, (g) => g.n)
+  const best = firstMax(gapsBetween(days, today), (g) => g.n)
   return best ? `${formatPlural(best.n, 'day')}, from ${formatDate(best.from)}` : null
 }
 

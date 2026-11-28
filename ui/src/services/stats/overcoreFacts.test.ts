@@ -99,6 +99,10 @@ describe('overcore pain facts', () => {
 })
 
 describe('overcore record facts', () => {
+  it('makes the category 12 with the two wasted-exchange facts', () => {
+    expect(FACTS.filter((f) => f.category === 'Overcore')).toHaveLength(12)
+  })
+
   const tabs: Tabs = {
     Overcore: [
       over('2024-05-02', 'Event', 'Anis', 'ouch'),
@@ -135,6 +139,8 @@ describe('overcore record facts', () => {
     expect(compute('first', tabs, all)).toBe('Anis, 2 May 2024')
     expect(compute('first', tabs, { trait: 'Attacker' })).toBe('Rapi, 30 Aug 2024')
     expect(compute('first', {}, all)).toBeNull()
+    const tie = [over('2024-05-01', 'Event', 'A'), over('2024-05-01', 'Event', 'B')]
+    expect(compute('first', { Overcore: tie }, all)).toBe('A, 1 May 2024')
   })
 
   it('blessed-streak is the longest gap, the running one included', () => {
@@ -149,6 +155,8 @@ describe('overcore record facts', () => {
     expect(compute('blessed-streak', tabs)).toBe('818 (1 Sep 2024 to 28 Nov 2026)')
     expect(compute('blessed-streak', { Overcore: [over(TODAY, 'Event', 'A')] })).toBe('0')
     expect(compute('blessed-streak', {})).toBeNull()
+    const even = ['2026-11-08', '2026-11-18'].map((d) => over(d, 'Event', 'A'))
+    expect(compute('blessed-streak', { Overcore: even })).toBe('10 (8 Nov 2026 to 18 Nov 2026)')
   })
 
   it('days-of-peace counts from the latest overcore', () => {
