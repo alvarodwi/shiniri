@@ -9,6 +9,9 @@ import {
   firstMax,
   flagged,
   groupByGameDay,
+  most,
+  namesWhere,
+  sum,
   topWithCount,
 } from '@/services/stats/rules'
 
@@ -54,7 +57,6 @@ function sessions(cols: Columns) {
 }
 type Session = ReturnType<typeof sessions>[number]
 
-const sum = <T>(list: T[], of: (item: T) => number) => list.reduce((n, item) => n + of(item), 0)
 const spent = (list: Session[], currency: Currency) => sum(list, (s) => s[currency])
 // The chosen {currency}; the filter offers only CURRENCIES.
 const chosen = (values: Values) => values.currency as Currency
@@ -174,9 +176,6 @@ function onOdds(cols: Columns, values: Values, today: string) {
     (s) => s.rateUp && (PILGRIM_BANNERS.includes(s.type) ? '1%' : '2%') === values.odds,
   )
 }
-// The NikkeDatabase names whose `column` is TRUE.
-const namesWhere = (cols: Columns, column: string) =>
-  new Set(cols[DB].nikke.filter((_, i) => flagged(cols[DB][column][i])).map(String))
 const spookList = (cols: Columns, values: Values, today: string) =>
   chasing(cols, values, today).flatMap((c) => c.list.flatMap(spooks))
 
@@ -575,8 +574,3 @@ export const EVENT_FACTS: Fact[] = [
 ]
 
 // "40 (2 Mar 2025)": the biggest `n`, tie to the earliest. A biggest of 0 names nothing.
-function most<T extends { n: number }>(list: T[], name: (item: T) => string): string | null {
-  const best = firstMax(list, (x) => x.n)
-  if (!best) return null
-  return best.n ? `${formatCount(best.n)} (${name(best)})` : '0'
-}

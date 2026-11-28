@@ -1,5 +1,7 @@
+import { NIKKE_DATABASE_TAB } from '@/config/sheets'
 import { SHEETS_EPOCH, cellToIsoDate } from '@/services/anomaly/anomalyRows'
-import { formatDate, formatPlural } from '@/services/stats/format'
+import type { Columns } from '@/services/stats/facts'
+import { formatCount, formatDate, formatPlural } from '@/services/stats/format'
 import { gameDay } from '@/utils/gameDay'
 
 // Rules that recur across facts.
@@ -79,4 +81,20 @@ export function streak<T extends { day: string }>(
   }
   const best = firstMax(streaks, (s) => s.length)
   return best ? `${formatPlural(best.length, 'day')}, from ${formatDate(best.from)}` : null
+}
+
+export const sum = <T>(list: T[], of: (item: T) => number) =>
+  list.reduce((n, item) => n + of(item), 0)
+
+// "300 (1 Jan 2026)": the highest `n` with what it was; a highest of 0 is just "0".
+export function most<T extends { n: number }>(list: T[], name: (item: T) => string): string | null {
+  const best = firstMax(list, (x) => x.n)
+  if (!best) return null
+  return best.n ? `${formatCount(best.n)} (${name(best)})` : '0'
+}
+
+// The NikkeDatabase names whose `column` is TRUE.
+export const namesWhere = (cols: Columns, column: string) => {
+  const db = cols[NIKKE_DATABASE_TAB.tab]
+  return new Set(db.nikke.filter((_, i) => flagged(db[column][i])).map(String))
 }

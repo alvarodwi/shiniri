@@ -2,11 +2,20 @@ import { NIKKE_DATABASE_TAB, ORDINARY_TAB } from '@/config/sheets'
 import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
 import { formatCount, formatDate, formatPlural, formatShareOf } from '@/services/stats/format'
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
-import { cellGameDay, daysBetween, firstMax, flagged, groupByGameDay } from '@/services/stats/rules'
+import {
+  cellGameDay,
+  daysBetween,
+  flagged,
+  groupByGameDay,
+  most,
+  namesWhere,
+  sum,
+} from '@/services/stats/rules'
 
 const { tab } = ORDINARY_TAB
 const DB = NIKKE_DATABASE_TAB.tab
-const CURRENCIES = ['gems', 'tickets', 'pulls']
+const CURRENCIES = ['gems', 'tickets', 'pulls'] as const
+type Currency = (typeof CURRENCIES)[number]
 const GEMS_PER_MILEAGE = 300
 
 // Every dated row, by game day then row. A column the fact did not declare reads as blank.
@@ -33,9 +42,8 @@ function sessions(cols: Columns) {
     .sort((a, b) => a.day.localeCompare(b.day))
 }
 type Session = ReturnType<typeof sessions>[number]
-type Amount = 'gems' | 'tickets' | 'pulls' | 'totalSsr'
+type Amount = Currency | 'totalSsr'
 
-const sum = <T>(list: T[], of: (item: T) => number) => list.reduce((n, item) => n + of(item), 0)
 const total = (list: Session[], column: Amount) => sum(list, (s) => s[column])
 
 // The sessions in the chosen range.
@@ -45,12 +53,9 @@ function select(cols: Columns, { range = ANY_PERIOD }: Values, today: string) {
 }
 const gemSessions = (list: Session[]) => list.filter((s) => s.gems > 0)
 
-// The NikkeDatabase names of overspec NIKKE, which is what a Pilgrim means here.
-const overspecNames = (cols: Columns) =>
-  new Set(cols[DB].nikke.filter((_, i) => flagged(cols[DB].overspec[i])).map(String))
 const hasOne = (s: Session, names: Set<string>) => s.names.some((n) => names.has(n))
 
-const currency: Filter = { id: 'currency', label: 'Currency', options: CURRENCIES }
+const currency: Filter = { id: 'currency', label: 'Currency', options: [...CURRENCIES] }
 const range = dateRange((cols) => cols[tab].date)
 
 const reads = (...columns: string[]) => [{ tab: ORDINARY_TAB, columns: ['date', ...columns] }]
@@ -67,7 +72,7 @@ export const ORDINARY_FACTS: Fact[] = [
     question: 'How many {currency} did I spend on ordinary pulls {range}?',
     filters: [currency, range],
     reads: reads(...CURRENCIES),
-    compute: (c, v, today) => formatCount(total(select(c, v, today), v.currency as Amount)),
+    compute: (c, v, today) => formatCount(total(select(c, v, today), v.currency as Currency)),
   },
   {
     id: 'ordinary-ssr',
@@ -101,11 +106,9 @@ export const ORDINARY_FACTS: Fact[] = [
       const list = select(c, v, today)
       const days = groupByGameDay(list.map((s) => s.day)).map(([day, rows]) => ({
         day,
-        n: sum(rows, (i) => list[i][v.currency as Amount]),
+        n: sum(rows, (i) => list[i][v.currency as Currency]),
       }))
-      const best = firstMax(days, (d) => d.n)
-      if (!best) return null
-      return best.n ? `${formatCount(best.n)} (${formatDate(best.day)})` : '0'
+      return most(days, (d) => formatDate(d.day))
     },
   },
   {
@@ -133,7 +136,7 @@ export const ORDINARY_FACTS: Fact[] = [
     reads: withDb(['ssrDetails'], ['overspec']),
     compute: (c, v, today) => {
       const names = select(c, v, today).flatMap((s) => s.names)
-      const overspec = overspecNames(c)
+      const overspec = namesWhere(c, 'overspec') // what a Pilgrim means here
       return formatShareOf(names.filter((n) => overspec.has(n)).length, names.length)
     },
   },
@@ -146,7 +149,7 @@ export const ORDINARY_FACTS: Fact[] = [
     // Whole sessions: the one that gave the Pilgrim counts none of its pulls.
     compute: (c) => {
       const list = sessions(c)
-      const overspec = overspecNames(c)
+      const overspec = namesWhere(c, 'overspec') // what a Pilgrim means here
       const last = list.map((s) => hasOne(s, overspec)).lastIndexOf(true)
       return last < 0 ? null : formatCount(total(list.slice(last + 1), 'pulls'))
     },
@@ -160,7 +163,8 @@ export const ORDINARY_FACTS: Fact[] = [
     reads: withDb(['pulls', 'ssrDetails'], ['overspec']),
     compute: (c, v, today) => {
       const list = select(c, v, today)
-      const overspec = overspecNames(c)
+      if (!list.length) return null // no sessions, as opposed to a run of 0
+      const overspec = namesWhere(c, 'overspec') // what a Pilgrim means here
       const runs = [{ day: '', n: 0 }]
       for (const s of list) {
         const run = runs[runs.length - 1]
@@ -170,9 +174,7 @@ export const ORDINARY_FACTS: Fact[] = [
           run.n += s.pulls
         }
       }
-      if (!list.length) return null // no sessions, as opposed to a run of 0
-      const best = firstMax(runs, (r) => r.n)!
-      return best.n ? `${formatCount(best.n)} (from ${formatDate(best.day)})` : '0'
+      return most(runs, (r) => `from ${formatDate(r.day)}`)
     },
   },
   {
