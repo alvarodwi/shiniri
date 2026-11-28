@@ -95,7 +95,7 @@ function chases(cols: Columns, all = sessions(cols)) {
 type Chase = ReturnType<typeof chases>[number]
 
 // The chases of the chosen rate-up whose first session is in range.
-function chasing(
+export function chasing(
   cols: Columns,
   { rateUp = ANY_RATE_UP, range = ANY_PERIOD }: Values,
   today: string,
@@ -105,7 +105,7 @@ function chasing(
     (c) => within(c.day) && (rateUp === ANY_RATE_UP || c.rateUp === rateUp),
   )
 }
-const failed = (list: Chase[]) => list.filter((c) => c.won < 0)
+export const failed = (list: Chase[]) => list.filter((c) => c.won < 0)
 const successful = (list: Chase[]) => list.filter((c) => c.won >= 0)
 // The sessions after the one that gave the first copy.
 const greed = (c: Chase) => (c.won < 0 ? [] : c.list.slice(c.won + 1))

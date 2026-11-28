@@ -10,6 +10,7 @@ import { LEVEL_FACTS } from '@/services/stats/levelFacts'
 import { MOLD_FACTS } from '@/services/stats/moldFacts'
 import { ORDINARY_FACTS } from '@/services/stats/ordinaryFacts'
 import { PROFILE_FACTS } from '@/services/stats/profileFacts'
+import { PULL_FACTS } from '@/services/stats/pullFacts'
 import { SOCIAL_FACTS } from '@/services/stats/socialFacts'
 import { SOLO_RAID_FACTS } from '@/services/stats/soloRaidFacts'
 import { SPECIAL_FACTS } from '@/services/stats/specialFacts'
@@ -86,4 +87,5 @@ export const FACTS: Fact[] = [
   ...MOLD_FACTS,
   ...EXCHANGE_FACTS,
   ...EXTRA_FACTS,
+  ...PULL_FACTS,
 ]

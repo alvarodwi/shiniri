@@ -5,7 +5,7 @@ import {
   formatDate,
   formatShare,
   formatShareOf,
-  formatSigned,
+  formatVsOdds,
 } from '@/services/stats/format'
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
 import {
@@ -41,7 +41,7 @@ const ODDS: Record<MoldType, number> = {
 // A sheet cell may hold no known type; then it is neither.
 const odds = (type: string) => ODDS[type as MoldType]
 const isPerfect = (type: string) => odds(type) === 100
-const isPlain = (type: string) => odds(type) < 100
+export const isPlain = (type: string) => odds(type) < 100
 
 const ANY_MOLD = 'any mold'
 const ANY_PLAIN = 'any non-Perfect mold'
@@ -61,7 +61,7 @@ const SHARDS_PER_PERFECT = 50
 const SWEEP_OPENS = 3
 
 // Every dated row with something opened, by game day then row. An undeclared column reads as blank.
-function sessions(cols: Columns) {
+export function moldSessions(cols: Columns) {
   const t = cols[tab]
   return t.date
     .flatMap((cell, i) => {
@@ -83,17 +83,17 @@ function sessions(cols: Columns) {
     })
     .sort((a, b) => a.day.localeCompare(b.day))
 }
-type Session = ReturnType<typeof sessions>[number]
+type Session = ReturnType<typeof moldSessions>[number]
 
 const opened = (list: Session[]) => sum(list, (s) => s.opens)
 const ssrs = (list: Session[]) => sum(list, (s) => s.ssr)
 // Times 100 to stay in whole numbers.
-const expectedX100 = (list: Session[]) => sum(list, (s) => s.opens * odds(s.type))
+export const expectedX100 = (list: Session[]) => sum(list, (s) => s.opens * odds(s.type))
 
 // The sessions in the chosen range.
 function select(cols: Columns, { range = ANY_PERIOD }: Values, today: string) {
   const within = inRange(range, today)
-  return sessions(cols).filter((s) => within(s.day))
+  return moldSessions(cols).filter((s) => within(s.day))
 }
 const ofMold = (list: Session[], { mold }: Values) => list.filter((s) => MOLDS[mold](s.type))
 // The same, for the facts about chance: a Perfect mold is skipped and breaks nothing.
@@ -201,7 +201,7 @@ export const MOLD_FACTS: Fact[] = [
     filters: [plainMold],
     reads: typedReads,
     compute: (c, v) => {
-      const list = chanceSessions(sessions(c), v)
+      const list = chanceSessions(moldSessions(c), v)
       const last = list.map((s) => s.ssr > 0).lastIndexOf(true)
       return last < 0 ? null : formatCount(opened(list.slice(last + 1)))
     },
@@ -214,7 +214,7 @@ export const MOLD_FACTS: Fact[] = [
     reads: typedReads,
     compute: (c, _, today) =>
       longestGap(
-        sessions(c)
+        moldSessions(c)
           .filter((s) => isPlain(s.type) && s.ssr)
           .map((s) => s.day),
         today,
@@ -228,7 +228,7 @@ export const MOLD_FACTS: Fact[] = [
     reads: reads('pulls'),
     compute: (c, _, today) =>
       longestGap(
-        sessions(c).map((s) => s.day),
+        moldSessions(c).map((s) => s.day),
         today,
       ),
   },
@@ -244,7 +244,7 @@ export const MOLD_FACTS: Fact[] = [
     compute: (c) =>
       missingFromPool(
         c,
-        sessions(c).flatMap((s) => s.names),
+        moldSessions(c).flatMap((s) => s.names),
       ),
   },
   {
@@ -275,7 +275,7 @@ export const MOLD_FACTS: Fact[] = [
     filters: [maker],
     reads: typedReads,
     compute: (c, v) => {
-      const list = fifties(sessions(c), v.maker)
+      const list = fifties(moldSessions(c), v.maker)
       const last = list.at(-1)
       if (!last) return null
       const now = outcome(last)
@@ -318,7 +318,7 @@ export const MOLD_FACTS: Fact[] = [
     reads: typedReads,
     // HQ Mold rows only: a Yellow bust gave no shards.
     compute: (c) => {
-      const list = sessions(c).filter((s) => s.type === 'HQ Mold')
+      const list = moldSessions(c).filter((s) => s.type === 'HQ Mold')
       if (!list.length) return null
       const shards = (opened(list) - ssrs(list)) * SHARDS_PER_BUST
       const toward = shards % SHARDS_PER_PERFECT
@@ -335,9 +335,7 @@ export const MOLD_FACTS: Fact[] = [
     compute: (c, v, today) => {
       const list = chanceSessions(select(c, v, today), v)
       if (!list.length) return null
-      const [got, due] = [ssrs(list), expectedX100(list)]
-      const diff = Math.round((got * 100 - due) / 10) / 10
-      return `${formatSigned(diff)} (${formatCount(got)} against ${formatCount(Math.round(due / 10) / 10)} expected)`
+      return formatVsOdds(ssrs(list), expectedX100(list))
     },
   },
   {

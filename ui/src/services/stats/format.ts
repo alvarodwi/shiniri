@@ -45,6 +45,13 @@ export const formatShare = (part: number, total: number) =>
 
 export const formatSigned = (n: number) => `${n > 0 ? '+' : ''}${formatCount(n)}`
 
+// "+1.2 (10 against 8.8 expected)". Expected comes times 100, to have stayed in whole numbers.
+export function formatVsOdds(got: number, dueX100: number) {
+  const diff = Math.round((got * 100 - dueX100) / 10) / 10
+  const due = Math.round(dueX100 / 10) / 10
+  return `${formatSigned(diff)} (${formatCount(got)} against ${formatCount(due)} expected)`
+}
+
 const usdDigits = { minimumFractionDigits: 2, maximumFractionDigits: 2 }
 export const formatMoney = (idr: number, usd: number) =>
   `Rp${formatCount(Math.round(idr))} ($${usd.toLocaleString('en-US', usdDigits)})`
