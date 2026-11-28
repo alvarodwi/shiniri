@@ -3,13 +3,16 @@ import {
   benchedLongest,
   biggestOverkill,
   biggestUnderdog,
+  SLOT_NAMES,
   busiest,
+  chapterNumbers,
   clearRange,
   clears,
   differentNikkes,
   favouriteDuo,
   favouriteNikke,
   favouriteTeam,
+  kind,
   longestSitting,
   longestWall,
   loyalTeam,
@@ -18,6 +21,7 @@ import {
   nikkeFilter,
   outing,
   passengers,
+  story,
   timed,
   underdogShare,
   underdogs,
@@ -33,9 +37,6 @@ const ANY_CHAPTER = 'any chapter'
 const MODES = ['Normal', 'Hard']
 
 const all = (cols: Columns) => clears(cols, 'Campaign')
-const kind = (c: Clear) =>
-  /^sub\b/i.test(c.stage) ? 'SUB' : /^ex\b/i.test(c.stage) ? 'EX' : 'story'
-const story = (list: Clear[]) => list.filter((c) => kind(c) === 'story')
 const ofMode = (list: Clear[], mode = ANY_MODE) =>
   list.filter((c) => mode === ANY_MODE || c.mode === mode)
 
@@ -48,7 +49,7 @@ function select(cols: Columns, { mode, chapter, range }: Values, today = '') {
 }
 
 type Chapter = { mode: string; chapter: number; list: Clear[]; boss?: Clear }
-// Dated clears per mode and chapter, by chapter then mode, so ties go to the lower chapter.
+// Dated clears per mode and chapter, in order of first clear, so ties go to the earliest.
 function chapters(list: Clear[]): Chapter[] {
   const map = new Map<string, Chapter>()
   for (const c of timed(list)) {
@@ -58,7 +59,7 @@ function chapters(list: Clear[]): Chapter[] {
     group.list.push(c)
     if (c.boss && kind(c) === 'story') group.boss ??= c
   }
-  return [...map.values()].sort((a, b) => a.chapter - b.chapter || a.mode.localeCompare(b.mode))
+  return [...map.values()]
 }
 const find = (cols: Columns, mode: string, chapter: string) =>
   chapters(all(cols)).find((g) => g.mode === mode && g.chapter === Number(chapter))
@@ -115,7 +116,8 @@ function median(numbers: number[]) {
 
 // Normal boss clear to Hard boss clear, by chapter.
 function catchUps(cols: Columns) {
-  const list = chapters(all(cols))
+  // by chapter: a catch-up tie goes to the lower one
+  const list = chapters(all(cols)).sort((a, b) => a.chapter - b.chapter)
   return list.flatMap((normal) => {
     if (normal.mode !== 'Normal' || !normal.boss) return []
     const hard = list.find((g) => g.mode === 'Hard' && g.chapter === normal.chapter)?.boss
@@ -146,21 +148,19 @@ const modeFilter: Filter = {
   say: (v) => (v === ANY_MODE ? '' : v),
 }
 const oneMode: Filter = { id: 'mode', label: 'Mode', options: MODES }
-const chapterNumbers = (cols: Columns) =>
-  [...new Set(all(cols).map((c) => c.chapter))].sort((a, b) => a - b).map(String)
-const chapter: Filter = { id: 'chapter', label: 'Chapter', options: chapterNumbers }
+const numbers = (cols: Columns) => chapterNumbers(all(cols))
+const chapter: Filter = { id: 'chapter', label: 'Chapter', options: numbers }
 const anyChapter: Filter = {
   ...chapter,
-  options: (cols) => [ANY_CHAPTER, ...chapterNumbers(cols)],
+  options: (cols) => [ANY_CHAPTER, ...numbers(cols)],
   say: (v) => (v === ANY_CHAPTER ? '' : `in chapter ${v}`),
 }
 const nikke = nikkeFilter(all)
 const range = clearRange('Campaign')
 
 const reads = (...columns: string[]) => [{ tab: CAMPAIGN_TAB, columns }]
-const SLOTS = ['slot1', 'slot2', 'slot3', 'slot4', 'slot5']
-const teamReads = reads('mode', 'date', ...SLOTS)
-const namedTeamReads = reads('mode', 'stageName', 'date', ...SLOTS)
+const teamReads = reads('mode', 'date', ...SLOT_NAMES)
+const namedTeamReads = reads('mode', 'stageName', 'date', ...SLOT_NAMES)
 const cpReads = reads('mode', 'chapter', 'stageName', 'recommendedCp', 'teamCp')
 const timeReads = reads('mode', 'chapter', 'stageName', 'date')
 const stageReads = reads('mode', 'stageName', 'date')
@@ -365,7 +365,9 @@ const ENTRIES: Entry[] = [
       const last = delays.at(-1) // clears are in time order
       if (!last) return null
       const when = last.ms > 0 ? formatDuration(last.ms) : 'before the boss'
-      return `${when} (${delays.length} EX)`
+      // a delay counts only the EX stages cleared after the boss
+      const count = delays.filter((d) => last.ms <= 0 || d.ms > 0).length
+      return `${when} (${count} EX)`
     },
   },
   {

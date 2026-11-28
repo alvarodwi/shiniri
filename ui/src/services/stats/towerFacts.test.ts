@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { A, CAMPAIGN, TOWER, compute, floor } from './clearRows.fixture'
+import { A, B, CAMPAIGN, TOWER, compute, floor, row } from './clearRows.fixture'
 import type { Row } from './clearRows.fixture'
 import { FACTS } from './facts'
 
@@ -137,6 +137,20 @@ const BOTH: [string, Values, string | null, Row[]?, Row[]?][] = [
   ['specialist', climb, null, CAMPAIGN],
   ['specialist', before, null],
   ['exclusives', climb, '0'],
+  ['exclusives', before, '0'],
+  [
+    'specialist', // Noah and Dorothy tie
+    climb,
+    'Noah (100% of tower clears, 0% of campaign)',
+    [floor('Tribe', 1, '2025-01-01 10:00:00', ['Noah', 'Dorothy'])],
+  ],
+  [
+    'braver-mode', // equal depths: the tower clear is earlier
+    climb,
+    'Tower (20% under, 20% in the campaign)',
+    [floor('Tribe', 1, '2025-01-01 10:00:00', B, 1000, 800)],
+    [row('Normal', 1, '1-1 STAGE', '2025-01-05 10:00:00', B, 1000, 800)],
+  ],
   ['exclusives', climb, '1', [floor('Tribe', 1, '2025-01-01 10:00:00', ['Noah', ...A.slice(1)])]],
   ['first-deployment', { nikke: 'Alice' }, 'Campaign, 1 Jan 2025 (Normal SUB 2-1)'],
   ['first-deployment', { nikke: 'Neon' }, 'Campaign, 1 Jan 2025 (Normal 2-1)'], // same instant

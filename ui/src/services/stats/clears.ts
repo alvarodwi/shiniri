@@ -1,11 +1,18 @@
 import type { Columns, Filter } from '@/services/stats/facts'
-import { formatCount, formatDate, formatDuration, formatPlural } from '@/services/stats/format'
+import {
+  formatCount,
+  formatDate,
+  formatDuration,
+  formatPercent,
+  formatPlural,
+  formatSigned,
+} from '@/services/stats/format'
 import { dateRange, inRange } from '@/services/stats/ranges'
 import { cellGameDay, cellTime, firstMax, groupByGameDay } from '@/services/stats/rules'
 
 // What the Campaign and Tower tabs share: one row per stage or floor clear.
 
-const SLOT_NAMES = ['slot1', 'slot2', 'slot3', 'slot4', 'slot5']
+export const SLOT_NAMES = ['slot1', 'slot2', 'slot3', 'slot4', 'slot5']
 
 // Columns a fact did not declare read as blank.
 export function clears(cols: Columns, tab: 'Campaign' | 'Tower') {
@@ -38,6 +45,13 @@ export function clears(cols: Columns, tab: 'Campaign' | 'Tower') {
   }).sort((a, b) => (a.at || Infinity) - (b.at || Infinity) || 0) // undated rows keep sheet order, last
 }
 export type Clear = ReturnType<typeof clears>[number]
+
+// Campaign stages only; SUB and EX are side stages.
+export const kind = (c: Clear) =>
+  /^sub\b/i.test(c.stage) ? 'SUB' : /^ex\b/i.test(c.stage) ? 'EX' : 'story'
+export const story = (list: Clear[]) => list.filter((c) => kind(c) === 'story')
+export const chapterNumbers = (list: Clear[]) =>
+  [...new Set(list.map((c) => c.chapter))].sort((a, b) => a - b).map(String)
 
 export const within = (list: Clear[], range: string, today: string) => {
   const match = inRange(range, today)
@@ -152,12 +166,12 @@ export function biggestOverkill(list: Clear[]) {
     rated(list).filter((c) => c.cp > c.rec),
     (c) => c.cp - c.rec,
   )
-  return c ? `${formatCount(c.cp - c.rec)} CP over, +${percentOf(c)}% (${c.name})` : null
+  return c
+    ? `${formatCount(c.cp - c.rec)} CP over, ${formatSigned(percentOf(c))}% (${c.name})`
+    : null
 }
-export const underdogShare = (list: Clear[]) => {
-  const total = rated(list).length
-  return total ? String(Math.round((underdogs(list).length / total) * 100)) : null
-}
+export const underdogShare = (list: Clear[]) =>
+  formatPercent(underdogs(list).length, rated(list).length)
 
 // synchroLevel is one level, or lists one per slot.
 export const passengers = (list: Clear[]) =>

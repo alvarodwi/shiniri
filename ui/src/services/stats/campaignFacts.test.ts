@@ -18,6 +18,13 @@ const TIED = [2, 3].flatMap((ch) => [
 ])
 const UNDATED = [row('Normal', 2, '2-1 STAGE', '', A, 0, 0)]
 
+// three equal gaps, underdogs and sittings, the team alternating
+const TWINS = [A, B, A].map((team, i) =>
+  row('Normal', 1, `1-${i + 1} STAGE`, `2025-01-0${i + 1} 10:00:00`, team, 1000, 900),
+)
+const OVER = TWINS.map((r) => ({ ...r, teamCp: 1100 }))
+const everyChapter = of('any mode', 'any chapter')
+
 // [slug, values, expected, rows]
 const CASES: [string, Values, string | null, Row[]?][] = [
   ['favourite-nikke', any, 'Liter (11 stages)'], // four tie; the first in the first row
@@ -47,7 +54,7 @@ const CASES: [string, Values, string | null, Row[]?][] = [
   ['underdog-bosses', any, '2'],
   ['underdog-bosses', none, '0'],
   ['fastest-chapter', any, '20 min (Normal ch. 2, jumped)'],
-  ['fastest-chapter', any, '0 min (Hard ch. 2)', TIED],
+  ['fastest-chapter', any, '0 min (Normal ch. 2)', TIED],
   ['fastest-chapter', any, null, UNDATED],
   ['slowest-chapter', any, '3 days 2 h (Normal ch. 3)'],
   ['slowest-chapter', hard, '1 day (Hard ch. 2)'],
@@ -90,6 +97,21 @@ const CASES: [string, Values, string | null, Row[]?][] = [
   ['boss-marathon', none, '0'],
   ['longest-sitting', any, '3 stages in 6 min (1 Feb 2025)'],
   ['longest-sitting', none, '0'],
+  ['biggest-underdog', everyChapter, '100 CP under, -10% (Normal 1-1)', TWINS],
+  ['biggest-overkill', everyChapter, '100 CP over, +10% (Normal 1-1)', OVER],
+  ['longest-wall', any, '1 day (before Normal 1-2)', TWINS],
+  ['loyal-team', any, '1 stage (from Normal 1-1)', TWINS],
+  ['longest-sitting', any, '1 stage in 0 min (1 Jan 2025)', TWINS],
+  [
+    'chapter-ex-delay',
+    of('Normal', '1'),
+    '1 day (1 EX)', // the EX before the boss is not counted
+    [
+      row('Normal', 1, 'EX STAGE', '2025-01-01 10:00:00'),
+      row('Normal', 1, '1-1 BOSS', '2025-01-02 10:00:00'),
+      row('Normal', 1, 'EX STAGE', '2025-01-03 10:00:00'),
+    ],
+  ],
   ['passengers', any, '2'],
   ['passengers', none, '0'],
   ['newest-recruit', any, 'Alice (debut 1 Jan 2025, Normal SUB 2-1)'],

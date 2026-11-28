@@ -3,7 +3,9 @@ import {
   benchedLongest,
   biggestOverkill,
   biggestUnderdog,
+  SLOT_NAMES,
   busiest,
+  chapterNumbers,
   clearRange,
   clears,
   debuts,
@@ -20,6 +22,7 @@ import {
   nikkesIn,
   outing,
   passengers,
+  story,
   timed,
   underdogShare,
   underdogs,
@@ -27,7 +30,13 @@ import {
 } from '@/services/stats/clears'
 import type { Clear } from '@/services/stats/clears'
 import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
-import { formatCount, formatDate, formatDuration, formatPlural } from '@/services/stats/format'
+import {
+  formatCount,
+  formatDate,
+  formatDuration,
+  formatPercent,
+  formatPlural,
+} from '@/services/stats/format'
 import { dateFields, inRange } from '@/services/stats/ranges'
 import { addDays, firstMax } from '@/services/stats/rules'
 
@@ -167,22 +176,20 @@ const modeNH: Filter = { id: 'mode', label: 'Mode', options: ['Normal', 'Hard'] 
 const chapter: Filter = {
   id: 'chapter',
   label: 'Chapter',
-  options: (cols) =>
-    [...new Set(campaign(cols).map((c) => c.chapter))].sort((a, b) => a - b).map(String),
+  options: (cols) => chapterNumbers(campaign(cols)),
 }
 const nikke = nikkeFilter(all)
 const anyNikke = nikkeFilter((cols) => [...campaign(cols), ...all(cols)])
 const range = clearRange('Tower')
 const bothRange = clearRange('Campaign', 'Tower')
 
-const SLOTS = ['slot1', 'slot2', 'slot3', 'slot4', 'slot5']
 const reads = (...columns: string[]) => [{ tab: TOWER_TAB, columns }]
 const bothReads = (towerColumns: string[], campaignColumns: string[]) => [
   { tab: TOWER_TAB, columns: towerColumns },
   { tab: CAMPAIGN_TAB, columns: campaignColumns },
 ]
-const teamReads = reads('mode', 'date', ...SLOTS)
-const floorTeamReads = reads('mode', 'floor', 'date', ...SLOTS)
+const teamReads = reads('mode', 'date', ...SLOT_NAMES)
+const floorTeamReads = reads('mode', 'floor', 'date', ...SLOT_NAMES)
 const cpReads = reads('mode', 'floor', 'date', 'recommendedCp', 'teamCp')
 const floorReads = reads('mode', 'floor', 'date')
 const dayReads = reads('mode', 'date')
@@ -456,8 +463,7 @@ const ENTRIES: Entry[] = [
       const days = openDays(c, v, today).flat()
       if (!days.length) return null
       const used = days.filter(full).length
-      const share = Math.round((used / days.length) * 100)
-      return `${formatCount(used)} of ${formatPlural(days.length, 'open day')} (${share}%)`
+      return `${formatCount(used)} of ${formatPlural(days.length, 'open day')} (${formatPercent(used, days.length)}%)`
     },
   },
   {
@@ -530,7 +536,7 @@ const ENTRIES: Entry[] = [
     title: 'Tower specialist',
     question: 'Which NIKKE do I use far more in towers than in the campaign {range}?',
     filters: [bothRange],
-    reads: bothReads(['date', ...SLOTS], ['date', ...SLOTS]),
+    reads: bothReads(['date', ...SLOT_NAMES], ['date', ...SLOT_NAMES]),
     compute: (c, v, today) => {
       const sides = both(c, v, today)
       if (!sides.tower.length || !sides.campaign.length) return null
@@ -553,7 +559,7 @@ const ENTRIES: Entry[] = [
     title: 'Tower exclusives',
     question: 'How many NIKKEs have I used in towers but never in the campaign {range}?',
     filters: [bothRange],
-    reads: bothReads(['date', ...SLOTS], ['date', ...SLOTS]),
+    reads: bothReads(['date', ...SLOT_NAMES], ['date', ...SLOT_NAMES]),
     compute: (c, v, today) => {
       const sides = both(c, v, today)
       const used = new Set(nikkesIn(sides.campaign))
@@ -565,7 +571,10 @@ const ENTRIES: Entry[] = [
     title: 'First deployment',
     question: 'Did {nikke} debut in the campaign or a tower, and when?',
     filters: [anyNikke],
-    reads: bothReads(['mode', 'floor', 'date', ...SLOTS], ['mode', 'stageName', 'date', ...SLOTS]),
+    reads: bothReads(
+      ['mode', 'floor', 'date', ...SLOT_NAMES],
+      ['mode', 'stageName', 'date', ...SLOT_NAMES],
+    ),
     compute: (c, v) => {
       const sides = [
         { where: 'Campaign', clear: debuts(campaign(c)).get(v.nikke) },
@@ -586,13 +595,15 @@ const ENTRIES: Entry[] = [
     ),
     compute: (c, v, today) => {
       const sides = both(c, v, today)
-      const story = sides.campaign.filter((s) => !/^(sub|ex)\b/i.test(s.stage))
       const found = [
-        { where: 'Campaign', other: 'in a tower', best: deepest(story) },
+        { where: 'Campaign', other: 'in a tower', best: deepest(story(sides.campaign)) },
         { where: 'Tower', other: 'in the campaign', best: deepest(sides.tower) },
       ]
+      // deeper first; equal depths go to the earlier clear
       const [a, b] = found.sort(
-        (x, y) => (y.best ? depth(y.best) : 0) - (x.best ? depth(x.best) : 0),
+        (x, y) =>
+          (y.best ? depth(y.best) : 0) - (x.best ? depth(x.best) : 0) ||
+          (x.best?.at ?? 0) - (y.best?.at ?? 0),
       )
       if (!a.best) return null
       const rest = b.best ? percent(depth(b.best)) : 'none'
