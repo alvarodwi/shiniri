@@ -115,6 +115,45 @@ export const TOWER_TAB: TabSpec = {
   headers: ['stageId', 'mode', 'floor', ...CLEAR_HEADERS],
 }
 
+// Read-only here: the cli writes both (HEADERS in cli/src/shiniri_cli/union_sheet.py).
+export const UNION_RAID_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
+  tab: 'UnionRaid',
+  headers: [
+    'season',
+    'day',
+    'mode',
+    'level',
+    'step',
+    'boss',
+    'bossElement',
+    'memberId',
+    'nickname',
+    'damage',
+    'finalHit',
+    'slot1',
+    'slot2',
+    'slot3',
+    'slot4',
+    'slot5',
+  ],
+}
+
+export const UNION_SEASON_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
+  tab: 'UnionSeason',
+  headers: [
+    'season',
+    'startDate',
+    'endDate',
+    'mode',
+    'level',
+    'bossesDown',
+    'hpLeft',
+    'damageDealt',
+  ],
+}
+
 export const FURNACE_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
   tab: 'Furnace',

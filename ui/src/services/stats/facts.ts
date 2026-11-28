@@ -8,6 +8,7 @@ import { PROFILE_FACTS } from '@/services/stats/profileFacts'
 import { SOLO_RAID_FACTS } from '@/services/stats/soloRaidFacts'
 import { SPECIAL_FACTS } from '@/services/stats/specialFacts'
 import { TOWER_FACTS } from '@/services/stats/towerFacts'
+import { UNION_RAID_FACTS } from '@/services/stats/unionRaidFacts'
 
 // A fact is the code-defined catalog entry; see docs/decisions/0008. `reads` names the tab and the
 // header-named columns it needs; compute gets those columns (cells below the header) per tab name.
@@ -72,4 +73,5 @@ export const FACTS: Fact[] = [
   ...SOLO_RAID_FACTS,
   ...CAMPAIGN_FACTS,
   ...TOWER_FACTS,
+  ...UNION_RAID_FACTS,
 ]
