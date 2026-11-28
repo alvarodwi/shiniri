@@ -11,7 +11,7 @@ in `docs/decisions/0008-stats-computed-in-the-client.md`.
 This doc does not list the facts. `FACTS` in `ui/src/services/stats/facts.ts` is the catalog, spread
 from one file per tab (`anomalyFacts.ts`, `specialFacts.ts`, `gearFacts.ts`,
 `furnaceFacts.ts`, `levelFacts.ts`, `profileFacts.ts`, `soloRaidFacts.ts`, `campaignFacts.ts`,
-`towerFacts.ts`, `unionRaidFacts.ts`, `socialFacts.ts`, with tests beside them). `clears.ts` holds what Campaign and Tower share: parsing a
+`towerFacts.ts`, `unionRaidFacts.ts`, `socialFacts.ts`, `eventFacts.ts`, with tests beside them). `clears.ts` holds what Campaign and Tower share: parsing a
 clear row and the computes both use; `clearRows.fixture.ts` is their test data. `Profile`, `Campaign`,
 `Tower`, `UnionRaid` and `UnionSeason` are written by the CLI; `PROFILE_TAB`, `CAMPAIGN_TAB`,
 `TOWER_TAB`, `UNION_RAID_TAB` and `UNION_SEASON_TAB` mirror its headers and only stats read them. A fact that reads two tabs lives in one of their files (`interception-*` in
@@ -20,6 +20,12 @@ clear row and the computes both use; `clearRows.fixture.ts` is their test data. 
 
 The social facts read the gacha spreadsheet. `social-missing` reads `Social` and `NikkeDatabase`; its social pool
 is every SSR in `NikkeDatabase` whose `overspec` and `limited` are not `TRUE`.
+
+The event facts read the gacha spreadsheet. Most work on chases, which `eventFacts.ts` builds from
+the `Event` rows: one rate-up's sessions, split after a gap of more than 30 days, falling in a Date
+range by its first session. A rerun chase (starting over 30 days after the NIKKE's `releaseDate`)
+with no gems and no rate-up is left out of every chase fact; the row facts still count its pulls and
+spooks. Only the `rateUpType` `Pilgrim Limited` is 1% odds, every other type 2%.
 
 The union facts count own hits by the fixed nickname `VAROA`, except that the days of a mode come
 from every member's rows. Their `season` filter is its own (not a Date range), counts "last N" back
