@@ -10,6 +10,7 @@ import { GEAR_FACTS } from '@/services/stats/gearFacts'
 import { LEVEL_FACTS } from '@/services/stats/levelFacts'
 import { MOLD_FACTS } from '@/services/stats/moldFacts'
 import { ORDINARY_FACTS } from '@/services/stats/ordinaryFacts'
+import { OVERCORE_FACTS } from '@/services/stats/overcoreFacts'
 import { PROFILE_FACTS } from '@/services/stats/profileFacts'
 import { PULL_FACTS } from '@/services/stats/pullFacts'
 import { SOCIAL_FACTS } from '@/services/stats/socialFacts'
@@ -90,4 +91,5 @@ export const FACTS: Fact[] = [
   ...EXTRA_FACTS,
   ...PULL_FACTS,
   ...ACQUISITION_FACTS,
+  ...OVERCORE_FACTS,
 ]

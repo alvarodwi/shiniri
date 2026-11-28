@@ -64,7 +64,7 @@ const text = (cell: unknown) => String(cell ?? '').trim()
 const within = ({ range = ANY_PERIOD }: Values, today: string) => inRange(range, today)
 
 // The dated rows of the named columns, by game day then row. An undeclared column reads as blank.
-function dated(cols: Columns, tab: string, first: string) {
+export function dated(cols: Columns, tab: string, first: string) {
   const t = cols[tab]
   return t[first]
     .flatMap((_, i) => {
