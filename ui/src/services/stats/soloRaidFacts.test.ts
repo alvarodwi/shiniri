@@ -35,6 +35,28 @@ const PLACES: Row[] = [
 ]
 const UNRANKED: Row[] = [[1, '2025-01-10', 'A', 'Wind', '-', '']]
 
+// both average 3.2, which floats miss by a hair
+const FLOATS: Row[] = [
+  [1, '2025-01-10', 'A', 'Wind', 1, '3.20%'],
+  [2, '2025-02-10', 'B', 'Water', 1, '3.10%'],
+  [3, '2025-03-10', 'B', 'Water', 1, '3.20%'],
+  [4, '2025-04-10', 'B', 'Water', 1, '3.30%'],
+]
+const FLOATS_LATER = FLOATS.map((r): Row => [
+  r[0],
+  r[1],
+  r[2],
+  r[3] === 'Wind' ? 'Water' : 'Wind',
+  r[4],
+  r[5],
+])
+// down by less than half a percent
+const SLIGHT_DROP: Row[] = [
+  [1, '2025-01-10', 'A', 'Wind', 10e9, ''],
+  [2, '2025-02-10', 'A', 'Wind', 10e9, ''],
+  [3, '2025-07-10', 'A', 'Wind', 9.96e9, ''],
+]
+
 const any = { range: 'any period' }
 const none = { range: 'in 2022' }
 const against = (weakness: string, range = any) => ({ ...range, weakness })
@@ -63,6 +85,9 @@ const CASES: [string, Record<string, string>, Row[], string | null][] = [
   ['best-weakness', any, ROWS, 'Iron, 2.50% over 2 seasons'],
   ['best-weakness', any, TIED, 'Wind, 4.00% over 1 season'],
   ['best-weakness', none, ROWS, null],
+  ['best-weakness', any, FLOATS, 'Wind, 3.20% over 1 season'],
+  ['best-weakness', any, FLOATS_LATER, 'Water, 3.20% over 1 season'],
+  ['power-creep', { period: 'in H2 2025' }, SLIGHT_DROP, '0 (10B to 9.96B)'],
   ['best-rank', against('any weakness'), ROWS, '#12, Golem (season 6, Feb 2026)'],
   ['best-rank', against('any weakness'), PLACES, '#7, B (season 2, Feb 2025)'],
   ['best-rank', against('any weakness'), TIED, '4.00%, A (season 1, Jan 2025)'],

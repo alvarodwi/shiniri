@@ -26,7 +26,7 @@ function parseRank(cell: unknown): { pct: number; place?: number } | null {
   return pct ? { pct: Number(pct) } : null
 }
 
-const day = ({ month }: { month: unknown }) => cellGameDay(month) ?? ''
+const seasonDay = ({ month }: { month: unknown }) => cellGameDay(month) ?? ''
 
 // Oldest season first (by month when `season` is not declared), so ties go to the earliest. A
 // declared but blank season is no row. Columns a fact did not declare read as blank; an empty or "-" damage is not tracked.
@@ -48,7 +48,7 @@ function seasons(cols: Columns) {
         },
       ]
     })
-    .sort((a, b) => a.season - b.season || day(a).localeCompare(day(b)))
+    .sort((a, b) => a.season - b.season || seasonDay(a).localeCompare(seasonDay(b)))
 }
 type Season = ReturnType<typeof seasons>[number]
 type Ranked = Season & { rank: NonNullable<Season['rank']> }
@@ -73,13 +73,20 @@ const rankScore = ({ rank }: Ranked) => (rank.place === undefined ? -rank.pct : 
 const showRank = ({ rank }: Ranked) =>
   rank.place === undefined ? `${rank.pct.toFixed(2)}%` : `#${rank.place}`
 
-const monthOf = (s: Season) => (day(s) ? formatMonth(day(s)) : null)
+const monthOf = (s: Season) => (seasonDay(s) ? formatMonth(seasonDay(s)) : null)
 const showSeason = (s: Season) =>
   `${s.boss} (${[`season ${s.season}`, monthOf(s)].filter(Boolean).join(', ')})`
 
+const showResult = (s: Ranked | undefined) => (s ? `${showRank(s)}, ${showSeason(s)}` : null)
+// The ranked seasons that gave the chosen frame.
+const framed = (cols: Columns, values: Values, today: string) =>
+  ranked(select(cols, values, today)).filter((s) => `tier ${tier(s.rank)}` === values.frame)
+
 const mean = (numbers: number[]) => numbers.reduce((a, b) => a + b, 0) / numbers.length
+// Rounded so that equal averages tie despite float error.
+const meanRank = (list: Ranked[]) => Math.round(mean(list.map((s) => s.rank.pct)) * 1e6) / 1e6
 const showAverage = (list: Ranked[]) =>
-  `${mean(list.map((s) => s.rank.pct)).toFixed(2)}% over ${formatPlural(list.length, 'season')}`
+  `${meanRank(list).toFixed(2)}% over ${formatPlural(list.length, 'season')}`
 
 // "in 2026" or "in H1 2026", with the period before it.
 const periodsOf = (day: string) => {
@@ -95,8 +102,9 @@ const periodBefore = (period: string) => {
 function damages(cols: Columns) {
   const map = new Map<string, number[]>()
   for (const s of seasons(cols)) {
-    if (!day(s) || s.damage === null) continue
-    for (const p of periodsOf(day(s))) map.set(p, [...(map.get(p) ?? []), s.damage])
+    const day = seasonDay(s)
+    if (!day || s.damage === null) continue
+    for (const p of periodsOf(day)) map.set(p, [...(map.get(p) ?? []), s.damage])
   }
   return map
 }
@@ -140,10 +148,7 @@ export const SOLO_RAID_FACTS: Fact[] = [
     question: 'How many {frame} frames have I got {range}?',
     filters: [frame, range],
     reads: reads('month', 'rank'),
-    compute: (c, v, today) =>
-      formatCount(
-        ranked(select(c, v, today)).filter((s) => `tier ${tier(s.rank)}` === v.frame).length,
-      ),
+    compute: (c, v, today) => formatCount(framed(c, v, today).length),
   },
   {
     id: 'soloraid-last-frame',
@@ -153,9 +158,7 @@ export const SOLO_RAID_FACTS: Fact[] = [
     filters: [frame, weakness],
     reads: reads(...RESULT, 'weakness'),
     compute: (c, v, today) => {
-      const last = ranked(select(c, v, today))
-        .filter((s) => `tier ${tier(s.rank)}` === v.frame)
-        .at(-1)
+      const last = framed(c, v, today).at(-1)
       return last ? showSeason(last) : null
     },
   },
@@ -166,13 +169,13 @@ export const SOLO_RAID_FACTS: Fact[] = [
     question: 'How close have I come to a tier 3 frame without getting it {range}?',
     filters: [range],
     reads: reads(...RESULT),
-    compute: (c, v, today) => {
-      const best = firstMax(
-        ranked(select(c, v, today)).filter((s) => tier(s.rank) < 3),
-        rankScore,
-      )
-      return best ? `${showRank(best)}, ${showSeason(best)}` : null
-    },
+    compute: (c, v, today) =>
+      showResult(
+        firstMax(
+          ranked(select(c, v, today)).filter((s) => tier(s.rank) < 3),
+          rankScore,
+        ),
+      ),
   },
   {
     id: 'soloraid-drought',
@@ -213,7 +216,7 @@ export const SOLO_RAID_FACTS: Fact[] = [
       const groups = new Map<string, Ranked[]>()
       for (const s of ranked(select(c, v, today)))
         if (s.weakness) groups.set(s.weakness, [...(groups.get(s.weakness) ?? []), s])
-      const best = firstMax([...groups], ([, list]) => -mean(list.map((s) => s.rank.pct)))
+      const best = firstMax([...groups], ([, list]) => -meanRank(list))
       return best ? `${best[0]}, ${showAverage(best[1])}` : null
     },
   },
@@ -224,10 +227,7 @@ export const SOLO_RAID_FACTS: Fact[] = [
     question: 'What is my best rank against {weakness} {range}?',
     filters: [weakness, range],
     reads: reads(...RESULT, 'weakness'),
-    compute: (c, v, today) => {
-      const best = firstMax(ranked(select(c, v, today)), rankScore)
-      return best ? `${showRank(best)}, ${showSeason(best)}` : null
-    },
+    compute: (c, v, today) => showResult(firstMax(ranked(select(c, v, today)), rankScore)),
   },
   {
     id: 'soloraid-top-damage',
@@ -272,7 +272,7 @@ export const SOLO_RAID_FACTS: Fact[] = [
       if (!comparable(map, v.period)) return null
       const before = mean(map.get(periodBefore(v.period))!)
       const now = mean(map.get(v.period)!)
-      const growth = Math.round(((now - before) / before) * 100)
+      const growth = Math.round(((now - before) / before) * 100) || 0 // never -0
       return `${formatSigned(growth)} (${formatLarge(before)} to ${formatLarge(now)})`
     },
   },
