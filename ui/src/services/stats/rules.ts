@@ -93,6 +93,16 @@ export function most<T extends { n: number }>(list: T[], name: (item: T) => stri
   return best.n ? `${formatCount(best.n)} (${name(best)})` : '0'
 }
 
+// How many of the non-limited SSRs, overspec included, `got` never names; null for an empty pool.
+export function missingFromPool(cols: Columns, got: string[]) {
+  const db = cols[NIKKE_DATABASE_TAB.tab]
+  const pool = db.nikke.filter(
+    (name, i) => name && db.rarity[i] === 'SSR' && !flagged(db.limited[i]),
+  )
+  const have = new Set(got)
+  return pool.length ? formatCount(pool.filter((n) => !have.has(String(n))).length) : null
+}
+
 // The NikkeDatabase names whose `column` is TRUE.
 export const namesWhere = (cols: Columns, column: string) => {
   const db = cols[NIKKE_DATABASE_TAB.tab]

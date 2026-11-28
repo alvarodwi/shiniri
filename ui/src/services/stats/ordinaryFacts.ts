@@ -5,15 +5,14 @@ import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
 import {
   cellGameDay,
   daysBetween,
-  flagged,
   groupByGameDay,
+  missingFromPool,
   most,
   namesWhere,
   sum,
 } from '@/services/stats/rules'
 
 const { tab } = ORDINARY_TAB
-const DB = NIKKE_DATABASE_TAB.tab
 const CURRENCIES = ['gems', 'tickets', 'pulls'] as const
 type Currency = (typeof CURRENCIES)[number]
 const GEMS_PER_MILEAGE = 300
@@ -117,15 +116,11 @@ export const ORDINARY_FACTS: Fact[] = [
     title: 'Ordinary still missing',
     question: 'How many NIKKE in the ordinary pool have I never pulled from it?',
     reads: withDb(['ssrDetails'], ['rarity', 'limited']),
-    // The pool is every non-limited SSR, overspec included.
-    compute: (c) => {
-      const db = c[DB]
-      const pool = db.nikke.filter(
-        (name, i) => name && db.rarity[i] === 'SSR' && !flagged(db.limited[i]),
-      )
-      const pulled = new Set(sessions(c).flatMap((s) => s.names))
-      return pool.length ? formatCount(pool.filter((n) => !pulled.has(String(n))).length) : null
-    },
+    compute: (c) =>
+      missingFromPool(
+        c,
+        sessions(c).flatMap((s) => s.names),
+      ),
   },
   {
     id: 'ordinary-pilgrim-share',

@@ -5,6 +5,7 @@ import { EVENT_FACTS } from '@/services/stats/eventFacts'
 import { FURNACE_FACTS } from '@/services/stats/furnaceFacts'
 import { GEAR_FACTS } from '@/services/stats/gearFacts'
 import { LEVEL_FACTS } from '@/services/stats/levelFacts'
+import { MOLD_FACTS } from '@/services/stats/moldFacts'
 import { ORDINARY_FACTS } from '@/services/stats/ordinaryFacts'
 import { PROFILE_FACTS } from '@/services/stats/profileFacts'
 import { SOCIAL_FACTS } from '@/services/stats/socialFacts'
@@ -80,4 +81,5 @@ export const FACTS: Fact[] = [
   ...SOCIAL_FACTS,
   ...EVENT_FACTS,
   ...ORDINARY_FACTS,
+  ...MOLD_FACTS,
 ]
