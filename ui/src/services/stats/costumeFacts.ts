@@ -9,6 +9,7 @@ import {
   formatUsd,
 } from '@/services/stats/format'
 import { cellGameDay, firstMax, flagged, gapsBetween, sum } from '@/services/stats/rules'
+import { gameDay } from '@/utils/gameDay'
 
 const { tab } = COSTUME_DATABASE_TAB
 const ANY_GRADE = 'any grade'
@@ -143,10 +144,16 @@ export const COSTUME_FACTS: Fact[] = [
       {
         id: 'year',
         label: 'Year',
-        options: (cols) =>
-          distinct(
-            cols[tab].releaseDate?.flatMap((d) => cellGameDay(d)?.slice(0, 4) ?? []) ?? [],
-          ).sort(),
+        // Options take no `today`, so the clock decides which years are out.
+        options: (cols) => {
+          const today = gameDay()
+          return distinct(
+            cols[tab].releaseDate?.flatMap((d) => {
+              const day = cellGameDay(d)
+              return day && day <= today ? day.slice(0, 4) : []
+            }) ?? [],
+          ).sort()
+        },
       },
       grade,
       source,

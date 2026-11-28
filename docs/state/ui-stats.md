@@ -89,10 +89,10 @@ The costume facts read the gacha spreadsheet's `CostumeDatabase` tab. A blank `g
 counts only under that filter's `any` option. A choice with no costumes gives no answer. Skipped passes
 are unowned `Event Pass` and `Mission Pass` costumes.
 The date and price facts (oldest wardrobe gap, wardrobe by year, release drought, upcoming costumes,
-list value, value skipped) also read `costumeName`, `releaseDate` and `priceUsd`. These last two
-are the owner's columns outside `COSTUME_DATABASE_TAB.headers`, so a missing header fails only the
+list value, value skipped) also read `costumeName`, `releaseDate` and `priceUsd`. `priceUsd` is the
+owner's column outside `COSTUME_DATABASE_TAB.headers`, so a missing header fails only the
 cards that read it. A blank `releaseDate` is left out of every date fact; a future date counts only
-in "upcoming". A `priceUsd` cell that is not a number (`Free`, blank) adds 0.
+in "upcoming". The year filter lists only years with a released costume. A `priceUsd` cell that is not a number (`Free`, blank) adds 0.
 
 Stage names come raw from the sheet (`46-40 HARD BOSS`, `SUB 2-1 STAGE`, `EX HARD STAGE`): story,
 side and boss stages are told apart by that text, and a boss floor is every tenth floor. The

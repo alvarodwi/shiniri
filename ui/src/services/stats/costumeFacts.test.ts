@@ -118,6 +118,11 @@ describe('costume date and price facts', () => {
     expect(dated('by-year', { ...v, grade: 'Epic' })).toBe('0 of 3')
     expect(dated('by-year', { ...v, year: '2099' })).toBeNull()
   })
+  it('by-year offers only years with a released costume', () => {
+    const year = fact('by-year').filters!.find((f) => f.id === 'year')!
+    const cols = { CostumeDatabase: { releaseDate: DATED.map((r) => r[5]) } }
+    expect((year.options as (c: typeof cols) => string[])(cols)).toEqual(['2024', '2025'])
+  })
   it('drought is the longest gap between two releases, the future ignored', () => {
     expect(dated('drought')).toBe('457 days, 1 Mar 2024 to 1 Jun 2025')
     expect(dated('drought', {}, DATED.slice(0, 1))).toBeNull()
