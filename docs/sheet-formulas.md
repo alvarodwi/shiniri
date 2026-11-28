@@ -8,8 +8,8 @@ known version, not the live one**. Check it against the sheet before relying on 
 
 Stale names since the rename (`decisions/0004-sheet-names-one-cutover.md`): headers `name`/`ssr` are
 now `nikke`; tabs `Molds`, `SpareBody`, `Other` are now `Mold`, `Exchange`, `Extra`; `Overcored` is now
-`Overcore` with headers `date, source, nikke, manufacturer, notes`. Old `AllPulls` source values stay
-valid through the owner's `SWITCH` formula. A renamed header on `AllPulls`, `RosterLog` or `Overcore`
+`Overcore` with headers `date, source, nikke, manufacturer, notes`. `Overcore` `source` values are the current
+names (the owner tidied the old rows), and `AllPulls` compares them as they are. A renamed header on `AllPulls`, `RosterLog` or `Overcore`
 breaks these formulas without an error in the app.
 
 ## AllPulls
@@ -60,7 +60,7 @@ value, not an array, so each `FILTER` keeps its own `LEN(Overcored!C2:C)`.
   srcs, CHOOSECOLS(s, 3),
   od, MAP(FILTER(Overcore!A2:A, LEN(Overcore!C2:C)), LAMBDA(x, IF(ISTEXT(x), DATEVALUE(x), x))),
   on, MAP(FILTER(Overcore!C2:C, LEN(Overcore!C2:C)), LAMBDA(x, TRIM(x))),
-  of, MAP(FILTER(Overcore!B2:B, LEN(Overcore!C2:C)), LAMBDA(x, SWITCH(TRIM(x), "Social", "Event", "Ordinary", "Mold", "Exchange", "Extra", TRIM(x)))),
+  of, MAP(FILTER(Overcore!B2:B, LEN(Overcore!C2:C)), LAMBDA(x, TRIM(x))),
   oc, MAP(SEQUENCE(n), LAMBDA(i, IF(INDEX(cp, i) <> "", INDEX(cp, i) > 11, LET(
     d, INDEX(dates, i), nm, INDEX(names, i), sr, INDEX(srcs, i),
     SUMPRODUCT((SEQUENCE(n) > i) * (dates = d) * (names = nm) * (srcs = sr))
