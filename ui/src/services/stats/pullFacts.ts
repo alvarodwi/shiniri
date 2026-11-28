@@ -12,6 +12,7 @@ import {
 import type { TabSpec } from '@/config/sheets'
 import { distinct } from '@/services/stats/anomalyFacts'
 import { chasing, failed } from '@/services/stats/eventFacts'
+import { ANY_EXCHANGE, MILEAGE } from '@/services/stats/exchangeFacts'
 import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
 import {
   formatCount,
@@ -40,7 +41,6 @@ import { FREE_PULLS } from '@/types/other'
 const ALL = ALL_PULLS_TAB.tab
 const DB = NIKKE_DATABASE_TAB.tab
 const ANY_SOURCE = 'any source'
-const ANY_EXCHANGE = 'any exchange'
 // The sources with sessions of pulls; mold opens are not pulls.
 const PULL_TABS: Record<string, TabSpec> = {
   Social: SOCIAL_TAB,
@@ -59,7 +59,6 @@ const BURSTS: Record<string, string> = { Step1: 'Burst I', Step2: 'Burst II', St
 const AGO: Record<string, number> = { '1 month ago': 1, '1 year ago': 12, '2 years ago': 24 }
 const RESCUE_DAYS = 30
 const SPARK_SOURCE = 'Gold Mileage'
-const MILEAGE = [SPARK_SOURCE, 'Silver Mileage']
 
 const text = (cell: unknown) => String(cell ?? '').trim()
 const within = ({ range = ANY_PERIOD }: Values, today: string) => inRange(range, today)
@@ -522,7 +521,7 @@ const wastedReads = [
   { tab: OVERCORE_TAB, columns: ['date', 'nikke'] },
 ]
 
-const EXCHANGE_FACTS: Fact[] = [
+const MILEAGE_AND_WASTE_FACTS: Fact[] = [
   {
     id: 'pulls-rescued-chases',
     category: 'Pulls',
@@ -599,4 +598,4 @@ const EXCHANGE_FACTS: Fact[] = [
   },
 ]
 
-export const PULL_FACTS: Fact[] = [...SESSION_FACTS, ...ALL_FACTS, ...EXCHANGE_FACTS]
+export const PULL_FACTS: Fact[] = [...SESSION_FACTS, ...ALL_FACTS, ...MILEAGE_AND_WASTE_FACTS]

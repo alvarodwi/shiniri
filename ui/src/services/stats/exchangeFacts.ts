@@ -10,8 +10,8 @@ import {
 } from '@/services/stats/rules'
 
 const { tab } = EXCHANGE_TAB
-const ANY_EXCHANGE = 'any exchange'
-const MILEAGE = ['Gold Mileage', 'Silver Mileage']
+export const ANY_EXCHANGE = 'any exchange'
+export const MILEAGE = ['Gold Mileage', 'Silver Mileage']
 
 // The rows from `wanted`, in row order, dated or not. An undeclared column reads as blank.
 function exchanges(cols: Columns, wanted: string) {

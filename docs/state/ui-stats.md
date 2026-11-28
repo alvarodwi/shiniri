@@ -9,7 +9,7 @@ untouched, and the CLI does not read facts. All in `ui/`. Vocabulary is in `GLOS
 in `docs/decisions/0008-stats-computed-in-the-client.md`.
 
 This doc does not list the facts. `FACTS` in `ui/src/services/stats/facts.ts` is the catalog, spread
-from one file per tab (`anomalyFacts.ts`, `specialFacts.ts`, `gearFacts.ts`,
+mostly from one file per tab (`anomalyFacts.ts`, `specialFacts.ts`, `gearFacts.ts`,
 `furnaceFacts.ts`, `levelFacts.ts`, `profileFacts.ts`, `soloRaidFacts.ts`, `campaignFacts.ts`,
 `towerFacts.ts`, `unionRaidFacts.ts`, `socialFacts.ts`, `eventFacts.ts`, `ordinaryFacts.ts`, `moldFacts.ts`,
 `exchangeFacts.ts`, `extraFacts.ts`, `pullFacts.ts`, with tests beside them). `clears.ts` holds what Campaign and Tower share: parsing a

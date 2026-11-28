@@ -212,7 +212,7 @@ Consecutive pulls from whole pull sessions that gave no SSR. The time between tw
 A stretch of days with no pull from a source.
 
 **Surprise package**:
-A game day on which fewer than ten social pulls gave an SSR.
+A game day on which fewer than ten pulls from one source (social, event or ordinary) gave an SSR.
 
 **Trait**:
 A NIKKE's manufacturer, class, burst, element or weapon.

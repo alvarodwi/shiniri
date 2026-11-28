@@ -98,6 +98,18 @@ describe('per-source session facts', () => {
     )
   })
 
+  it('longest-ssr-wait and longest-hoard give a tie to the earliest', () => {
+    const tabs = {
+      social: [
+        ['2026-11-08', 5, 1],
+        ['2026-11-18', 5, 1],
+      ],
+    }
+    const s = { source: 'Social' }
+    for (const id of ['pulls-longest-ssr-wait', 'pulls-longest-hoard'])
+      expect(compute(id, tabs, s)).toBe('10 days, from 8 Nov 2026')
+  })
+
   it('surprise-packages counts days under 10 pulls with an SSR', () => {
     expect(compute('pulls-surprise-packages', { ordinary }, o)).toBe('2')
     expect(compute('pulls-surprise-packages', { ordinary: [ordinary[0]] }, o)).toBe('0')
@@ -165,6 +177,18 @@ describe('AllPulls facts', () => {
     expect(compute('pulls-best-day', { all }, { source: 'Event' })).toBe('1 (1 Jan 2025)')
     expect(compute('pulls-best-day', {}, any)).toBeNull()
     expect(fact('pulls-best-day').title).toBe('Luckiest day')
+  })
+
+  it('best-day, main-supplier and every-road give a tie to the earliest', () => {
+    const tied = [
+      ['2025-01-02', 'Noah', 'Event'],
+      ['2025-01-02', 'Noah', 'Mold'],
+      ['2025-01-01', 'Frima', 'Social'],
+      ['2025-01-01', 'Frima', 'Ordinary'],
+    ]
+    expect(compute('pulls-best-day', { all: tied }, any)).toBe('2 (1 Jan 2025)')
+    expect(compute('pulls-main-supplier', { all: tied })).toBe('Social, 1 SSR')
+    expect(compute('pulls-every-road', { all: tied })).toBe('Frima, 2 sources')
   })
 
   it('nikke-count and last-visit follow the source, any counting all six', () => {
