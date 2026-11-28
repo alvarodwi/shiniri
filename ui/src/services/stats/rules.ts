@@ -4,6 +4,9 @@ import { gameDay } from '@/utils/gameDay'
 
 // Rules that recur across facts.
 
+// A hand-filled TRUE/FALSE cell, e.g. NikkeDatabase's `limited`.
+export const flagged = (cell: unknown) => String(cell).trim().toUpperCase() === 'TRUE'
+
 // Highest score; a tie goes to the earliest item, so pass items in row order. Negate for lowest.
 export function firstMax<T>(items: T[], score: (item: T) => number): T | undefined {
   let best: T | undefined

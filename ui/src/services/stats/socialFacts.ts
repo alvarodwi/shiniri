@@ -1,8 +1,8 @@
 import { NIKKE_DATABASE_TAB, SOCIAL_TAB } from '@/config/sheets'
 import type { Columns, Fact } from '@/services/stats/facts'
-import { formatCount, formatDate, formatShare } from '@/services/stats/format'
+import { formatCount, formatDate, formatShareOf } from '@/services/stats/format'
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
-import { firstMax, groupByGameDay } from '@/services/stats/rules'
+import { firstMax, flagged, groupByGameDay } from '@/services/stats/rules'
 
 const { tab } = SOCIAL_TAB
 const total = (cells: unknown[], rows: number[]) =>
@@ -47,9 +47,7 @@ export const SOCIAL_FACTS: Fact[] = [
       const rows = rowsIn(c, v.range, today)
       const pulls = total(c[tab].pulls, rows)
       const ssr = total(c[tab].totalSsr, rows)
-      return pulls
-        ? `${formatShare(ssr, pulls)} (${formatCount(ssr)} of ${formatCount(pulls)})`
-        : null
+      return formatShareOf(ssr, pulls)
     },
   },
   {
@@ -79,7 +77,6 @@ export const SOCIAL_FACTS: Fact[] = [
     ],
     compute: (c) => {
       const db = c[NIKKE_DATABASE_TAB.tab]
-      const flagged = (cell: unknown) => String(cell).trim().toUpperCase() === 'TRUE'
       const pool = db.nikke.filter(
         (name, i) =>
           name && db.rarity[i] === 'SSR' && !flagged(db.limited[i]) && !flagged(db.overspec[i]),

@@ -35,6 +35,10 @@ export function formatDuration(ms: number): string {
 export const formatPercent = (part: number, total: number) =>
   total === 0 ? null : String(Math.round((part / total) * 100))
 
+// "13.3 (8 of 60)"; a share of nothing is no answer.
+export const formatShareOf = (part: number, total: number) =>
+  total ? `${formatShare(part, total)} (${formatCount(part)} of ${formatCount(total)})` : null
+
 // A small share, to one decimal.
 export const formatShare = (part: number, total: number) =>
   String(Math.round((part / total) * 1000) / 10)

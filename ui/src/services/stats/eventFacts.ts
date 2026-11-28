@@ -1,12 +1,13 @@
 import { EVENT_TAB, NIKKE_DATABASE_TAB } from '@/config/sheets'
 import { distinct } from '@/services/stats/anomalyFacts'
 import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
-import { formatCount, formatDate, formatPlural, formatShare } from '@/services/stats/format'
+import { formatCount, formatDate, formatPlural, formatShareOf } from '@/services/stats/format'
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
 import {
   cellGameDay,
   daysBetween,
   firstMax,
+  flagged,
   groupByGameDay,
   topWithCount,
 } from '@/services/stats/rules'
@@ -15,15 +16,14 @@ const { tab } = EVENT_TAB
 const DB = NIKKE_DATABASE_TAB.tab
 const ANY_TYPE = 'any banner type'
 const ANY_RATE_UP = 'any rate-up'
-const CURRENCIES = ['gems', 'tickets', 'pulls']
+const CURRENCIES = ['gems', 'tickets', 'pulls'] as const
+type Currency = (typeof CURRENCIES)[number]
 // A banner lasts at most about a month: a longer gap starts a new chase, and a chase that starts
 // later than this after the release is a rerun.
 const BANNER_DAYS = 30
 const SPARK_PULLS = 200
 // Copies of the rate-up each goal takes.
 const GOALS: Record<string, number> = { 'first copy': 1, MLB: 4, 'core 7': 11 }
-
-const flagged = (cell: unknown) => String(cell).trim().toUpperCase() === 'TRUE'
 
 // Every dated row, by game day then row. A column the fact did not declare reads as blank.
 function sessions(cols: Columns) {
@@ -52,10 +52,11 @@ function sessions(cols: Columns) {
     .sort((a, b) => a.day.localeCompare(b.day))
 }
 type Session = ReturnType<typeof sessions>[number]
-type Currency = 'gems' | 'tickets' | 'pulls'
 
 const sum = <T>(list: T[], of: (item: T) => number) => list.reduce((n, item) => n + of(item), 0)
-const spent = (list: Session[], currency: string) => sum(list, (s) => s[currency as Currency])
+const spent = (list: Session[], currency: Currency) => sum(list, (s) => s[currency])
+// The chosen {currency}; the filter offers only CURRENCIES.
+const chosen = (values: Values) => values.currency as Currency
 
 // Any SSR that isn't the rate-up. A session with no rate-up has no spooks.
 const spooks = ({ rateUp, names }: Session) => (rateUp ? names.filter((n) => n !== rateUp) : [])
@@ -111,11 +112,19 @@ function upTo(c: Chase, goal: number): Session[] | null {
   const i = c.list.findIndex((s) => (have += copies(s)) >= goal)
   return i < 0 ? null : c.list.slice(0, i + 1)
 }
+// The sessions up to the first copy, for a successful chase.
+const toWin = (c: Chase) => c.list.slice(0, c.won + 1)
 // Spooks before the first rate-up, in ssrDetails order.
-function spooksFirst({ list, won }: Chase): number {
-  const names = list.slice(0, won + 1).flatMap((s) => s.names)
-  return names.indexOf(list[won].rateUp)
-}
+const spooksFirst = (c: Chase) =>
+  toWin(c)
+    .flatMap((s) => s.names)
+    .indexOf(c.rateUp)
+// The chases that reached `goal`, with the sessions it took.
+const reaching = (list: Chase[], goal: string) =>
+  list.flatMap((c) => {
+    const took = upTo(c, GOALS[goal])
+    return took ? [{ ...c, took }] : []
+  })
 const chaseName = (c: Chase) => `${c.rateUp}, ${formatDate(c.day)}`
 const mostChase = (list: Chase[], of: (c: Chase) => number) =>
   most(
@@ -129,7 +138,7 @@ function select(cols: Columns, { type = ANY_TYPE, range = ANY_PERIOD }: Values, 
   return sessions(cols).filter((s) => within(s.day) && (type === ANY_TYPE || s.type === type))
 }
 
-const currency: Filter = { id: 'currency', label: 'Currency', options: CURRENCIES }
+const currency: Filter = { id: 'currency', label: 'Currency', options: [...CURRENCIES] }
 const type: Filter = {
   id: 'type',
   label: 'Banner type',
@@ -137,13 +146,13 @@ const type: Filter = {
   say: (v) => (v === ANY_TYPE ? '' : v),
 }
 const range = dateRange((cols) => cols[tab].date)
-const rateUps = (cols: Columns) => distinct(cols[tab].rateUpName)
+const rateUpNames = (cols: Columns) => distinct(cols[tab].rateUpName)
 const rateUp: Filter = {
   id: 'rateUp',
   label: 'Rate-up',
-  options: (cols) => [ANY_RATE_UP, ...rateUps(cols)],
+  options: (cols) => [ANY_RATE_UP, ...rateUpNames(cols)],
 }
-const oneRateUp: Filter = { id: 'rateUp', label: 'Rate-up', options: rateUps }
+const oneRateUp: Filter = { id: 'rateUp', label: 'Rate-up', options: rateUpNames }
 const goal: Filter = { id: 'goal', label: 'Goal', options: Object.keys(GOALS) }
 const odds: Filter = { id: 'odds', label: 'Odds', options: ['1%', '2%'] }
 
@@ -164,6 +173,9 @@ function onOdds(cols: Columns, values: Values, today: string) {
     (s) => s.rateUp && (s.type === 'Pilgrim Limited' ? '1%' : '2%') === values.odds,
   )
 }
+// The NikkeDatabase names whose `column` is TRUE.
+const namesWhere = (cols: Columns, column: string) =>
+  new Set(cols[DB].nikke.filter((_, i) => flagged(cols[DB][column][i])).map(String))
 const spookList = (cols: Columns, values: Values, today: string) =>
   chasing(cols, values, today).flatMap((c) => c.list.flatMap(spooks))
 
@@ -175,7 +187,7 @@ export const EVENT_FACTS: Fact[] = [
     question: 'How many {currency} did I spend on {type} event pulls {range}?',
     filters: [currency, type, range],
     reads: reads('rateUpType', ...CURRENCIES),
-    compute: (c, v, today) => formatCount(spent(select(c, v, today), v.currency)),
+    compute: (c, v, today) => formatCount(spent(select(c, v, today), chosen(v))),
   },
   {
     id: 'event-ssrs',
@@ -195,7 +207,7 @@ export const EVENT_FACTS: Fact[] = [
     reads: reads('rateUpType', 'pulls', 'totalSsr'),
     compute: (c, v, today) => {
       const list = select(c, v, today)
-      return share(
+      return formatShareOf(
         sum(list, (s) => s.totalSsr),
         spent(list, 'pulls'),
       )
@@ -214,7 +226,7 @@ export const EVENT_FACTS: Fact[] = [
         day,
         n: spent(
           rows.map((i) => list[i]),
-          v.currency,
+          chosen(v),
         ),
       }))
       return most(days, (d) => formatDate(d.day))
@@ -228,14 +240,14 @@ export const EVENT_FACTS: Fact[] = [
     reads: withDb(['rateUpName', 'ssrDetails'], ['rarity', 'limited']),
     compute: (c) => {
       const list = sessions(c)
-      const rateUps = new Set(list.map((s) => s.rateUp))
+      const chanced = new Set(list.map((s) => s.rateUp))
       const pulled = new Set(list.flatMap((s) => s.names))
       const db = c[DB]
       const pool = db.nikke
         .map(String)
         .filter(
           (name, i) =>
-            name && db.rarity[i] === 'SSR' && (!flagged(db.limited[i]) || rateUps.has(name)),
+            name && db.rarity[i] === 'SSR' && (!flagged(db.limited[i]) || chanced.has(name)),
         )
       return pool.length ? formatCount(pool.filter((name) => !pulled.has(name)).length) : null
     },
@@ -249,7 +261,7 @@ export const EVENT_FACTS: Fact[] = [
     reads: reads('rateUpName', 'rateUpType', 'pulls', 'ssrDetails'),
     compute: (c, v, today) => {
       const list = onOdds(c, v, today)
-      return share(sum(list, copies), spent(list, 'pulls'))
+      return formatShareOf(sum(list, copies), spent(list, 'pulls'))
     },
   },
   {
@@ -261,7 +273,7 @@ export const EVENT_FACTS: Fact[] = [
     reads: reads('rateUpName', 'rateUpType', 'ssrDetails'),
     compute: (c, v, today) => {
       const list = onOdds(c, v, today)
-      return share(
+      return formatShareOf(
         sum(list, copies),
         sum(list, (s) => s.names.length),
       )
@@ -284,8 +296,7 @@ export const EVENT_FACTS: Fact[] = [
     filters: [rateUp, range],
     reads: withDb(['rateUpName', 'ssrDetails', 'gems'], ['releaseDate', 'overspec']),
     compute: (c, v, today) => {
-      const db = c[DB]
-      const overspec = new Set(db.nikke.filter((_, i) => flagged(db.overspec[i])).map(String))
+      const overspec = namesWhere(c, 'overspec')
       return formatCount(spookList(c, v, today).filter((n) => overspec.has(n)).length)
     },
   },
@@ -306,9 +317,7 @@ export const EVENT_FACTS: Fact[] = [
     filters: [rateUp, range],
     reads: chaseReads(),
     compute: (c, v, today) => {
-      const won = successful(chasing(c, v, today)).map((x) => ({ ...x, n: spooksFirst(x) }))
-      const worst = firstMax(won, (x) => x.n)
-      return worst ? `${formatCount(worst.n)} (${chaseName(worst)})` : null
+      return mostChase(successful(chasing(c, v, today)), spooksFirst)
     },
   },
   {
@@ -338,7 +347,7 @@ export const EVENT_FACTS: Fact[] = [
     question: 'What is the most {currency} one chase took {range}?',
     filters: [currency, range],
     reads: costReads,
-    compute: (c, v, today) => mostChase(chasing(c, v, today), (x) => spent(x.list, v.currency)),
+    compute: (c, v, today) => mostChase(chasing(c, v, today), (x) => spent(x.list, chosen(v))),
   },
   {
     id: 'event-costliest-failure',
@@ -348,7 +357,7 @@ export const EVENT_FACTS: Fact[] = [
     filters: [currency, range],
     reads: costReads,
     compute: (c, v, today) =>
-      mostChase(failed(chasing(c, v, today)), (x) => spent(x.list, v.currency)),
+      mostChase(failed(chasing(c, v, today)), (x) => spent(x.list, chosen(v))),
   },
   {
     id: 'event-wasted-on-failures',
@@ -358,7 +367,7 @@ export const EVENT_FACTS: Fact[] = [
     filters: [currency, range],
     reads: costReads,
     compute: (c, v, today) =>
-      formatCount(sum(failed(chasing(c, v, today)), (x) => spent(x.list, v.currency))),
+      formatCount(sum(failed(chasing(c, v, today)), (x) => spent(x.list, chosen(v)))),
   },
   {
     id: 'event-price-of-success',
@@ -368,10 +377,7 @@ export const EVENT_FACTS: Fact[] = [
     filters: [currency, goal, rateUp, range],
     reads: costReads,
     compute: (c, v, today) => {
-      const costs = chasing(c, v, today).flatMap((x) => {
-        const list = upTo(x, GOALS[v.goal])
-        return list ? [spent(list, v.currency)] : []
-      })
+      const costs = reaching(chasing(c, v, today), v.goal).map((x) => spent(x.took, chosen(v)))
       if (!costs.length) return null
       const average = Math.round(sum(costs, (n) => n) / costs.length)
       return `${formatCount(average)} over ${formatPlural(costs.length, 'chase')}`
@@ -385,10 +391,10 @@ export const EVENT_FACTS: Fact[] = [
     filters: [goal, range],
     reads: chaseReads('pulls'),
     compute: (c, v, today) => {
-      const reached = chasing(c, v, today).flatMap((x) => {
-        const list = upTo(x, GOALS[v.goal])
-        return list ? [{ ...x, n: spent(list, 'pulls') }] : []
-      })
+      const reached = reaching(chasing(c, v, today), v.goal).map((x) => ({
+        ...x,
+        n: spent(x.took, 'pulls'),
+      }))
       const best = firstMax(reached, (x) => -x.n)
       return best ? `${formatCount(best.n)} (${chaseName(best)})` : null
     },
@@ -402,7 +408,7 @@ export const EVENT_FACTS: Fact[] = [
     reads: costReads,
     compute: (c, v, today) => {
       const list = chasing(c, v, today)
-      return list.length ? formatCount(sum(list, (x) => spent(x.list, v.currency))) : null
+      return list.length ? formatCount(sum(list, (x) => spent(x.list, chosen(v)))) : null
     },
   },
   {
@@ -413,7 +419,7 @@ export const EVENT_FACTS: Fact[] = [
     filters: [currency, rateUp, range],
     reads: costReads,
     compute: (c, v, today) =>
-      formatCount(sum(chasing(c, v, today), (x) => spent(greed(x), v.currency))),
+      formatCount(sum(chasing(c, v, today), (x) => spent(greed(x), chosen(v)))),
   },
   {
     id: 'event-ticket-wins',
@@ -424,10 +430,7 @@ export const EVENT_FACTS: Fact[] = [
     reads: chaseReads(),
     // Gems spent on dupes afterwards do not spoil a win.
     compute: (c, v, today) =>
-      formatCount(
-        successful(chasing(c, v, today)).filter((x) => !spent(x.list.slice(0, x.won + 1), 'gems'))
-          .length,
-      ),
+      formatCount(successful(chasing(c, v, today)).filter((x) => !spent(toWin(x), 'gems')).length),
   },
   {
     id: 'event-failed-chases',
@@ -446,7 +449,7 @@ export const EVENT_FACTS: Fact[] = [
     filters: [currency, range],
     reads: costReads,
     compute: (c, v, today) =>
-      mostChase(successful(chasing(c, v, today)), (x) => spent(greed(x), v.currency)),
+      mostChase(successful(chasing(c, v, today)), (x) => spent(greed(x), chosen(v))),
   },
   {
     id: 'event-greed-haul',
@@ -478,9 +481,7 @@ export const EVENT_FACTS: Fact[] = [
     reads: chaseReads('pulls'),
     compute: (c, v, today) =>
       formatCount(
-        successful(chasing(c, v, today)).filter(
-          (x) => spent(x.list.slice(0, x.won + 1), 'pulls') <= 10,
-        ).length,
+        successful(chasing(c, v, today)).filter((x) => spent(toWin(x), 'pulls') <= 10).length,
       ),
   },
   {
@@ -516,8 +517,7 @@ export const EVENT_FACTS: Fact[] = [
     question: 'How many limited NIKKE did I chase and never get from event pulls?',
     reads: withDb(['rateUpName', 'ssrDetails', 'gems'], ['releaseDate', 'limited']),
     compute: (c) => {
-      const db = c[DB]
-      const limited = new Set(db.nikke.filter((_, i) => flagged(db.limited[i])).map(String))
+      const limited = namesWhere(c, 'limited')
       const pulled = new Set(sessions(c).flatMap((s) => s.names))
       const missed = chases(c)
         .map((x) => x.rateUp)
@@ -572,13 +572,6 @@ export const EVENT_FACTS: Fact[] = [
     },
   },
 ]
-
-// "13.3 (8 of 60)"; a share of nothing is no answer.
-function share(part: number, total: number): string | null {
-  return total
-    ? `${formatShare(part, total)} (${formatCount(part)} of ${formatCount(total)})`
-    : null
-}
 
 // "40 (2 Mar 2025)": the biggest `n`, tie to the earliest. A biggest of 0 names nothing.
 function most<T extends { n: number }>(list: T[], name: (item: T) => string): string | null {

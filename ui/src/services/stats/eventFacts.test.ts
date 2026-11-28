@@ -228,6 +228,58 @@ describe('event facts: rate-ups and chases', () => {
     )
   })
 
+  it('gives ties to the earliest chase or NIKKE', () => {
+    // two identical failed chases, then two identical wins with the same greed
+    const rows: Row[] = [
+      ['2025-01-03', 'Biscuit', 'Regular', 600, 0, 'Noah'],
+      ['2025-03-01', 'Biscuit', 'Regular', 600, 0, 'Frima'],
+      ['2025-05-01', 'Alice', 'Regular', 300, 0, 'Frima, Alice'],
+      ['2025-05-02', 'Alice', 'Regular', 300, 0, ''],
+      ['2025-07-01', 'Alice', 'Regular', 300, 0, 'Noah, Alice'],
+      ['2025-07-02', 'Alice', 'Regular', 300, 0, ''],
+    ]
+    const gems = { currency: 'gems' }
+    expect(compute('costliest-failure', rows, gems)).toBe('600 (Biscuit, 3 Jan 2025)')
+    expect(compute('biggest-greed', rows, gems)).toBe('300 (Alice, 1 May 2025)')
+    expect(compute('worst-spook-streak', rows)).toBe('1 (Alice, 1 May 2025)')
+    expect(compute('quickest-win', rows, { goal: 'first copy' })).toBe('1 (Alice, 1 May 2025)')
+    expect(compute('frequent-spooker', rows)).toBe('Noah, 2 spooks')
+    const streaks: Row[] = [rows[0], rows[2], rows[1]].map((r, i) => [
+      `2025-0${2 * i + 1}-01`,
+      r[1],
+      r[2],
+      r[3],
+      r[4],
+      r[5],
+    ])
+    expect(compute('losing-streak', streaks)).toBe('1 chase, from 1 Jan 2025')
+    const guests: Row[] = [['2025-01-01', 'Anis', 'Regular', 300, 0, 'Dorothy, Biscuit']]
+    expect(compute('uninvited-guests', guests)).toBe('2, mostly Dorothy (1 time)')
+  })
+
+  it('answers 0 where there is something to count but nothing counts', () => {
+    const won: Row[] = [['2025-01-03', 'Biscuit', 'Regular', 0, 1, 'Biscuit']]
+    const gems = { currency: 'gems', goal: 'first copy', rateUp: 'Biscuit' }
+    expect(compute('wasted-on-failures', won, gems)).toBe('0')
+    expect(compute('greed-haul', won)).toBe('0')
+    expect(compute('losing-streak', won)).toBe('0')
+    expect(compute('worst-spook-streak', won)).toBe('0')
+    expect(compute('chase-receipt', won, gems)).toBe('0')
+    expect(compute('price-of-success', won, gems)).toBe('0 over 1 chase')
+    const lost: Row[] = [['2025-01-03', 'Biscuit', 'Regular', 0, 1, '']]
+    expect(compute('costliest-failure', lost, gems)).toBe('0')
+  })
+
+  it('averages the price of success over the chases that got there', () => {
+    const rows: Row[] = [
+      ['2025-01-03', 'Biscuit', 'Regular', 0, 10, 'Biscuit'],
+      ['2025-03-01', 'Biscuit', 'Regular', 300, 20, 'Biscuit'],
+      ['2025-05-01', 'Biscuit', 'Regular', 300, 90, ''], // failed: not averaged
+    ]
+    const values = { currency: 'pulls', goal: 'first copy', rateUp: 'Biscuit' }
+    expect(compute('price-of-success', rows, values)).toBe('16 over 2 chases') // 15.5
+  })
+
   it('has all 31 facts in Pulls with unique titles', () => {
     const facts = FACTS.filter((f) => f.id.startsWith('event-'))
     expect(facts).toHaveLength(31)
