@@ -65,6 +65,13 @@ export const daysBetween = (from: string, to: string) => (Date.parse(to) - Date.
 export const addDays = (day: string, n: number) =>
   new Date(Date.parse(day) + n * DAY).toISOString().slice(0, 10)
 
+// "31 days, from 1 Jan 2026": the widest step between days, the one still running included.
+export function longestGap(days: string[], today: string) {
+  const gaps = days.map((from, i) => ({ from, n: daysBetween(from, days[i + 1] ?? today) }))
+  const best = firstMax(gaps, (g) => g.n)
+  return best ? `${formatPlural(best.n, 'day')}, from ${formatDate(best.from)}` : null
+}
+
 // "6 days, from 3 Oct 2023": the longest run of consecutive calendar dates that match.
 export function streak<T extends { day: string }>(
   list: T[],

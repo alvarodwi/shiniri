@@ -3,7 +3,6 @@ import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
 import {
   formatCount,
   formatDate,
-  formatPlural,
   formatShare,
   formatShareOf,
   formatSigned,
@@ -11,9 +10,9 @@ import {
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
 import {
   cellGameDay,
-  daysBetween,
   firstMax,
   groupByGameDay,
+  longestGap,
   missingFromPool,
   most,
   runs,
@@ -116,13 +115,6 @@ const longestRun = (list: Session[], match: (s: Session) => boolean) =>
         (r) => `from ${formatDate(r.day)}`,
       )
     : null
-
-// "31 days, from 1 Jan 2026": the widest step between days, the one still running included.
-function longestGap(days: string[], today: string) {
-  const gaps = days.map((from, i) => ({ from, n: daysBetween(from, days[i + 1] ?? today) }))
-  const best = firstMax(gaps, (g) => g.n)
-  return best ? `${formatPlural(best.n, 'day')}, from ${formatDate(best.from)}` : null
-}
 
 const filter = (id: string, label: string, options: string[], say?: Filter['say']): Filter => ({
   id,

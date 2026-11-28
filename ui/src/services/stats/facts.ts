@@ -2,6 +2,7 @@ import type { TabSpec } from '@/config/sheets'
 import { ANOMALY_FACTS } from '@/services/stats/anomalyFacts'
 import { CAMPAIGN_FACTS } from '@/services/stats/campaignFacts'
 import { EVENT_FACTS } from '@/services/stats/eventFacts'
+import { EXCHANGE_FACTS } from '@/services/stats/exchangeFacts'
 import { FURNACE_FACTS } from '@/services/stats/furnaceFacts'
 import { GEAR_FACTS } from '@/services/stats/gearFacts'
 import { LEVEL_FACTS } from '@/services/stats/levelFacts'
@@ -82,4 +83,5 @@ export const FACTS: Fact[] = [
   ...EVENT_FACTS,
   ...ORDINARY_FACTS,
   ...MOLD_FACTS,
+  ...EXCHANGE_FACTS,
 ]

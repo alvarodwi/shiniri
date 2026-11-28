@@ -11,7 +11,8 @@ in `docs/decisions/0008-stats-computed-in-the-client.md`.
 This doc does not list the facts. `FACTS` in `ui/src/services/stats/facts.ts` is the catalog, spread
 from one file per tab (`anomalyFacts.ts`, `specialFacts.ts`, `gearFacts.ts`,
 `furnaceFacts.ts`, `levelFacts.ts`, `profileFacts.ts`, `soloRaidFacts.ts`, `campaignFacts.ts`,
-`towerFacts.ts`, `unionRaidFacts.ts`, `socialFacts.ts`, `eventFacts.ts`, `ordinaryFacts.ts`, `moldFacts.ts`, with tests beside them). `clears.ts` holds what Campaign and Tower share: parsing a
+`towerFacts.ts`, `unionRaidFacts.ts`, `socialFacts.ts`, `eventFacts.ts`, `ordinaryFacts.ts`, `moldFacts.ts`,
+`exchangeFacts.ts`, with tests beside them). `clears.ts` holds what Campaign and Tower share: parsing a
 clear row and the computes both use; `clearRows.fixture.ts` is their test data. `Profile`, `Campaign`,
 `Tower`, `UnionRaid` and `UnionSeason` are written by the CLI; `PROFILE_TAB`, `CAMPAIGN_TAB`,
 `TOWER_TAB`, `UNION_RAID_TAB` and `UNION_SEASON_TAB` mirror its headers and only stats read them. A fact that reads two tabs lives in one of their files (`interception-*` in
@@ -36,6 +37,9 @@ The mold facts read the gacha spreadsheet. A `Mold` row is one mold type in one 
 nothing opened is ignored. Odds per `moldType` are a constant in `moldFacts.ts`. The facts about
 chance skip Perfect molds without breaking a run. A mixed 50/50 sitting ends both streaks. The
 mold pool is the ordinary pool. Mold SSR wait and hoard count the stretch still running.
+
+The exchange facts read the gacha spreadsheet. An `Exchange` row is one copy. The liberation wait
+runs between consecutive `Liberation` rows; the mileage saving counts the stretch still running.
 
 The union facts count own hits by the fixed nickname `VAROA`, except that the days of a mode come
 from every member's rows. Their `season` filter is its own (not a Date range), counts "last N" back
