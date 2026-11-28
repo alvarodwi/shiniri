@@ -5,6 +5,7 @@ import { FURNACE_FACTS } from '@/services/stats/furnaceFacts'
 import { GEAR_FACTS } from '@/services/stats/gearFacts'
 import { LEVEL_FACTS } from '@/services/stats/levelFacts'
 import { PROFILE_FACTS } from '@/services/stats/profileFacts'
+import { SOCIAL_FACTS } from '@/services/stats/socialFacts'
 import { SOLO_RAID_FACTS } from '@/services/stats/soloRaidFacts'
 import { SPECIAL_FACTS } from '@/services/stats/specialFacts'
 import { TOWER_FACTS } from '@/services/stats/towerFacts'
@@ -74,4 +75,5 @@ export const FACTS: Fact[] = [
   ...CAMPAIGN_FACTS,
   ...TOWER_FACTS,
   ...UNION_RAID_FACTS,
+  ...SOCIAL_FACTS,
 ]
