@@ -89,6 +89,32 @@ export const SOLO_RAID_TAB: TabSpec = {
   headers: ['season', 'month', 'boss', 'weakness', 'damage', 'rank', 'notes'],
 }
 
+// Read-only here: the cli writes them (HEADERS in cli/src/shiniri_cli/clear_sheet.py).
+const CLEAR_HEADERS = [
+  'stageName',
+  'date',
+  'recommendedCp',
+  'teamCp',
+  'synchroLevel',
+  'slot1',
+  'slot2',
+  'slot3',
+  'slot4',
+  'slot5',
+]
+
+export const CAMPAIGN_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
+  tab: 'Campaign',
+  headers: ['stageId', 'mode', 'chapter', ...CLEAR_HEADERS],
+}
+
+export const TOWER_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
+  tab: 'Tower',
+  headers: ['stageId', 'mode', 'floor', ...CLEAR_HEADERS],
+}
+
 export const FURNACE_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_JOURNAL_SHEET_ID,
   tab: 'Furnace',

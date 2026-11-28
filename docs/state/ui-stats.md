@@ -10,10 +10,17 @@ in `docs/decisions/0008-stats-computed-in-the-client.md`.
 
 This doc does not list the facts. `FACTS` in `ui/src/services/stats/facts.ts` is the catalog, spread
 from one file per tab (`anomalyFacts.ts`, `specialFacts.ts`, `gearFacts.ts`,
-`furnaceFacts.ts`, `levelFacts.ts`, `profileFacts.ts`, `soloRaidFacts.ts`, with tests beside them). `Profile` is written
-by the CLI's `watch`; `PROFILE_TAB` mirrors its headers and only stats read it. A fact that reads
-two tabs lives in one of their files (`interception-*` in `specialFacts.ts`, `gear-special-*` in
-`gearFacts.ts`).
+`furnaceFacts.ts`, `levelFacts.ts`, `profileFacts.ts`, `soloRaidFacts.ts`, `campaignFacts.ts`,
+`towerFacts.ts`, with tests beside them). `clears.ts` holds what Campaign and Tower share: parsing a
+clear row and the computes both use; `clearRows.fixture.ts` is their test data. `Profile`, `Campaign`
+and `Tower` are written by the CLI; `PROFILE_TAB`, `CAMPAIGN_TAB` and `TOWER_TAB` mirror its headers
+and only stats read them. A fact that reads two tabs lives in one of their files (`interception-*` in
+`specialFacts.ts`, `gear-special-*` in `gearFacts.ts`, the combined Campaign facts in
+`towerFacts.ts`).
+
+Stage names come raw from the sheet (`46-40 HARD BOSS`, `SUB 2-1 STAGE`, `EX HARD STAGE`): story,
+side and boss stages are told apart by that text, and a boss floor is every tenth floor. The
+manufacturer towers' open weekdays and 3-clear daily limit are constants in `towerFacts.ts`.
 
 ## Public surface
 
@@ -22,7 +29,8 @@ two tabs lives in one of their files (`interception-*` in `specialFacts.ts`, `ge
   `{filterId}` in a fact's question with the chosen value's question text (`…` while unchosen).
 - `ui/src/services/stats/format.ts`: how answers write dates, months, counts, large numbers,
   durations, percents, signed changes and money. `rules.ts`: ties to the earliest row (`firstMax`),
-  `topWithCount`, and the game day of a date cell (`cellGameDay`, `groupByGameDay`).
+  `topWithCount`, and the instant and game day of a date cell (`cellTime`, `cellGameDay`,
+  `groupByGameDay`).
 - `ui/src/services/stats/ranges.ts`: the Date range filter (`dateRange`, `customRange`), `RANGE_PRESETS`,
   `ANY_PERIOD`, `inRange`, `dateFields` and `chipText`.
 - `ui/src/services/stats/loader.ts`: `createLoader()`, the header-and-column reads and the cache.

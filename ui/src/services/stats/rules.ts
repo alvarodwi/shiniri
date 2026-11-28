@@ -20,20 +20,26 @@ export function topWithCount(cells: unknown[], unit: string, plural?: string): s
   return top ? `${top[0]}, ${formatPlural(top[1], unit, plural)}` : null
 }
 
-// The game day of a raw date cell. A plain date (text or serial) already is one; a WIB timestamp
-// (text, or a serial with a time) is converted. Anything else is null.
+// The instant of a raw WIB timestamp cell (text, or a serial with a time); NaN for anything else,
+// a plain date included.
+export function cellTime(cell: unknown): number {
+  if (typeof cell === 'number' && !Number.isInteger(cell))
+    return SHEETS_EPOCH + Math.round(cell * 86_400) * 1000 - 7 * 3_600_000
+  const [, day, time] =
+    String(cell ?? '')
+      .trim()
+      .match(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}(?::\d{2})?)$/) ?? []
+  return day ? Date.parse(`${day}T${time}+07:00`) : NaN // a hand-typed "25:00" is NaN too
+}
+
+// The game day of a raw date cell. A plain date (text or serial) already is one; a WIB timestamp is
+// converted. Anything else is null.
 export function cellGameDay(cell: unknown): string | null {
   if (cell === '' || cell == null) return null
-  if (typeof cell === 'number' && !Number.isInteger(cell)) {
-    const wib = SHEETS_EPOCH + Math.round(cell * 86_400) * 1000
-    return gameDay(new Date(wib - 7 * 3_600_000))
-  }
-  const text = cellToIsoDate(String(cell))
-  const [, day, time] = text.match(/^(\d{4}-\d{2}-\d{2})(?: (\d{2}:\d{2}(?::\d{2})?))?$/) ?? []
-  if (!day) return null
-  if (!time) return day
-  const at = new Date(`${day}T${time}+07:00`)
-  return Number.isNaN(at.getTime()) ? null : gameDay(at) // a hand-typed "25:00" must not throw
+  const at = cellTime(cell)
+  if (!Number.isNaN(at)) return gameDay(new Date(at))
+  if (typeof cell === 'number' && !Number.isInteger(cell)) return null
+  return cellToIsoDate(String(cell)).match(/^\d{4}-\d{2}-\d{2}$/)?.[0] ?? null
 }
 
 // [day, row indexes] per game day, oldest first, so ties between days go to the earliest.

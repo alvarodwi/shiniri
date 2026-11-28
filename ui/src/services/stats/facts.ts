@@ -1,11 +1,13 @@
 import type { TabSpec } from '@/config/sheets'
 import { ANOMALY_FACTS } from '@/services/stats/anomalyFacts'
+import { CAMPAIGN_FACTS } from '@/services/stats/campaignFacts'
 import { FURNACE_FACTS } from '@/services/stats/furnaceFacts'
 import { GEAR_FACTS } from '@/services/stats/gearFacts'
 import { LEVEL_FACTS } from '@/services/stats/levelFacts'
 import { PROFILE_FACTS } from '@/services/stats/profileFacts'
 import { SOLO_RAID_FACTS } from '@/services/stats/soloRaidFacts'
 import { SPECIAL_FACTS } from '@/services/stats/specialFacts'
+import { TOWER_FACTS } from '@/services/stats/towerFacts'
 
 // A fact is the code-defined catalog entry; see docs/decisions/0008. `reads` names the tab and the
 // header-named columns it needs; compute gets those columns (cells below the header) per tab name.
@@ -68,4 +70,6 @@ export const FACTS: Fact[] = [
   ...LEVEL_FACTS,
   ...PROFILE_FACTS,
   ...SOLO_RAID_FACTS,
+  ...CAMPAIGN_FACTS,
+  ...TOWER_FACTS,
 ]
