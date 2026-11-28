@@ -5,6 +5,7 @@ import {
   EVENT_TAB,
   FURNACE_TAB,
   LEVEL_TAB,
+  PROFILE_TAB,
   NIKKE_DATABASE_TAB,
   OVERCORE_TAB,
   ROSTER_LOG_TAB,
@@ -102,6 +103,33 @@ export const MOCK_SHEETS = sheets([
     [775, '2026-11-08', days(5), ''],
     [780, '2026-11-08', days(6), ''],
   ]),
+  // Only the columns the stats read; the rest stay blank.
+  tab(
+    PROFILE_TAB,
+    [
+      ['2026-11-16', '2026-11-16 17:59:02', true, 1200, 28000],
+      ['2026-11-17', '2026-11-17 06:59:04', true, 1200, 28600],
+      ['2026-11-18', '2026-11-19 02:59:01', false, 1200, 28300],
+      ['2026-11-19', '2026-11-19 18:59:03', true, 1200, 29100],
+    ].map(([date, takenAt, dailyDone, paidGems, freeGems], i) => {
+      const row: Record<string, Cell> = {
+        date,
+        takenAt,
+        dailyDone,
+        paidGems,
+        freeGems,
+        level: 412 + i,
+        credits: 5_000_000 + i * 250_000,
+        battleData: 9_000_000 + i * 100_000,
+        coreDust: 40_000 + i * 500,
+        recruitVouchers: 10 + i,
+        advRecruitVouchers: 3,
+        silverMileage: 100 + i * 2,
+        goldMileage: 150 + i * 5,
+      }
+      return PROFILE_TAB.headers.map((h) => row[h] ?? '')
+    }),
+  ),
   tab(SOLO_RAID_TAB, [
     [43, '2026-09-12', 'Mother Whale', 'Electric', 9876543210, '9.12%', ''],
     [44, '2026-10-15', 'Gravedigger', 'Fire', 11234567890, '8.40%', 'new team'],

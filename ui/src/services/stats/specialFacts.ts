@@ -45,10 +45,12 @@ const days = (rows: Row[]) =>
     const list = indexes.map((i) => rows[i])
     return { day, runs: total(list, 'runs'), drops: total(list, 'drops') }
   })
-type Day = ReturnType<typeof days>[number]
 
 // "6 days, from 3 Oct 2023": the longest run of consecutive calendar dates that match.
-function streak(list: Day[], match: (d: Day) => boolean): string | null {
+export function streak<T extends { day: string }>(
+  list: T[],
+  match: (d: T) => boolean,
+): string | null {
   const streaks: { from: string; length: number }[] = []
   let next = NaN // the date that would extend the current streak
   for (const d of list) {
