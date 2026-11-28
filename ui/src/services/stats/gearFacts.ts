@@ -3,7 +3,7 @@ import { distinct } from '@/services/stats/anomalyFacts'
 import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
 import { formatCount, formatDate, formatPercent, formatPlural } from '@/services/stats/format'
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
-import { cellGameDay, firstMax, topWithCount } from '@/services/stats/rules'
+import { cellGameDay, daysBetween, firstMax, topWithCount } from '@/services/stats/rules'
 import {
   ANOMALY_SOURCE,
   CLASS_TYPES,
@@ -277,7 +277,7 @@ export const GEAR_FACTS: Fact[] = [
       }
       const [oldest] = latest
       if (!oldest) return null
-      const days = (Date.parse(today) - Date.parse(oldest[1])) / 86_400_000
+      const days = daysBetween(oldest[1], today)
       return `${oldest[0]}, ${formatPlural(days, 'day')}`
     },
   },

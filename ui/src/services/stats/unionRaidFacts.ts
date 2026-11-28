@@ -10,7 +10,7 @@ import {
   formatPlural,
   formatShare,
 } from '@/services/stats/format'
-import { addDays, cellGameDay, firstMax, topWithCount } from '@/services/stats/rules'
+import { addDays, cellGameDay, firstMax, sum, topWithCount } from '@/services/stats/rules'
 import { WEAKNESSES } from '@/types/soloRaid'
 import type { Weakness } from '@/types/soloRaid'
 
@@ -29,7 +29,6 @@ const WEAK_TO: Record<string, Weakness> = {
   Wind: 'Fire',
 }
 
-const sum = (numbers: number[]) => numbers.reduce((a, b) => a + b, 0)
 const capitalise = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
 
 // Every row of UnionRaid, oldest season and day first, so ties go to the earliest. A column the fact
@@ -168,7 +167,7 @@ const biggest = (list: Hit[]) => {
 }
 const average = (list: Hit[]) =>
   list.length
-    ? `${formatLarge(sum(list.map((h) => h.damage)) / list.length)} over ${formatPlural(list.length, 'hit')}`
+    ? `${formatLarge(sum(list, (h) => h.damage) / list.length)} over ${formatPlural(list.length, 'hit')}`
     : null
 
 // Own damage per season with a hit in the list, oldest first.
@@ -194,7 +193,7 @@ function teams(list: Hit[], team: string) {
   const size = team === 'triple' ? 3 : 2
   return [...map.values()]
     .filter((group) => group.length === size)
-    .map((group) => ({ ...group[0], damage: sum(group.map((h) => h.damage)) }))
+    .map((group) => ({ ...group[0], damage: sum(group, (h) => h.damage) }))
 }
 
 const used = (list: Hit[]) => new Set(list.flatMap((h) => h.team))
@@ -253,9 +252,8 @@ export const UNION_RAID_FACTS: Fact[] = [
       const seasons = picked(c, RAID, v.season)
       return formatCount(
         sum(
-          raidDays(c, v.mode)
-            .filter((d) => seasons.has(d.season))
-            .map(unused),
+          raidDays(c, v.mode).filter((d) => seasons.has(d.season)),
+          unused,
         ),
       )
     },
@@ -300,7 +298,7 @@ export const UNION_RAID_FACTS: Fact[] = [
     question: 'How much Hard damage did I deal in {season}?',
     filters: [season],
     reads: seasonal('mode', 'damage'),
-    compute: (c, v) => formatLarge(sum(hard(c, v).map((h) => h.damage))),
+    compute: (c, v) => formatLarge(sum(hard(c, v), (h) => h.damage)),
   }),
   fact({
     id: 'unionraid-best-raid-season',
@@ -595,9 +593,8 @@ export const UNION_RAID_FACTS: Fact[] = [
       // A season whose hits are not on the sheet yet would read as a false 0.
       if (!total || !numbers(c, RAID).includes(seasonOf(v.season))) return null
       const mine = sum(
-        hard(c, v)
-          .filter((h) => h.level === 4)
-          .map((h) => h.damage),
+        hard(c, v).filter((h) => h.level === 4),
+        (h) => h.damage,
       )
       return formatShare(mine, total)
     },
