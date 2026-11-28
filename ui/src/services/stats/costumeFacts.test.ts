@@ -83,3 +83,55 @@ describe('costume facts', () => {
     )
   })
 })
+
+// [nikke, costumeName, grade, source, owned, releaseDate, priceUsd]
+const DATED = [
+  ['Rapi', 'Red Hood', 'Unique', 'Cash Shop', true, '2024-01-10', 20],
+  ['Anis', 'Sparkling', 'Epic', 'Event Pass', false, '2024-03-01', '10.5'],
+  ['Neon', 'Blue Ocean', 'Epic', 'Mission Pass', false, '2024-02-01', 'Free'],
+  ['Marian', 'Future', 'Epic', 'Cash Shop', 'TRUE', '2025-06-01', ''],
+  ['Pepper', 'Soon', 'Unique', 'Cash Shop', false, '2099-01-01', 99],
+  ['Noir', 'Undated', 'Epic', 'Cash Shop', false, '', 5],
+  ['Viper', 'Old', 'Epic', 'Event Pass', 'FALSE', '2024-03-01', 4],
+]
+const dated = (id: string, values: Record<string, string> = {}, rows = DATED) =>
+  fact(id).compute(
+    {
+      CostumeDatabase: Object.fromEntries(
+        ['nikke', 'costumeName', 'grade', 'source', 'owned', 'releaseDate', 'priceUsd'].map(
+          (h, i) => [h, rows.map((r) => r[i])],
+        ),
+      ),
+    },
+    values,
+    '2026-11-28',
+  )
+
+describe('costume date and price facts', () => {
+  it('oldest-gap names the earliest released unowned costume', () => {
+    expect(dated('oldest-gap')).toBe('Neon, Blue Ocean, 1 Feb 2024')
+    expect(dated('oldest-gap', {}, DATED.slice(0, 1))).toBeNull()
+  })
+  it('by-year counts owned of released in the year', () => {
+    const v = { year: '2024', grade: 'any grade', source: 'any source' }
+    expect(dated('by-year', v)).toBe('1 of 4')
+    expect(dated('by-year', { ...v, grade: 'Epic' })).toBe('0 of 3')
+    expect(dated('by-year', { ...v, year: '2099' })).toBeNull()
+  })
+  it('drought is the longest gap between two releases, the future ignored', () => {
+    expect(dated('drought')).toBe('457 days, 1 Mar 2024 to 1 Jun 2025')
+    expect(dated('drought', {}, DATED.slice(0, 1))).toBeNull()
+  })
+  it('upcoming counts costumes releasing after today', () => {
+    expect(dated('upcoming')).toBe('1')
+    expect(dated('upcoming', {}, DATED.slice(0, 2))).toBe('0')
+  })
+  it('list-value sums priceUsd of owned costumes, a non-number as 0', () => {
+    expect(dated('list-value', { source: 'any source' })).toBe('$20.00')
+    expect(dated('list-value', { source: 'Event Pass' })).toBe('$0.00')
+  })
+  it('skipped-value sums unowned pass costumes', () => {
+    expect(dated('skipped-value')).toBe('$14.50')
+    expect(dated('skipped-value', {}, DATED.slice(0, 1))).toBeNull()
+  })
+})

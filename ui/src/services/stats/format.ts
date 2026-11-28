@@ -53,5 +53,6 @@ export function formatVsOdds(got: number, dueX100: number) {
 }
 
 const usdDigits = { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+export const formatUsd = (usd: number) => `$${usd.toLocaleString('en-US', usdDigits)}`
 export const formatMoney = (idr: number, usd: number) =>
-  `Rp${formatCount(Math.round(idr))} ($${usd.toLocaleString('en-US', usdDigits)})`
+  `Rp${formatCount(Math.round(idr))} (${formatUsd(usd)})`

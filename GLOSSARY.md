@@ -339,3 +339,7 @@ A costume the account has, however it was got. One bought on a rerun counts like
 
 **Pass costume**:
 A costume first offered through an event pass or mission pass. One not owned is a skipped pass costume.
+
+**List price**:
+What a costume costs by its source, in dollars, whatever was actually paid. A free costume is 0.
+_Avoid_: Price paid, spend

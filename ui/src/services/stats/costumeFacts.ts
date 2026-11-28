@@ -1,8 +1,14 @@
 import { COSTUME_DATABASE_TAB } from '@/config/sheets'
 import { distinct } from '@/services/stats/anomalyFacts'
 import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
-import { formatCount, formatPercent } from '@/services/stats/format'
-import { flagged } from '@/services/stats/rules'
+import {
+  formatCount,
+  formatDate,
+  formatPercent,
+  formatPlural,
+  formatUsd,
+} from '@/services/stats/format'
+import { cellGameDay, firstMax, flagged, gapsBetween, sum } from '@/services/stats/rules'
 
 const { tab } = COSTUME_DATABASE_TAB
 const ANY_GRADE = 'any grade'
@@ -17,6 +23,9 @@ function costumes(cols: Columns) {
   const length = Math.max(0, ...Object.values(t).map((column) => column.length))
   return Array.from({ length }, (_, i) => ({
     nikke: text(t.nikke?.[i]),
+    name: text(t.costumeName?.[i]),
+    date: cellGameDay(t.releaseDate?.[i]),
+    usd: Number(text(t.priceUsd?.[i])) || 0, // Free, blank and text add 0
     grade: text(t.grade?.[i]),
     source: text(t.source?.[i]),
     owned: flagged(t.owned?.[i]),
@@ -34,6 +43,10 @@ const select = (cols: Columns, { grade = ANY_GRADE, source = ANY_SOURCE }: Value
 // A set with no costumes is no answer; owning none of an existing one is "0".
 const countOf = (set: ReturnType<typeof costumes>, wantOwned: boolean) =>
   set.length ? formatCount(set.filter((c) => c.owned === wantOwned).length) : null
+
+// Costumes already out; a future or blank date is not released.
+const released = (cols: Columns, today: string) =>
+  costumes(cols).filter((c) => c.date && c.date <= today)
 
 const grade: Filter = {
   id: 'grade',
@@ -106,5 +119,107 @@ export const COSTUME_FACTS: Fact[] = [
         costumes(c).filter((x) => PASS_SOURCES.includes(x.source)),
         false,
       ),
+  },
+  {
+    id: 'costume-oldest-gap',
+    category: 'Database',
+    title: 'Oldest wardrobe gap',
+    question: 'Which released costume have I gone longest without?',
+    reads: reads('nikke', 'costumeName', 'owned', 'releaseDate'),
+    compute: (c, _v, today) => {
+      const gap = firstMax(
+        released(c, today).filter((x) => !x.owned),
+        (x) => -Date.parse(x.date!),
+      )
+      return gap ? `${gap.nikke}, ${gap.name}, ${formatDate(gap.date!)}` : null
+    },
+  },
+  {
+    id: 'costume-by-year',
+    category: 'Database',
+    title: 'Wardrobe by year',
+    question: 'How many of the {grade} costumes from {source} released in {year} do I own?',
+    filters: [
+      {
+        id: 'year',
+        label: 'Year',
+        options: (cols) =>
+          distinct(
+            cols[tab].releaseDate?.flatMap((d) => cellGameDay(d)?.slice(0, 4) ?? []) ?? [],
+          ).sort(),
+      },
+      grade,
+      source,
+    ],
+    reads: reads('grade', 'source', 'owned', 'releaseDate'),
+    compute: (c, v, today) => {
+      const inYear = select(c, v).filter(
+        (x) => x.date && x.date <= today && x.date.startsWith(v.year),
+      )
+      return inYear.length
+        ? `${formatCount(inYear.filter((x) => x.owned).length)} of ${formatCount(inYear.length)}`
+        : null
+    },
+  },
+  {
+    id: 'costume-drought',
+    category: 'Database',
+    title: 'Release drought',
+    question: 'What was the longest gap between two costume releases?',
+    reads: reads('releaseDate'),
+    compute: (c, _v, today) => {
+      const days = [...new Set(released(c, today).map((x) => x.date!))].sort()
+      if (days.length < 2) return null
+      const best = firstMax(gapsBetween(days, days[days.length - 1]), (g) => g.n)!
+      return `${formatPlural(best.n, 'day')}, ${formatDate(best.from)} to ${formatDate(best.to)}`
+    },
+  },
+  {
+    id: 'costume-upcoming',
+    category: 'Database',
+    title: 'Upcoming costumes',
+    question: 'How many costumes are still to be released?',
+    reads: reads('releaseDate'),
+    compute: (c, _v, today) => {
+      const all = costumes(c)
+      return all.length ? formatCount(all.filter((x) => x.date && x.date > today).length) : null
+    },
+  },
+  {
+    id: 'costume-list-value',
+    category: 'Database',
+    title: 'List value of the wardrobe',
+    question: 'What is the list price of my {source} costumes?',
+    filters: [sourceBeforeNoun],
+    reads: reads('source', 'owned', 'priceUsd'),
+    compute: (c, v) => {
+      const set = select(c, v)
+      return set.length
+        ? formatUsd(
+            sum(
+              set.filter((x) => x.owned),
+              (x) => x.usd,
+            ),
+          )
+        : null
+    },
+  },
+  {
+    id: 'costume-skipped-value',
+    category: 'Database',
+    title: 'Value I skipped',
+    question: 'What is the list price of the pass costumes I let go?',
+    reads: reads('source', 'owned', 'priceUsd'),
+    compute: (c) => {
+      const passes = costumes(c).filter((x) => PASS_SOURCES.includes(x.source))
+      return passes.length
+        ? formatUsd(
+            sum(
+              passes.filter((x) => !x.owned),
+              (x) => x.usd,
+            ),
+          )
+        : null
+    },
   },
 ]
