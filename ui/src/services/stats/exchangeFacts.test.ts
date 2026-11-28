@@ -49,8 +49,11 @@ describe('exchange facts', () => {
     expect(compute('most-exchanged-nikke', ROWS, 'Gold Mileage')).toBe('Frima, 2 copies')
     expect(compute('most-exchanged-nikke', ROWS, 'Union Chip')).toBe('Sin, 1 copy')
     expect(compute('most-exchanged-nikke', ROWS.slice(0, 2), 'Bonus Recruit')).toBeNull()
-    const tied = ROWS.slice(2, 4)
-    expect(compute('most-exchanged-nikke', tied, 'any exchange')).toBe('Frima, 1 copy')
+    // tie: earliest row, not earliest date; an undated row is still a copy
+    const tied = [ROWS[3], ROWS[2]]
+    expect(compute('most-exchanged-nikke', tied, 'any exchange')).toBe('Biscuit, 1 copy')
+    const undated = [...tied, ['', 'Frima', 'Gold Mileage']]
+    expect(compute('most-exchanged-nikke', undated, 'any exchange')).toBe('Frima, 2 copies')
   })
 
   it('longest-mileage-saving counts the stretch still running', () => {
