@@ -86,6 +86,25 @@ export function streak<T extends { day: string }>(
 export const sum = <T>(list: T[], of: (item: T) => number) =>
   list.reduce((n, item) => n + of(item), 0)
 
+// Back-to-back items that match, as the amounts they add up to and the day each run started. A
+// non-match ends a run; the last one is the run still going.
+export function runs<T extends { day: string }>(
+  list: T[],
+  match: (item: T) => boolean,
+  amount: (item: T) => number,
+) {
+  const out = [{ day: '', n: 0 }]
+  for (const item of list) {
+    const run = out[out.length - 1]
+    if (!match(item)) out.push({ day: '', n: 0 })
+    else {
+      run.day ||= item.day
+      run.n += amount(item)
+    }
+  }
+  return out
+}
+
 // "300 (1 Jan 2026)": the highest `n` with what it was; a highest of 0 is just "0".
 export function most<T extends { n: number }>(list: T[], name: (item: T) => string): string | null {
   const best = firstMax(list, (x) => x.n)

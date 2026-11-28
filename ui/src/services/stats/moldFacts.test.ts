@@ -96,9 +96,8 @@ const CASES: [string, Record<string, string>, unknown[][], string | null][] = [
   ['current-bust', plain, ROWS, '2'],
   ['current-bust', { mold: 'HQ' }, ROWS, '0'],
   ['current-bust', { mold: 'Purple' }, ROWS, null],
-  ['ssr-wait', {}, ROWS, '31 days, from 1 Jan 2026'],
-  ['ssr-wait', {}, TIED, '2 days, from 1 Jan 2026'],
-  ['ssr-wait', {}, WINS, null],
+  ['ssr-wait', {}, ROWS, '272 days, from 1 Mar 2026'], // still going
+  ['ssr-wait', {}, PERFECT, null],
   ['hoard', {}, ROWS, '271 days, from 2 Mar 2026'], // still going
   ['hoard', {}, [], null],
   ['missing', {}, ROWS, '1'], // Noah
@@ -141,6 +140,23 @@ const CASES: [string, Record<string, string>, unknown[][], string | null][] = [
 describe('mold facts', () => {
   it.each(CASES)('mold-%s %o', (id, values, rows, expected) => {
     expect(compute(id, rows, values)).toBe(expected)
+  })
+
+  it('measures the stretch between days, ties to the earliest', () => {
+    const rows = [1, 3, 5].map((d) => [`2026-01-0${d}`, 'Tetra Mold', 1, 1, 'a'])
+    for (const id of ['ssr-wait', 'hoard']) {
+      expect(compute(id, rows, {}, DB, '2026-01-06')).toBe('2 days, from 1 Jan 2026')
+      expect(compute(id, rows.slice(0, 1), {}, DB, '2026-01-01')).toBe('0 days, from 1 Jan 2026')
+    }
+  })
+
+  it('breaks maker and sitting ties by the earliest', () => {
+    const rows = [
+      ['2026-01-01', 'Tetra Mold', 2, 1, 'a'],
+      ['2026-01-02', 'Elysion Mold', 2, 1, 'a'],
+    ]
+    expect(compute('luckiest-maker', rows, any)).toBe('Tetra, 50% (1 of 2)')
+    expect(compute('packed-session', rows, plain)).toBe('1 (1 Jan 2026)')
   })
 
   it('has no pool without NikkeDatabase rows', () => {

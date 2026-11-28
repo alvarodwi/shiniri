@@ -35,7 +35,7 @@ pool is every SSR whose `limited` is not `TRUE`, overspec included.
 The mold facts read the gacha spreadsheet. A `Mold` row is one mold type in one sitting; a row with
 nothing opened is ignored. Odds per `moldType` are a constant in `moldFacts.ts`. The facts about
 chance skip Perfect molds without breaking a run. A mixed 50/50 sitting ends both streaks. The
-mold pool is the ordinary pool.
+mold pool is the ordinary pool. Mold SSR wait and hoard count the stretch still running.
 
 The union facts count own hits by the fixed nickname `VAROA`, except that the days of a mode come
 from every member's rows. Their `season` filter is its own (not a Date range), counts "last N" back

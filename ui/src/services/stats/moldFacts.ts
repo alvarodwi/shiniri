@@ -16,22 +16,33 @@ import {
   groupByGameDay,
   missingFromPool,
   most,
+  runs,
   sum,
 } from '@/services/stats/rules'
+import type { MoldType } from '@/types/molds'
 
 const { tab } = MOLD_TAB
 const MAKERS = ['Pilgrim', 'Elysion', 'Missilis', 'Tetra']
 const MAKER_TYPES = MAKERS.map((m) => `${m} Mold`)
-// The SSR chance of one open, in percent, by `moldType`.
-const ODDS: Record<string, number> = {
+// The SSR chance of one open, in percent. Typed so a new mold type can't be left out.
+const ODDS: Record<MoldType, number> = {
   'Purple Mold': 21,
   'HQ Mold': 61,
   'Yellow Mold': 61, // retired, same odds as HQ
-  ...Object.fromEntries(MAKER_TYPES.map((t) => [t, 50])),
-  ...Object.fromEntries(['HQ', ...MAKERS].map((m) => [`${m} Perfect Mold`, 100])),
+  'Pilgrim Mold': 50,
+  'Elysion Mold': 50,
+  'Missilis Mold': 50,
+  'Tetra Mold': 50,
+  'HQ Perfect Mold': 100,
+  'Pilgrim Perfect Mold': 100,
+  'Elysion Perfect Mold': 100,
+  'Missilis Perfect Mold': 100,
+  'Tetra Perfect Mold': 100,
 }
-const isPerfect = (type: string) => ODDS[type] === 100
-const isPlain = (type: string) => ODDS[type] < 100
+// A sheet cell may hold no known type; then it is neither.
+const odds = (type: string) => ODDS[type as MoldType]
+const isPerfect = (type: string) => odds(type) === 100
+const isPlain = (type: string) => odds(type) < 100
 
 const ANY_MOLD = 'any mold'
 const ANY_PLAIN = 'any non-Perfect mold'
@@ -77,8 +88,8 @@ type Session = ReturnType<typeof sessions>[number]
 
 const opened = (list: Session[]) => sum(list, (s) => s.opens)
 const ssrs = (list: Session[]) => sum(list, (s) => s.ssr)
-// Expected SSRs, times 100 to stay in whole numbers.
-const expected = (list: Session[]) => sum(list, (s) => s.opens * ODDS[s.type])
+// Times 100 to stay in whole numbers.
+const expectedX100 = (list: Session[]) => sum(list, (s) => s.opens * odds(s.type))
 
 // The sessions in the chosen range.
 function select(cols: Columns, { range = ANY_PERIOD }: Values, today: string) {
@@ -87,10 +98,10 @@ function select(cols: Columns, { range = ANY_PERIOD }: Values, today: string) {
 }
 const ofMold = (list: Session[], { mold }: Values) => list.filter((s) => MOLDS[mold](s.type))
 // The same, for the facts about chance: a Perfect mold is skipped and breaks nothing.
-const chance = (list: Session[], values: Values) =>
+const chanceSessions = (list: Session[], values: Values) =>
   ofMold(list, values).filter((s) => isPlain(s.type))
 // The manufacturer 50/50s of the chosen {maker}.
-const fifties = (list: Session[], { maker = ANY_MAKER }: Values) =>
+const fifties = (list: Session[], maker = ANY_MAKER) =>
   list.filter((s) =>
     maker === ANY_MAKER ? MAKER_TYPES.includes(s.type) : s.type === `${maker} Mold`,
   )
@@ -98,25 +109,17 @@ const fifties = (list: Session[], { maker = ANY_MAKER }: Values) =>
 // A sitting wins or loses its 50/50s; a mixed one does neither.
 const outcome = (s: Session) => (s.ssr === s.opens ? 'win' : s.ssr ? 'mixed' : 'lose')
 
-// Back-to-back sessions that match, as the opens they add up to and the day they started.
-function runs(list: Session[], match: (s: Session) => boolean) {
-  const out = [{ day: '', n: 0 }]
-  for (const s of list) {
-    const run = out[out.length - 1]
-    if (!match(s)) out.push({ day: '', n: 0 })
-    else {
-      run.day ||= s.day
-      run.n += s.opens
-    }
-  }
-  return out
-}
 const longestRun = (list: Session[], match: (s: Session) => boolean) =>
-  list.length ? most(runs(list, match), (r) => `from ${formatDate(r.day)}`) : null
+  list.length
+    ? most(
+        runs(list, match, (s) => s.opens),
+        (r) => `from ${formatDate(r.day)}`,
+      )
+    : null
 
-// "31 days, from 1 Jan 2026": the widest step between consecutive days.
-function longestGap(days: string[]) {
-  const gaps = days.slice(1).map((to, i) => ({ from: days[i], n: daysBetween(days[i], to) }))
+// "31 days, from 1 Jan 2026": the widest step between days, the one still running included.
+function longestGap(days: string[], today: string) {
+  const gaps = days.map((from, i) => ({ from, n: daysBetween(from, days[i + 1] ?? today) }))
   const best = firstMax(gaps, (g) => g.n)
   return best ? `${formatPlural(best.n, 'day')}, from ${formatDate(best.from)}` : null
 }
@@ -129,7 +132,7 @@ const filter = (id: string, label: string, options: string[], say?: Filter['say'
 })
 const sayMold = (v: string) => (v === ANY_MOLD ? '' : v === ANY_PLAIN ? 'non-Perfect' : v)
 const plainMolds = Object.keys(MOLDS).filter((m) => m !== ANY_MOLD && m !== 'Perfect')
-const mold = filter('mold', 'Mold', plainMolds, sayMold)
+const plainMold = filter('mold', 'Mold', plainMolds, sayMold)
 const anyMold = filter('mold', 'Mold', Object.keys(MOLDS), sayMold)
 const maker = filter('maker', 'Manufacturer', [ANY_MAKER, ...MAKERS], (v) =>
   v === ANY_MAKER ? '' : v,
@@ -138,7 +141,7 @@ const result = filter('result', 'Result', ['win', 'lose'])
 const range = dateRange((cols) => cols[tab].date)
 
 const reads = (...columns: string[]) => [{ tab: MOLD_TAB, columns: ['date', ...columns] }]
-const typed = reads('moldType', 'pulls', 'totalSsr')
+const typedReads = reads('moldType', 'pulls', 'totalSsr')
 
 export const MOLD_FACTS: Fact[] = [
   {
@@ -156,7 +159,7 @@ export const MOLD_FACTS: Fact[] = [
     title: 'Mold SSRs',
     question: 'How many SSRs did {mold} molds give me {range}?',
     filters: [anyMold, range],
-    reads: typed,
+    reads: typedReads,
     compute: (c, v, today) => formatCount(ssrs(ofMold(select(c, v, today), v))),
   },
   {
@@ -164,12 +167,12 @@ export const MOLD_FACTS: Fact[] = [
     category: 'Pulls',
     title: 'Mold luck',
     question: "What % of my {mold} opens {range} gave an SSR, against what's expected?",
-    filters: [mold, range],
-    reads: typed,
+    filters: [plainMold, range],
+    reads: typedReads,
     compute: (c, v, today) => {
-      const list = chance(select(c, v, today), v)
+      const list = chanceSessions(select(c, v, today), v)
       const share = formatShareOf(ssrs(list), opened(list))
-      return share && `${share}, expected ${formatShare(expected(list), opened(list) * 100)}`
+      return share && `${share}, expected ${formatShare(expectedX100(list), opened(list) * 100)}`
     },
   },
   {
@@ -193,20 +196,20 @@ export const MOLD_FACTS: Fact[] = [
     category: 'Pulls',
     title: 'Longest bust run',
     question: "What is the most {mold} molds I've busted in a row {range}?",
-    filters: [mold, range],
-    reads: typed,
+    filters: [plainMold, range],
+    reads: typedReads,
     // Only SSR-less rows count.
-    compute: (c, v, today) => longestRun(chance(select(c, v, today), v), (s) => !s.ssr),
+    compute: (c, v, today) => longestRun(chanceSessions(select(c, v, today), v), (s) => !s.ssr),
   },
   {
     id: 'mold-current-bust',
     category: 'Pulls',
     title: 'Current bust run',
     question: 'How many {mold} molds have I opened since my last SSR from one?',
-    filters: [mold],
-    reads: typed,
+    filters: [plainMold],
+    reads: typedReads,
     compute: (c, v) => {
-      const list = chance(sessions(c), v)
+      const list = chanceSessions(sessions(c), v)
       const last = list.map((s) => s.ssr > 0).lastIndexOf(true)
       return last < 0 ? null : formatCount(opened(list.slice(last + 1)))
     },
@@ -216,12 +219,13 @@ export const MOLD_FACTS: Fact[] = [
     category: 'Pulls',
     title: 'Mold SSR wait',
     question: "What is the longest I've waited between mold SSRs?",
-    reads: typed,
-    compute: (c) =>
+    reads: typedReads,
+    compute: (c, _, today) =>
       longestGap(
         sessions(c)
           .filter((s) => isPlain(s.type) && s.ssr)
           .map((s) => s.day),
+        today,
       ),
   },
   {
@@ -230,11 +234,11 @@ export const MOLD_FACTS: Fact[] = [
     title: 'Mold hoard',
     question: "What is the longest I've gone without opening a mold?",
     reads: reads('pulls'),
-    // The stretch still running counts.
-    compute: (c, _, today) => {
-      const days = sessions(c).map((s) => s.day)
-      return days.length ? longestGap([...days, today]) : null
-    },
+    compute: (c, _, today) =>
+      longestGap(
+        sessions(c).map((s) => s.day),
+        today,
+      ),
   },
   {
     id: 'mold-missing',
@@ -257,9 +261,9 @@ export const MOLD_FACTS: Fact[] = [
     title: '50/50 winning streak',
     question: "What is the most {maker} 50/50s I've won in a row {range}?",
     filters: [maker, range],
-    reads: typed,
+    reads: typedReads,
     compute: (c, v, today) =>
-      longestRun(fifties(select(c, v, today), v), (s) => outcome(s) === 'win'),
+      longestRun(fifties(select(c, v, today), v.maker), (s) => outcome(s) === 'win'),
   },
   {
     id: 'mold-loss-streak',
@@ -267,9 +271,9 @@ export const MOLD_FACTS: Fact[] = [
     title: '50/50 losing streak',
     question: "What is the most {maker} 50/50s I've lost in a row {range}?",
     filters: [maker, range],
-    reads: typed,
+    reads: typedReads,
     compute: (c, v, today) =>
-      longestRun(fifties(select(c, v, today), v), (s) => outcome(s) === 'lose'),
+      longestRun(fifties(select(c, v, today), v.maker), (s) => outcome(s) === 'lose'),
   },
   {
     id: 'mold-current-streak',
@@ -277,14 +281,18 @@ export const MOLD_FACTS: Fact[] = [
     title: 'Current 50/50 streak',
     question: 'Am I winning or losing my {maker} 50/50s, and for how many?',
     filters: [maker],
-    reads: typed,
+    reads: typedReads,
     compute: (c, v) => {
-      const list = fifties(sessions(c), v)
+      const list = fifties(sessions(c), v.maker)
       const last = list.at(-1)
       if (!last) return null
       const now = outcome(last)
       if (now === 'mixed') return '0 (the last sitting was mixed)'
-      const { n } = runs(list, (s) => outcome(s) === now).at(-1)!
+      const { n } = runs(
+        list,
+        (s) => outcome(s) === now,
+        (s) => s.opens,
+      ).at(-1)!
       return `${now === 'win' ? 'winning' : 'losing'}, ${formatCount(n)} in a row`
     },
   },
@@ -294,10 +302,10 @@ export const MOLD_FACTS: Fact[] = [
     title: 'Luckiest manufacturer',
     question: 'Which manufacturer mold wins me the most {range}?',
     filters: [range],
-    reads: typed,
+    reads: typedReads,
     // By share won, not by count; a tie goes to the manufacturer opened first.
     compute: (c, v, today) => {
-      const list = fifties(select(c, v, today), {})
+      const list = fifties(select(c, v, today))
       const best = firstMax(
         [...new Set(list.map((s) => s.type))].map((type) => {
           const own = list.filter((s) => s.type === type)
@@ -315,7 +323,7 @@ export const MOLD_FACTS: Fact[] = [
     category: 'Pulls',
     title: 'HQ pity',
     question: 'How many HQ Perfect Molds have my HQ busts earned?',
-    reads: typed,
+    reads: typedReads,
     // HQ Mold rows only: a Yellow bust gave no shards.
     compute: (c) => {
       const list = sessions(c).filter((s) => s.type === 'HQ Mold')
@@ -330,12 +338,12 @@ export const MOLD_FACTS: Fact[] = [
     category: 'Pulls',
     title: 'Ahead or behind',
     question: 'How many SSRs am I above or below the odds on {mold} molds {range}?',
-    filters: [mold, range],
-    reads: typed,
+    filters: [plainMold, range],
+    reads: typedReads,
     compute: (c, v, today) => {
-      const list = chance(select(c, v, today), v)
+      const list = chanceSessions(select(c, v, today), v)
       if (!list.length) return null
-      const [got, due] = [ssrs(list), expected(list)]
+      const [got, due] = [ssrs(list), expectedX100(list)]
       const diff = Math.round((got * 100 - due) / 10) / 10
       return `${formatSigned(diff)} (${formatCount(got)} against ${formatCount(Math.round(due / 10) / 10)} expected)`
     },
@@ -345,12 +353,12 @@ export const MOLD_FACTS: Fact[] = [
     category: 'Pulls',
     title: 'Mold packed session',
     question: 'What is the most SSRs one sitting of {mold} molds gave me {range}?',
-    filters: [mold, range],
-    reads: typed,
+    filters: [plainMold, range],
+    reads: typedReads,
     // A row is one mold type in one sitting.
     compute: (c, v, today) =>
       most(
-        chance(select(c, v, today), v).map((s) => ({ day: s.day, n: s.ssr })),
+        chanceSessions(select(c, v, today), v).map((s) => ({ day: s.day, n: s.ssr })),
         (s) => formatDate(s.day),
       ),
   },
@@ -360,9 +368,9 @@ export const MOLD_FACTS: Fact[] = [
     title: '50/50 sweeps',
     question: 'On how many days did I {result} every 50/50 {range}?',
     filters: [result, range],
-    reads: typed,
+    reads: typedReads,
     compute: (c, v, today) => {
-      const list = fifties(select(c, v, today), {})
+      const list = fifties(select(c, v, today))
       const swept = groupByGameDay(list.map((s) => s.day)).filter(([, rows]) => {
         const day = rows.map((i) => list[i])
         return opened(day) >= SWEEP_OPENS && day.every((s) => outcome(s) === v.result)
@@ -376,7 +384,7 @@ export const MOLD_FACTS: Fact[] = [
     title: 'Guaranteed share',
     question: 'What % of my mold SSRs {range} came from Perfect molds?',
     filters: [range],
-    reads: typed,
+    reads: typedReads,
     compute: (c, v, today) => {
       const list = select(c, v, today)
       return formatShareOf(ssrs(list.filter((s) => isPerfect(s.type))), ssrs(list))

@@ -9,6 +9,7 @@ import {
   missingFromPool,
   most,
   namesWhere,
+  runs,
   sum,
 } from '@/services/stats/rules'
 
@@ -160,16 +161,12 @@ export const ORDINARY_FACTS: Fact[] = [
       const list = select(c, v, today)
       if (!list.length) return null // no sessions, as opposed to a run of 0
       const overspec = namesWhere(c, 'overspec') // what a Pilgrim means here
-      const runs = [{ day: '', n: 0 }]
-      for (const s of list) {
-        const run = runs[runs.length - 1]
-        if (hasOne(s, overspec)) runs.push({ day: '', n: 0 })
-        else {
-          run.day ||= s.day
-          run.n += s.pulls
-        }
-      }
-      return most(runs, (r) => `from ${formatDate(r.day)}`)
+      const dry = runs(
+        list,
+        (s) => !hasOne(s, overspec),
+        (s) => s.pulls,
+      )
+      return most(dry, (r) => `from ${formatDate(r.day)}`)
     },
   },
   {
