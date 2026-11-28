@@ -81,7 +81,10 @@ const CASES: [string, Record<string, string>, Row[], string | null][] = [
   ['top-piece', from(FURNACE), ROWS, null],
   ['top-manufacturer', all, ROWS, 'Tetra, 3 pieces'],
   ['top-manufacturer', from('any box'), ROWS, 'Tetra, 1 piece'],
+  ['top-manufacturer', all, ROWS.slice(0, 2), 'Tetra, 1 piece'], // tie: earliest row
+  ['top-manufacturer', from(BOX), ROWS, null],
   ['top-class', all, ROWS, 'Attacker, 6 pieces'],
+  ['top-class', all, ROWS.slice(0, 2), 'Attacker, 1 piece'], // tie: earliest row
   ['top-class', from(BOX), ROWS, null],
   ['top-slot', all, ROWS, 'Helmet, 2 pieces'], // tie with Torso and Gloves: earliest row
   ['top-slot', { ...all, range: 'in 2022' }, ROWS, null],
@@ -92,6 +95,7 @@ const CASES: [string, Record<string, string>, Row[], string | null][] = [
   ['class-share', { ...all, class: 'Supporter' }, ROWS, '0'],
   ['class-share', { ...from(BOX), class: 'Supporter' }, ROWS, null],
   ['slot-share', { ...all, slot: 'Gloves' }, ROWS, '29'],
+  ['slot-share', { ...from(AI), slot: 'Torso' }, ROWS, '0'],
   ['slot-share', { ...all, slot: 'Gloves', range: 'in 2022' }, ROWS, null],
   ['collection', { source: 'any source' }, ROWS, '6'],
   ['collection', { source: BOX }, ROWS, '1'],
@@ -131,7 +135,11 @@ const SPECIAL_CASES: [string, Record<string, string>, string | null][] = [
   ['top-piece', special, 'Tetra Attacker Helmet, 1 piece'], // tie: earliest row
   ['top-piece', modernia, null],
   ['top-manufacturer', { ...special, boss: 'Gravedigger' }, 'Elysion, 1 piece'],
+  ['top-manufacturer', special, 'Tetra, 1 piece'], // tie: earliest row
   ['top-manufacturer', modernia, null],
+  ['top-class', special, 'Attacker, 1 piece'], // tie: earliest row
+  ['manufacturer-share', { ...special, manufacturer: 'Pilgrim' }, '0'],
+  ['slot-share', { ...special, slot: 'Boots' }, '0'],
   ['top-class', alteisen, 'Attacker, 1 piece'],
   ['top-class', modernia, null],
   ['top-slot', special, 'Helmet, 1 piece'],

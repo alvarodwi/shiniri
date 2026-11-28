@@ -9,6 +9,7 @@ export type Slot = (typeof SLOTS)[number]
 export type Gear = { classType: ClassType; manufacturer: Manufacturer }
 
 // Gear `source` values, verbatim: the stats tabs group by these strings.
+export const SPECIAL_SOURCE = 'Special Interception' // closed history, so no form writes it
 export const ANOMALY_SOURCE = 'Anomaly Interception'
 export const GEAR_SOURCES = {
   arms: 'Manufacturer Arms',

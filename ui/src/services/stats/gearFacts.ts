@@ -4,10 +4,16 @@ import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
 import { formatCount, formatDate, formatPercent, formatPlural } from '@/services/stats/format'
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
 import { cellGameDay, firstMax, topWithCount } from '@/services/stats/rules'
-import { ANOMALY_SOURCE, CLASS_TYPES, GEAR_SOURCES, MANUFACTURERS, SLOTS } from '@/types/gear'
+import {
+  ANOMALY_SOURCE,
+  CLASS_TYPES,
+  GEAR_SOURCES,
+  MANUFACTURERS,
+  SLOTS,
+  SPECIAL_SOURCE,
+} from '@/types/gear'
 
 const { tab } = GEAR_TAB
-const SPECIAL_SOURCE = 'Special Interception' // closed history, so no form writes it
 const { arms, box, furnace } = GEAR_SOURCES
 
 // What each source option counts.
@@ -28,6 +34,9 @@ const ANY = {
   boss: 'any boss',
 }
 
+const kindName = (manufacturer: string, cls: string, slot: string) =>
+  `${manufacturer} ${cls} ${slot}`
+
 // The dated pieces, oldest first; a day keeps its row order.
 function pieces(cols: Columns) {
   const t = cols[tab]
@@ -37,7 +46,7 @@ function pieces(cols: Columns) {
       const day = cellGameDay(date)
       if (!day) return []
       const [manufacturer, cls, slot] = ['manufacturer', 'class', 'slot'].map((n) => text(n, i))
-      const kind = manufacturer && cls && slot ? `${manufacturer} ${cls} ${slot}` : ''
+      const kind = manufacturer && cls && slot ? kindName(manufacturer, cls, slot) : ''
       return [{ i, date, day, source: text('source', i), manufacturer, class: cls, slot, kind }]
     })
     .sort((a, b) => a.day.localeCompare(b.day))
@@ -50,11 +59,11 @@ const matches = (p: Piece, values: Values) =>
   )
 
 // Pieces from the chosen source (any when the fact has none), in range, in row order.
-function select(cols: Columns, values: Values, today: string, chosen: string[] = []) {
+function select(cols: Columns, values: Values, today: string, excluded: string[] = []) {
   const { source = 'any source', range = ANY_PERIOD } = values
   const within = inRange(range, today)
   return pieces(cols)
-    .filter((p) => SOURCES[source].includes(p.source) && !chosen.includes(p.source))
+    .filter((p) => SOURCES[source].includes(p.source) && !excluded.includes(p.source))
     .filter((p) => within(p.date))
     .sort((a, b) => a.i - b.i)
 }
@@ -81,10 +90,10 @@ function share(list: Piece[], key: Exclude<Key, 'kind'>, value: string) {
   return formatPercent(known.filter((p) => p[key] === value).length, known.length)
 }
 
-const sourceFilter = (chosen: string[] = []): Filter => ({
+const sourceFilter = (excluded: string[] = []): Filter => ({
   id: 'source',
   label: 'Source',
-  options: Object.keys(SOURCES).filter((s) => !chosen.includes(s)),
+  options: Object.keys(SOURCES).filter((s) => !excluded.includes(s)),
 })
 const source = sourceFilter()
 const classSource = sourceFilter(CLASS_CHOSEN)
@@ -248,7 +257,7 @@ export const GEAR_FACTS: Fact[] = [
       let sets = 0
       for (const m of MANUFACTURERS)
         for (const cls of CLASS_TYPES)
-          sets += Math.min(...SLOTS.map((s) => counts.get(`${m} ${cls} ${s}`) ?? 0))
+          sets += Math.min(...SLOTS.map((s) => counts.get(kindName(m, cls, s)) ?? 0))
       return formatCount(sets)
     },
   },
