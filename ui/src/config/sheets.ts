@@ -316,6 +316,31 @@ export const ROSTER_LOG_TAB: TabSpec = {
   headers: ['date', 'nameCode', 'nikke', 'copies'],
 }
 
+// Read-only here: a sheet formula builds it. Row 2 numbers the copy slots (firstCopy to c7).
+export const ACQUISITION_LOG_TAB: TabSpec = {
+  spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,
+  tab: 'AcquisitionLog',
+  headers: [
+    'nikke',
+    'confidence',
+    'releaseDate',
+    'firstCopy',
+    'lb1',
+    'lb2',
+    'lb3',
+    'c1',
+    'c2',
+    'c3',
+    'c4',
+    'c5',
+    'c6',
+    'c7',
+    'totalCopies',
+    'untracked',
+    'tracked',
+  ],
+}
+
 // One row per Nikke copy past C7; notes stays blank, the owner fills it by hand.
 export const OVERCORE_TAB: TabSpec = {
   spreadsheetId: import.meta.env.VITE_GACHA_SHEET_ID,

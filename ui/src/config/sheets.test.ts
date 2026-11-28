@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  ACQUISITION_LOG_TAB,
   ALL_PULLS_TAB,
   ANOMALY_TAB,
   COSTUME_DATABASE_TAB,
@@ -183,6 +184,15 @@ describe('tab specs', () => {
     expect(shape(ROSTER_LOG_TAB)).toEqual({
       tab: 'RosterLog',
       headers: ['date', 'nameCode', 'nikke', 'copies'],
+    })
+  })
+  it('AcquisitionLog', () => {
+    expect(shape(ACQUISITION_LOG_TAB)).toEqual({
+      tab: 'AcquisitionLog',
+      headers: (
+        'nikke confidence releaseDate firstCopy lb1 lb2 lb3 c1 c2 c3 c4 c5 c6 c7 ' +
+        'totalCopies untracked tracked'
+      ).split(' '),
     })
   })
   it('Overcore', () => {

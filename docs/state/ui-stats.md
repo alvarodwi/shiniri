@@ -12,7 +12,7 @@ This doc does not list the facts. `FACTS` in `ui/src/services/stats/facts.ts` is
 mostly from one file per tab (`anomalyFacts.ts`, `specialFacts.ts`, `gearFacts.ts`,
 `furnaceFacts.ts`, `levelFacts.ts`, `profileFacts.ts`, `soloRaidFacts.ts`, `campaignFacts.ts`,
 `towerFacts.ts`, `unionRaidFacts.ts`, `socialFacts.ts`, `eventFacts.ts`, `ordinaryFacts.ts`, `moldFacts.ts`,
-`exchangeFacts.ts`, `extraFacts.ts`, `pullFacts.ts`, with tests beside them). `clears.ts` holds what Campaign and Tower share: parsing a
+`exchangeFacts.ts`, `extraFacts.ts`, `pullFacts.ts`, `acquisitionFacts.ts`, with tests beside them). `clears.ts` holds what Campaign and Tower share: parsing a
 clear row and the computes both use; `clearRows.fixture.ts` is their test data. `Profile`, `Campaign`,
 `Tower`, `UnionRaid` and `UnionSeason` are written by the CLI; `PROFILE_TAB`, `CAMPAIGN_TAB`,
 `TOWER_TAB`, `UNION_RAID_TAB` and `UNION_SEASON_TAB` mirror its headers and only stats read them. A fact that reads two tabs lives in one of their files (`interception-*` in
@@ -51,6 +51,13 @@ read `AllPulls`, which a sheet formula builds (`docs/sheet-formulas.md`). The fa
 out `Exchange` and `Extra`. A rescued chase is a failed one that a mileage exchange or a free pull on
 the same banner completed within 30 days of its last session. The two Overcore facts there pair each
 `Overcore` row with the latest unpaired non-`Liberation` exchange of that NIKKE on or before it.
+
+The Roster facts in `acquisitionFacts.ts` read `AcquisitionLog` (gacha spreadsheet), which a sheet
+formula builds; nothing is rebuilt from `AllPulls` or `RosterLog`. A slot from `firstCopy` to `c7` is
+a date, a newline and a source, or `?` (untracked) or blank; row 2 holds slot numbers, which the slot
+parser skips. A NIKKE counts when the slots a fact needs are known, whatever its `confidence`; only
+"First recorded core" wants `Perfect`. "Late arrival" counts NIKKE released on or after the earliest
+logged copy.
 
 The union facts count own hits by the fixed nickname `VAROA`, except that the days of a mode come
 from every member's rows. Their `season` filter is its own (not a Date range), counts "last N" back

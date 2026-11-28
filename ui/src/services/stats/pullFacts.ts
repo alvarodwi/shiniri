@@ -53,7 +53,7 @@ const CHANCE_SOURCES = [...PULL_SOURCES, 'Mold']
 const SOURCES = [...CHANCE_SOURCES, 'Exchange', 'Extra']
 // Expected SSRs per 100 pulls.
 const PULL_ODDS: Record<string, number> = { Social: 2, Event: 4, Ordinary: 4 }
-const ATTRIBUTES = ['manufacturer', 'class', 'burst', 'element', 'weapon']
+export const ATTRIBUTES = ['manufacturer', 'class', 'burst', 'element', 'weapon']
 const BURSTS: Record<string, string> = { Step1: 'Burst I', Step2: 'Burst II', Step3: 'Burst III' }
 // Months back.
 const AGO: Record<string, number> = { '1 month ago': 1, '1 year ago': 12, '2 years ago': 24 }
@@ -285,7 +285,7 @@ const byChance = <T extends { source: string }>(list: T[]) =>
   list.filter((a) => CHANCE_SOURCES.includes(a.source))
 
 // The trait of each NikkeDatabase NIKKE as answers word it.
-function traits(cols: Columns, attribute: string) {
+export function traits(cols: Columns, attribute: string) {
   const db = cols[DB]
   const label = (raw: string) => {
     if (attribute === 'manufacturer') return raw.charAt(0) + raw.slice(1).toLowerCase()

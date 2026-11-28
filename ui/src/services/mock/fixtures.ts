@@ -1,4 +1,5 @@
 import {
+  ACQUISITION_LOG_TAB,
   ALL_PULLS_TAB,
   ANOMALY_TAB,
   CAMPAIGN_TAB,
@@ -406,6 +407,12 @@ export const MOCK_SHEETS = sheets([
   tab(ALL_PULLS_TAB, [
     ['2026-10-20', 'Rapi', 'Event', false, '', false],
     ['2026-11-02', 'Rapi', 'Event', false, 11, false],
+  ]),
+  // Row 2 numbers the slots, as the formula writes it.
+  tab(ACQUISITION_LOG_TAB, [
+    ['', '', '', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    ['Rapi', 'Good', '2022-11-04', '?', ...Array(9).fill('2026-10-20\nEvent'), '2026-11-02\nEvent'],
+    ['Noah', 'Perfect', '2026-10-01', '2026-10-01\nMold', '2026-11-01\nExchange'],
   ]),
   tab(OVERCORE_TAB, [['2025-05-01', 'Event Banner', 'Noah', 'Pilgrim', 'pilgrim core 8 pain']]),
   tab(EVENT_TAB, [
