@@ -41,6 +41,16 @@ const TIED = [
 ]
 const FLAT = [row('2026-11-01', 5, '05:59', false), row('2026-11-02', 5, '05:59', false)]
 
+// two equal finishes, and two equal two-day runs
+const PAIRS = [
+  row('2026-11-01', 100, '17:59', true),
+  row('2026-11-02', 100, '17:59', true),
+  row('2026-11-04', 100, '05:59', true),
+  row('2026-11-05', 100, '05:59', true),
+]
+// loses 1 gem over 30 days
+const SLIGHT_LOSS = [row('2026-10-01', 100, '05:59', true), row('2026-10-31', 99, '05:59', true)]
+
 const any = { range: 'any period' }
 const nov = { range: '2026-11-01..2026-11-08' }
 const none = { range: 'in 2022' }
@@ -57,6 +67,7 @@ const CASES: [string, Record<string, string>, Row[], string | null][] = [
   // 11,000 over 312 days
   ['daily-gain', gems(any), ROWS, '35.3'],
   ['daily-gain', gems(any, 'paid gems'), ROWS, '0'],
+  ['daily-gain', gems(any), SLIGHT_LOSS, '0'],
   ['daily-gain', gems(none), ROWS, null],
   // 8 Nov follows a gap, so its +7,500 does not count
   ['best-day', gems(any), ROWS, '+3,000, 2 Nov 2026'],
@@ -77,7 +88,7 @@ const CASES: [string, Record<string, string>, Row[], string | null][] = [
   ['earliest', any, TIED, '07:59, 1 Nov 2026'], // tie: earliest row
   ['earliest', any, FLAT, null],
   ['latest', any, ROWS, '01:59, 3 Nov 2026'],
-  ['latest', any, TIED, '19:59, 2 Nov 2026'],
+  ['latest', any, PAIRS, '19:59, 1 Nov 2026'], // tie: earliest row
   ['latest', any, FLAT, null],
   ['unfinished', any, ROWS, '1'],
   ['unfinished', none, ROWS, '0'],
@@ -89,6 +100,7 @@ const CASES: [string, Record<string, string>, Row[], string | null][] = [
   ['top-segment', any, FLAT, null],
   ['streak', any, ROWS, '3 days, from 1 Nov 2026'],
   ['streak', any, TIED, '2 days, from 1 Nov 2026'],
+  ['streak', any, PAIRS, '2 days, from 1 Nov 2026'], // tie: earliest run
   ['streak', any, FLAT, null],
 ]
 

@@ -7,10 +7,8 @@ import {
   formatPlural,
   formatSigned,
 } from '@/services/stats/format'
-import { addDays, daysBetween } from '@/services/stats/levelFacts'
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
-import { cellGameDay, firstMax } from '@/services/stats/rules'
-import { streak } from '@/services/stats/specialFacts'
+import { addDays, cellGameDay, daysBetween, firstMax, streak } from '@/services/stats/rules'
 
 const { tab } = PROFILE_TAB
 
@@ -147,7 +145,7 @@ export const PROFILE_FACTS: Fact[] = [
     reads: growthReads,
     compute: (c, v, today) => {
       const perDay = rate(spanOf(c, v, today))
-      return perDay === null ? null : formatCount(Math.round(perDay * 10) / 10)
+      return perDay === null ? null : formatCount(Math.round(perDay * 10) / 10 || 0) // never "-0"
     },
   },
   {
@@ -185,8 +183,8 @@ export const PROFILE_FACTS: Fact[] = [
       if (!latest) return null
       const left = Number(v.amount.replace(/,/g, '')) - latest.value
       if (left <= 0) return 'Already reached'
-      const since = addDays(today, -30)
-      const perDay = rate(span(list, (day) => day >= since))
+      const monthAgo = addDays(today, -30)
+      const perDay = rate(span(list, (day) => day >= monthAgo))
       return perDay !== null && perDay > 0
         ? formatDate(addDays(latest.day, Math.ceil(left / perDay)))
         : null

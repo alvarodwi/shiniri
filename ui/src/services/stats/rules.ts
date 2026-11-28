@@ -1,5 +1,5 @@
 import { SHEETS_EPOCH, cellToIsoDate } from '@/services/anomaly/anomalyRows'
-import { formatPlural } from '@/services/stats/format'
+import { formatDate, formatPlural } from '@/services/stats/format'
 import { gameDay } from '@/utils/gameDay'
 
 // Rules that recur across facts.
@@ -47,4 +47,27 @@ export function groupByGameDay(cells: unknown[]): [string, number[]][] {
     else days.set(day, [i])
   })
   return [...days].sort(([a], [b]) => a.localeCompare(b))
+}
+
+const DAY = 86_400_000
+export const daysBetween = (from: string, to: string) => (Date.parse(to) - Date.parse(from)) / DAY
+export const addDays = (day: string, n: number) =>
+  new Date(Date.parse(day) + n * DAY).toISOString().slice(0, 10)
+
+// "6 days, from 3 Oct 2023": the longest run of consecutive calendar dates that match.
+export function streak<T extends { day: string }>(
+  list: T[],
+  match: (d: T) => boolean,
+): string | null {
+  const streaks: { from: string; length: number }[] = []
+  let next = NaN // the date that would extend the current streak
+  for (const d of list) {
+    if (!match(d)) continue
+    const at = Date.parse(d.day)
+    if (at === next) streaks[streaks.length - 1].length++
+    else streaks.push({ from: d.day, length: 1 })
+    next = at + DAY
+  }
+  const best = firstMax(streaks, (s) => s.length)
+  return best ? `${formatPlural(best.length, 'day')}, from ${formatDate(best.from)}` : null
 }

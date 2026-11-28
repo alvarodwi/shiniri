@@ -3,14 +3,9 @@ import { LEVEL_TAB } from '@/config/sheets'
 import type { Columns, Fact } from '@/services/stats/facts'
 import { formatCount, formatDate, formatPlural } from '@/services/stats/format'
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
-import { cellGameDay, firstMax, groupByGameDay } from '@/services/stats/rules'
+import { addDays, cellGameDay, daysBetween, firstMax, groupByGameDay } from '@/services/stats/rules'
 
 const { tab } = LEVEL_TAB
-export const DAY = 86_400_000
-export const daysBetween = (from: string, to: string) => (Date.parse(to) - Date.parse(from)) / DAY
-export const addDays = (day: string, n: number) =>
-  new Date(Date.parse(day) + n * DAY).toISOString().slice(0, 10)
-
 // The dated milestones, oldest first; a day keeps its row order. Approximated rows count too.
 const milestones = (cols: Columns) =>
   cols[tab].date
@@ -90,8 +85,8 @@ export const LEVEL_FACTS: Fact[] = [
     reads,
     compute: (c, _, today) => {
       const list = milestones(c)
-      const since = addDays(today, -365)
-      const pace = daysPerLevel(list, (m) => m.day >= since)
+      const yearAgo = addDays(today, -365)
+      const pace = daysPerLevel(list, (m) => m.day >= yearAgo)
       if (pace === null) return null
       const last = list.at(-1)!
       const next = (Math.floor(last.level / LEVEL_STEP) + 1) * LEVEL_STEP

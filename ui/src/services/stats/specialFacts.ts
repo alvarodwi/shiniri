@@ -3,7 +3,7 @@ import { distinct, select as anomalyRuns, sumModules } from '@/services/stats/an
 import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
 import { formatCount, formatDate, formatPercent, formatPlural } from '@/services/stats/format'
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
-import { firstMax, groupByGameDay } from '@/services/stats/rules'
+import { firstMax, groupByGameDay, streak } from '@/services/stats/rules'
 
 const { tab } = SPECIAL_TAB
 const ANY_BOSS = 'any boss'
@@ -45,24 +45,6 @@ const days = (rows: Row[]) =>
     const list = indexes.map((i) => rows[i])
     return { day, runs: total(list, 'runs'), drops: total(list, 'drops') }
   })
-
-// "6 days, from 3 Oct 2023": the longest run of consecutive calendar dates that match.
-export function streak<T extends { day: string }>(
-  list: T[],
-  match: (d: T) => boolean,
-): string | null {
-  const streaks: { from: string; length: number }[] = []
-  let next = NaN // the date that would extend the current streak
-  for (const d of list) {
-    if (!match(d)) continue
-    const at = Date.parse(d.day)
-    if (at === next) streaks[streaks.length - 1].length++
-    else streaks.push({ from: d.day, length: 1 })
-    next = at + 86_400_000
-  }
-  const best = firstMax(streaks, (s) => s.length)
-  return best ? `${formatPlural(best.length, 'day')}, from ${formatDate(best.from)}` : null
-}
 
 const boss: Filter = {
   id: 'boss',
