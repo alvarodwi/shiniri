@@ -10,7 +10,7 @@ const { tab } = EXTRA_TAB
 const FREEBIES: OtherType[] = ['Welfare Unit', 'Welfare Pass']
 
 // The indexes of the rows from one of `sources`.
-const from = (cols: Columns, ...sources: OtherType[]) =>
+const rowsFrom = (cols: Columns, ...sources: OtherType[]) =>
   cols[tab].source.flatMap((cell, i) =>
     (sources as string[]).includes(String(cell).trim()) ? [i] : [],
   )
@@ -22,7 +22,7 @@ const ssrsIn = (
   ...sources: OtherType[]
 ) => {
   const within = inRange(range, today)
-  const rows = from(cols, ...sources).filter((i) => within(cols[tab].date[i]))
+  const rows = rowsFrom(cols, ...sources).filter((i) => within(cols[tab].date[i]))
   return formatCount(sum(rows, (i) => Number(cols[tab].totalSsr[i])))
 }
 
@@ -47,7 +47,7 @@ export const EXTRA_FACTS: Fact[] = [
     reads: reads('rateUpName', 'ssrDetails'),
     compute: (c) => {
       const t = c[tab]
-      const hits = from(c, FREE_PULLS).filter((i) => {
+      const hits = rowsFrom(c, FREE_PULLS).filter((i) => {
         const name = String(t.rateUpName[i] ?? '').trim()
         return name !== '' && String(t.ssrDetails[i] ?? '').trim() === name
       })
@@ -71,6 +71,6 @@ export const EXTRA_FACTS: Fact[] = [
     reads: reads('totalSsr'),
     // A row is one recruit with one guarantee.
     compute: (c) =>
-      formatCount(sum(from(c, GUARANTEED), (i) => Math.max(Number(c[tab].totalSsr[i]) - 1, 0))),
+      formatCount(sum(rowsFrom(c, GUARANTEED), (i) => Math.max(Number(c[tab].totalSsr[i]) - 1, 0))),
   },
 ]
