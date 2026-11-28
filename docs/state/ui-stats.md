@@ -25,7 +25,8 @@ The event facts read the gacha spreadsheet. Most work on chases, which `eventFac
 the `Event` rows: one rate-up's sessions, split after a gap of more than 30 days, falling in a Date
 range by its first session. A rerun chase (starting over 30 days after the NIKKE's `releaseDate`)
 with no gems and no rate-up is left out of every chase fact; the row facts still count its pulls and
-spooks. Only the `rateUpType` `Pilgrim Limited` is 1% odds, every other type 2%.
+spooks. The `rateUpType`s `Pilgrim Limited` and `Summer Pilgrim Limited` are 1% odds,
+every other type 2%.
 
 The union facts count own hits by the fixed nickname `VAROA`, except that the days of a mode come
 from every member's rows. Their `season` filter is its own (not a Date range), counts "last N" back

@@ -124,7 +124,7 @@ An ordinary pull session paid at least partly with gems, the 150-gem pull includ
 A game day with at least one gem session. Gems are normally kept for event pulls, so it is out of the ordinary.
 
 **Rate-up**:
-The NIKKE an event banner favours: 1% of pulls on a Pilgrim Limited banner, whatever the NIKKE's manufacturer, and 2% on any other.
+The NIKKE an event banner favours: 1% of pulls on a Pilgrim Limited or Summer Pilgrim Limited banner, whatever the NIKKE's manufacturer, and 2% on any other.
 _Avoid_: Target
 
 **Spook**:

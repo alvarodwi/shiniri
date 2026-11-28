@@ -228,6 +228,12 @@ describe('event facts: rate-ups and chases', () => {
     )
   })
 
+  it('gives a summer Pilgrim banner the Pilgrim odds', () => {
+    const rows: Row[] = [['2025-07-23', 'Dorothy', 'Summer Pilgrim Limited', 0, 10, 'Dorothy']]
+    expect(compute('rate-up-luck', rows, { odds: '1%' })).toBe('10 (1 of 10)')
+    expect(compute('rate-up-luck', rows, { odds: '2%' })).toBeNull()
+  })
+
   it('gives ties to the earliest chase or NIKKE', () => {
     // two identical failed chases, then two identical wins with the same greed
     const rows: Row[] = [

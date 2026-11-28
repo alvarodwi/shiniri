@@ -16,6 +16,7 @@ const { tab } = EVENT_TAB
 const DB = NIKKE_DATABASE_TAB.tab
 const ANY_TYPE = 'any banner type'
 const ANY_RATE_UP = 'any rate-up'
+const PILGRIM_BANNERS = ['Pilgrim Limited', 'Summer Pilgrim Limited']
 const CURRENCIES = ['gems', 'tickets', 'pulls'] as const
 type Currency = (typeof CURRENCIES)[number]
 // A banner lasts at most about a month: a longer gap starts a new chase, and a chase that starts
@@ -167,10 +168,10 @@ const chaseReads = (...event: string[]) =>
 
 const costReads = chaseReads('tickets', 'pulls')
 
-// A Pilgrim Limited rate-up is 1% whatever its manufacturer, any other 2%.
+// A rate-up on a Pilgrim banner, summer or not, is 1% whatever its manufacturer; any other 2%.
 function onOdds(cols: Columns, values: Values, today: string) {
   return select(cols, { range: values.range }, today).filter(
-    (s) => s.rateUp && (s.type === 'Pilgrim Limited' ? '1%' : '2%') === values.odds,
+    (s) => s.rateUp && (PILGRIM_BANNERS.includes(s.type) ? '1%' : '2%') === values.odds,
   )
 }
 // The NikkeDatabase names whose `column` is TRUE.
