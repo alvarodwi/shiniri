@@ -285,7 +285,7 @@ const byChance = <T extends { source: string }>(list: T[]) =>
   list.filter((a) => CHANCE_SOURCES.includes(a.source))
 
 // The trait of each NikkeDatabase NIKKE as answers word it.
-export function traits(cols: Columns, attribute: string) {
+function traits(cols: Columns, attribute: string) {
   const db = cols[DB]
   const label = (raw: string) => {
     if (attribute === 'manufacturer') return raw.charAt(0) + raw.slice(1).toLowerCase()
@@ -295,16 +295,23 @@ export function traits(cols: Columns, attribute: string) {
   return new Map(db.nikke.map((name, i) => [text(name), label(text(db[attribute][i]))]))
 }
 
+// The trait labels those NIKKE have, attribute by attribute.
+export const traitOptions = (cols: Columns, names: string[]) =>
+  ATTRIBUTES.flatMap((attribute) => {
+    const of = traits(cols, attribute)
+    return distinct(names.map((name) => of.get(name)))
+  })
+
+// Whether a NIKKE has the trait; the labels don't overlap between attributes.
+export function hasTrait(cols: Columns, label: string) {
+  const maps = ATTRIBUTES.map((a) => traits(cols, a))
+  return (name: string) => maps.some((m) => m.get(name) === label)
+}
+
 const source = (options: string[]) => filter('source', 'Source', [ANY_SOURCE, ...options])
 const anySource = source(SOURCES)
 const pulledNikke = filter('nikke', 'NIKKE', (c) => distinct(c[ALL].nikke.map(text)))
-const trait = filter('trait', 'Trait', (c) => {
-  const pulled = distinct(c[ALL].nikke.map(text))
-  return ATTRIBUTES.flatMap((attribute) => {
-    const of = traits(c, attribute)
-    return distinct(pulled.map((name) => of.get(name)))
-  })
-})
+const trait = filter('trait', 'Trait', (c) => traitOptions(c, distinct(c[ALL].nikke.map(text))))
 const attribute = filter('attribute', 'Attribute', ATTRIBUTES)
 const ago = filter('ago', 'When', Object.keys(AGO))
 const range = dateRange((c) => c[ALL].date)
@@ -378,10 +385,8 @@ const ALL_FACTS: Fact[] = [
     filters: [trait, anySource, range],
     reads: traitReads,
     compute: (c, v, today) => {
-      // The labels don't overlap between attributes.
-      const maps = ATTRIBUTES.map((a) => traits(c, a))
-      const list = select(c, v, today)
-      return formatCount(list.filter((a) => maps.some((m) => m.get(a.nikke) === v.trait)).length)
+      const has = hasTrait(c, v.trait)
+      return formatCount(select(c, v, today).filter((a) => has(a.nikke)).length)
     },
   },
   {

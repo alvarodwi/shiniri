@@ -2,7 +2,7 @@ import { ACQUISITION_LOG_TAB, NIKKE_DATABASE_TAB } from '@/config/sheets'
 import { distinct } from '@/services/stats/anomalyFacts'
 import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
 import { formatCount, formatDate, formatPlural } from '@/services/stats/format'
-import { ATTRIBUTES, traits } from '@/services/stats/pullFacts'
+import { ATTRIBUTES, hasTrait, traitOptions } from '@/services/stats/pullFacts'
 import { ANY_PERIOD, dateRange, inRange } from '@/services/stats/ranges'
 import { cellGameDay, daysBetween, firstMax, topWithCount } from '@/services/stats/rules'
 
@@ -48,7 +48,7 @@ function roster(cols: Columns) {
 // The known copies of one slot column, row 2 and unknowns left out.
 const column = (cols: Columns, slot: string) => cols[TAB][slot].flatMap((c) => copy(c) ?? [])
 
-const longest = (list: { nikke: string; n: number }[]) => {
+const longestDays = (list: { nikke: string; n: number }[]) => {
   const best = firstMax(list, (x) => x.n)
   return best ? `${best.nikke}, ${formatPlural(best.n, 'day')}` : null
 }
@@ -80,16 +80,7 @@ const confidence: Filter = {
 const trait: Filter = {
   id: 'trait',
   label: 'Trait',
-  options: (c) => {
-    const names = distinct(c[TAB].nikke.map(text))
-    return [
-      ANY_TRAIT,
-      ...ATTRIBUTES.flatMap((attribute) => {
-        const of = traits(c, attribute)
-        return distinct(names.map((name) => of.get(name)))
-      }),
-    ]
-  },
+  options: (c) => [ANY_TRAIT, ...traitOptions(c, distinct(c[TAB].nikke.map(text)))],
   say: (v) => (v === ANY_TRAIT ? '' : v),
 }
 
@@ -100,12 +91,11 @@ const traitReads = (...columns: string[]) => [
 ]
 
 // The earliest core 7 among the NIKKE with the chosen trait.
-function firstCore(cols: Columns, values: Values, recordedOnly: boolean) {
-  const maps = values.trait === ANY_TRAIT ? [] : ATTRIBUTES.map((a) => traits(cols, a))
+function firstMaxCore(cols: Columns, values: Values, recordedOnly: boolean) {
+  const wanted = values.trait === ANY_TRAIT ? () => true : hasTrait(cols, values.trait)
   const list = roster(cols).flatMap((r) => {
     const max = r.at('c7')
-    const wanted = values.trait === ANY_TRAIT || maps.some((m) => m.get(r.nikke) === values.trait)
-    return max && wanted && (!recordedOnly || r.confidence === 'Perfect')
+    return max && wanted(r.nikke) && (!recordedOnly || r.confidence === 'Perfect')
       ? [{ nikke: r.nikke, day: max.day }]
       : []
   })
@@ -160,7 +150,7 @@ export const ACQUISITION_FACTS: Fact[] = [
     title: 'Slowest max core',
     question: 'Which NIKKE took longest from first copy to core 7?',
     reads: reads('nikke', 'firstCopy', 'c7'),
-    compute: (c) => longest(maxWaits(c)),
+    compute: (c) => longestDays(maxWaits(c)),
   },
   {
     id: 'acquisition-drought',
@@ -216,7 +206,7 @@ export const ACQUISITION_FACTS: Fact[] = [
     title: 'Release day pickups',
     question: 'How many NIKKE did I get on their release day {range}?',
     filters: [dateRange((c) => column(c, 'firstCopy').map((x) => x.day))],
-    // releaseDate repeats down the tab, so firstCopy rows line up with it by index.
+    // Both columns are cut from the same rows, so they line up by index.
     reads: reads('releaseDate', 'firstCopy'),
     compute: (c, v, today) => {
       const inside = inRange(v.range ?? ANY_PERIOD, today)
@@ -238,7 +228,7 @@ export const ACQUISITION_FACTS: Fact[] = [
       const list = roster(c)
       // Logging starts at the earliest copy on the tab; older releases may have arrived unlogged.
       const start = SLOTS.flatMap((s) => column(c, s).map((x) => x.day)).sort()[0]
-      return longest(
+      return longestDays(
         list.flatMap((r) => {
           const first = r.at('firstCopy')
           return first && r.release && r.release >= start
@@ -267,7 +257,7 @@ export const ACQUISITION_FACTS: Fact[] = [
     question: 'Which {trait} NIKKE reached core 7 first?',
     filters: [trait],
     reads: traitReads(),
-    compute: (c, v) => firstCore(c, v, false),
+    compute: (c, v) => firstMaxCore(c, v, false),
   },
   {
     id: 'acquisition-first-recorded-max',
@@ -276,6 +266,6 @@ export const ACQUISITION_FACTS: Fact[] = [
     question: 'Which fully recorded {trait} NIKKE reached core 7 first?',
     filters: [trait],
     reads: traitReads('confidence'),
-    compute: (c, v) => firstCore(c, v, true),
+    compute: (c, v) => firstMaxCore(c, v, true),
   },
 ]
