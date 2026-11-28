@@ -32,8 +32,8 @@ const select = (cols: Columns, { grade = ANY_GRADE, source = ANY_SOURCE }: Value
   )
 
 // A set with no costumes is no answer; owning none of an existing one is "0".
-const countOf = (set: ReturnType<typeof costumes>, owned: boolean) =>
-  set.length ? formatCount(set.filter((c) => c.owned === owned).length) : null
+const countOf = (set: ReturnType<typeof costumes>, wantOwned: boolean) =>
+  set.length ? formatCount(set.filter((c) => c.owned === wantOwned).length) : null
 
 const grade: Filter = {
   id: 'grade',
