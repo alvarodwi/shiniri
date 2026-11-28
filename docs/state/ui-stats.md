@@ -13,7 +13,7 @@ mostly from one file per tab (`anomalyFacts.ts`, `specialFacts.ts`, `gearFacts.t
 `furnaceFacts.ts`, `levelFacts.ts`, `profileFacts.ts`, `soloRaidFacts.ts`, `campaignFacts.ts`,
 `towerFacts.ts`, `unionRaidFacts.ts`, `socialFacts.ts`, `eventFacts.ts`, `ordinaryFacts.ts`, `moldFacts.ts`,
 `exchangeFacts.ts`, `extraFacts.ts`, `pullFacts.ts`, `acquisitionFacts.ts`, `dupeFacts.ts`,
-`overcoreFacts.ts`, `rosterFacts.ts`, with tests beside them). `clears.ts` holds what Campaign and Tower share: parsing a
+`overcoreFacts.ts`, `rosterFacts.ts`, `spendingFacts.ts`, with tests beside them). `clears.ts` holds what Campaign and Tower share: parsing a
 clear row and the computes both use; `clearRows.fixture.ts` is their test data. `Profile`, `Campaign`,
 `Tower`, `UnionRaid` and `UnionSeason` are written by the CLI; `PROFILE_TAB`, `CAMPAIGN_TAB`,
 `TOWER_TAB`, `UNION_RAID_TAB` and `UNION_SEASON_TAB` mirror its headers and only stats read them. A fact that reads two tabs lives in one of their files (`interception-*` in
@@ -79,6 +79,11 @@ The union facts count own hits by the fixed nickname `VAROA`, except that the da
 from every member's rows. Their `season` filter is its own (not a Date range), counts "last N" back
 from the newest season in the tab the fact is about, and takes years from `UnionSeason.startDate`.
 The sheet says `Electronic`; answers say `Electric`.
+
+The spending facts read the gacha spreadsheet's `Spending` tab. A row is one purchase. Rankings and
+shares use rupiah. Costume purchases are `Costume`, `Costume Gacha`, `Event Pass` and `Mission Pass`
+at full price, and their NIKKE is what precedes the type in `packageName`. A monthly pass covers 30
+days and passes stack. Daily cost divides by the days from launch (2022-11-04) through today.
 
 Stage names come raw from the sheet (`46-40 HARD BOSS`, `SUB 2-1 STAGE`, `EX HARD STAGE`): story,
 side and boss stages are told apart by that text, and a boss floor is every tenth floor. The

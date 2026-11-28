@@ -18,6 +18,7 @@ import { ROSTER_FACTS } from '@/services/stats/rosterFacts'
 import { SOCIAL_FACTS } from '@/services/stats/socialFacts'
 import { SOLO_RAID_FACTS } from '@/services/stats/soloRaidFacts'
 import { SPECIAL_FACTS } from '@/services/stats/specialFacts'
+import { SPENDING_FACTS } from '@/services/stats/spendingFacts'
 import { TOWER_FACTS } from '@/services/stats/towerFacts'
 import { UNION_RAID_FACTS } from '@/services/stats/unionRaidFacts'
 
@@ -96,4 +97,5 @@ export const FACTS: Fact[] = [
   ...DUPE_FACTS,
   ...OVERCORE_FACTS,
   ...ROSTER_FACTS,
+  ...SPENDING_FACTS,
 ]
