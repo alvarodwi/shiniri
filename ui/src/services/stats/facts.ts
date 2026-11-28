@@ -4,6 +4,7 @@ import { FURNACE_FACTS } from '@/services/stats/furnaceFacts'
 import { GEAR_FACTS } from '@/services/stats/gearFacts'
 import { LEVEL_FACTS } from '@/services/stats/levelFacts'
 import { PROFILE_FACTS } from '@/services/stats/profileFacts'
+import { SOLO_RAID_FACTS } from '@/services/stats/soloRaidFacts'
 import { SPECIAL_FACTS } from '@/services/stats/specialFacts'
 
 // A fact is the code-defined catalog entry; see docs/decisions/0008. `reads` names the tab and the
@@ -66,4 +67,5 @@ export const FACTS: Fact[] = [
   ...FURNACE_FACTS,
   ...LEVEL_FACTS,
   ...PROFILE_FACTS,
+  ...SOLO_RAID_FACTS,
 ]

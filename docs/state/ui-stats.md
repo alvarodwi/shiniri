@@ -10,7 +10,7 @@ in `docs/decisions/0008-stats-computed-in-the-client.md`.
 
 This doc does not list the facts. `FACTS` in `ui/src/services/stats/facts.ts` is the catalog, spread
 from one file per tab (`anomalyFacts.ts`, `specialFacts.ts`, `gearFacts.ts`,
-`furnaceFacts.ts`, `levelFacts.ts`, `profileFacts.ts`, with tests beside them). `Profile` is written
+`furnaceFacts.ts`, `levelFacts.ts`, `profileFacts.ts`, `soloRaidFacts.ts`, with tests beside them). `Profile` is written
 by the CLI's `watch`; `PROFILE_TAB` mirrors its headers and only stats read it. A fact that reads
 two tabs lives in one of their files (`interception-*` in `specialFacts.ts`, `gear-special-*` in
 `gearFacts.ts`).
