@@ -1,5 +1,6 @@
 import { UNION_RAID_TAB, UNION_SEASON_TAB } from '@/config/sheets'
 import { distinct } from '@/services/stats/anomalyFacts'
+import { SLOT_NAMES } from '@/services/stats/clears'
 import type { Columns, Fact, Filter, Values } from '@/services/stats/facts'
 import {
   formatCount,
@@ -7,9 +8,11 @@ import {
   formatLarge,
   formatMonth,
   formatPlural,
+  formatShare,
 } from '@/services/stats/format'
 import { addDays, cellGameDay, firstMax, topWithCount } from '@/services/stats/rules'
 import { WEAKNESSES } from '@/types/soloRaid'
+import type { Weakness } from '@/types/soloRaid'
 
 const RAID = UNION_RAID_TAB.tab
 const SEASON = UNION_SEASON_TAB.tab
@@ -18,7 +21,7 @@ const HITS_PER_DAY = 3
 const ANY_SEASON = 'any season'
 
 // bossElement -> the element it is weak to; the API's "Electronic" shows as "Electric".
-const WEAK_TO: Record<string, string> = {
+const WEAK_TO: Record<string, Weakness> = {
   Fire: 'Water',
   Water: 'Electric',
   Electronic: 'Iron',
@@ -27,7 +30,7 @@ const WEAK_TO: Record<string, string> = {
 }
 
 const sum = (numbers: number[]) => numbers.reduce((a, b) => a + b, 0)
-const title = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
+const capitalise = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
 
 // Every row of UnionRaid, oldest season and day first, so ties go to the earliest. A column the fact
 // did not declare reads as blank.
@@ -48,7 +51,7 @@ function hits(cols: Columns) {
           mine: text('nickname', i) === ME,
           damage: Number(text('damage', i)),
           final: text('finalHit', i).toUpperCase() === 'TRUE',
-          team: [1, 2, 3, 4, 5].map((n) => text(`slot${n}`, i)).filter(Boolean),
+          team: SLOT_NAMES.map((name) => text(name, i)).filter(Boolean),
         },
       ]
     })
@@ -197,9 +200,9 @@ function teams(list: Hit[], team: string) {
 const used = (list: Hit[]) => new Set(list.flatMap((h) => h.team))
 const withNikke = (list: Hit[], nikke: string) => list.filter((h) => h.team.includes(nikke))
 
+const isLevel4 = (s: { mode: string; level: number | null }) => s.mode === 'hard' && s.level === 4
 // Seasons that reached hard level 4.
-const level4 = (cols: Columns) =>
-  raidSeasons(cols).filter((s) => s.mode === 'hard' && s.level === 4)
+const level4 = (cols: Columns) => raidSeasons(cols).filter(isLevel4)
 const dealt = (cols: Columns) =>
   level4(cols).flatMap((s): [number, number][] =>
     s.damageDealt === null ? [] : [[s.season, s.damageDealt]],
@@ -217,7 +220,6 @@ const season = seasonFilter(RAID)
 const oneSeason = singleSeason(RAID)
 const progressSeason = singleSeason(SEASON)
 
-const SLOTS = ['slot1', 'slot2', 'slot3', 'slot4', 'slot5']
 const raid = (...columns: string[]) => ({
   tab: UNION_RAID_TAB,
   columns: ['nickname', ...columns],
@@ -394,7 +396,7 @@ export const UNION_RAID_FACTS: Fact[] = [
     title: 'Favourite raid NIKKE',
     question: 'Which NIKKE did I use most in {mode} mode in {season}?',
     filters: [mode, season],
-    reads: seasonal('mode', ...SLOTS),
+    reads: seasonal('mode', ...SLOT_NAMES),
     compute: (c, v) =>
       topWithCount(
         select(c, v, v.mode).flatMap((h) => h.team),
@@ -406,7 +408,7 @@ export const UNION_RAID_FACTS: Fact[] = [
     title: 'NIKKE hit count',
     question: 'In how many hits did I use {nikke} in {season}?',
     filters: [nikke, season],
-    reads: seasonal(...SLOTS),
+    reads: seasonal(...SLOT_NAMES),
     compute: (c, v) => formatCount(withNikke(select(c, v), v.nikke).length),
   }),
   fact({
@@ -414,7 +416,7 @@ export const UNION_RAID_FACTS: Fact[] = [
     title: 'Raid roster size',
     question: 'How many different NIKKEs have I used in {season}?',
     filters: [season],
-    reads: seasonal(...SLOTS),
+    reads: seasonal(...SLOT_NAMES),
     compute: (c, v) => formatCount(used(select(c, v)).size),
   }),
   fact({
@@ -422,7 +424,7 @@ export const UNION_RAID_FACTS: Fact[] = [
     title: 'Best with NIKKE',
     question: 'What is my biggest Hard hit with {nikke}?',
     filters: [nikke],
-    reads: [raid('mode', 'damage', ...SLOTS)],
+    reads: [raid('mode', 'damage', ...SLOT_NAMES)],
     compute: (c, v) => {
       const best = firstMax(withNikke(hard(c, {}), v.nikke), (h) => h.damage)
       return best ? formatLarge(best.damage) : null
@@ -455,7 +457,7 @@ export const UNION_RAID_FACTS: Fact[] = [
     title: 'New raid NIKKEs',
     question: 'How many NIKKEs did I use for the first time in {season}?',
     filters: [singleSeason(RAID, 1)], // in the earliest season every NIKKE would be new
-    reads: [raid('season', ...SLOTS)],
+    reads: [raid('season', ...SLOT_NAMES)],
     compute: (c, v) => {
       const chosen = seasonOf(v.season)
       const list = own(c)
@@ -468,7 +470,7 @@ export const UNION_RAID_FACTS: Fact[] = [
     id: 'unionraid-longest-serving-nikke',
     title: 'Longest-serving NIKKE',
     question: 'Which NIKKE have I used in the most seasons in a row?',
-    reads: [raid('season', ...SLOTS)],
+    reads: [raid('season', ...SLOT_NAMES)],
     compute: (c) => {
       const list = own(c)
       const run = new Map<string, number>()
@@ -510,7 +512,7 @@ export const UNION_RAID_FACTS: Fact[] = [
     title: 'Weakness staple',
     question: 'Which NIKKE is my staple against {weakness}-weak bosses in {season}?',
     filters: [weakness, season],
-    reads: seasonal('mode', 'bossElement', ...SLOTS),
+    reads: seasonal('mode', 'bossElement', ...SLOT_NAMES),
     compute: (c, v) => {
       const list = hard(c, v)
       const staples = [...used(against(list, v.weakness))]
@@ -532,8 +534,8 @@ export const UNION_RAID_FACTS: Fact[] = [
     compute: (c, v) => {
       const s = raidSeasons(c).find((r) => r.season === seasonOf(v.season))
       if (!s?.mode || s.level === null) return null
-      const where = `${title(s.mode)} level ${s.level}`
-      if (s.mode === 'hard' && s.level === 4)
+      const where = `${capitalise(s.mode)} level ${s.level}`
+      if (isLevel4(s))
         return s.damageDealt === null
           ? null
           : `${where}, ${formatLarge(s.damageDealt)} damage dealt`
@@ -597,7 +599,7 @@ export const UNION_RAID_FACTS: Fact[] = [
           .filter((h) => h.level === 4)
           .map((h) => h.damage),
       )
-      return String(Math.round((mine / total) * 1000) / 10)
+      return formatShare(mine, total)
     },
   }),
   fact({

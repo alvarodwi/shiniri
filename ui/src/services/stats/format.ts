@@ -35,6 +35,10 @@ export function formatDuration(ms: number): string {
 export const formatPercent = (part: number, total: number) =>
   total === 0 ? null : String(Math.round((part / total) * 100))
 
+// A small share, to one decimal.
+export const formatShare = (part: number, total: number) =>
+  String(Math.round((part / total) * 1000) / 10)
+
 export const formatSigned = (n: number) => `${n > 0 ? '+' : ''}${formatCount(n)}`
 
 const usdDigits = { minimumFractionDigits: 2, maximumFractionDigits: 2 }

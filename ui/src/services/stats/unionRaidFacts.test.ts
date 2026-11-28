@@ -191,6 +191,17 @@ describe('union raid facts', () => {
     expect(compute('biggest-hard-hit', any, tied)).toBe('1B (season 45)')
     expect(compute('favourite-raid-nikke', hard, tied)).toBe('Liter, 1 hit')
     expect(compute('last-hard-finish', {}, tied)).toBe('B (season 46, 30 Oct 2026)')
+    expect(compute('best-by-weakness', electric, tied)).toBe('1B (season 45)')
+    expect(compute('best-raid-season', {}, tied.slice(0, 2))).toBe('season 45, 1B')
+    const elements = [hit(46, 1, 'hard', { bossElement: 'Iron' }), hit(45, 1, 'hard')]
+    expect(compute('favourite-hard-weakness', any, elements)).toBe('Water, 1 hit')
+    const doubles = ['B', 'B', 'A', 'A'].map((boss) => hit(45, 1, 'hard', { boss }))
+    expect(compute('last-teamed-boss', { team: 'double' }, doubles)).toContain('B (season 45')
+    expect(compute('teamed-boss-damage', { ...any, team: 'double' }, doubles)).toBe(
+      '2B, B (season 45)',
+    )
+    const near = [45, 46].map((n) => season(n, '2026-10-30', 'hard', 3, { hpLeft: 1e9 }))
+    expect(compute('nearest-level-4', {}, tied, near)).toBe('season 45, 1B HP left')
     const level = [45, 46].map((n) => season(n, '2026-10-30', 'hard', 4, { damageDealt: 1e9 }))
     expect(compute('most-level-4-damage', any, tied, level)).toBe('1B (season 45)')
   })
