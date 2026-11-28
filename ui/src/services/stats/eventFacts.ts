@@ -27,7 +27,7 @@ type Currency = (typeof CURRENCIES)[number]
 const BANNER_DAYS = 30
 const SPARK_PULLS = 200
 // Copies of the rate-up each goal takes.
-const GOALS: Record<string, number> = { 'first copy': 1, MLB: 4, 'core 7': 11 }
+export const GOALS: Record<string, number> = { 'first copy': 1, MLB: 4, 'core 7': 11 }
 
 // Every dated row, by game day then row. A column the fact did not declare reads as blank.
 function sessions(cols: Columns) {

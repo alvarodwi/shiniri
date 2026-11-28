@@ -1,5 +1,6 @@
 import { NIKKE_DATABASE_TAB, ROSTER_LOG_TAB } from '@/config/sheets'
 import { distinct } from '@/services/stats/anomalyFacts'
+import { GOALS } from '@/services/stats/eventFacts'
 import type { Columns, Fact, Filter } from '@/services/stats/facts'
 import { formatCount, formatPlural } from '@/services/stats/format'
 import {
@@ -18,8 +19,8 @@ import { firstMax, flagged, sum } from '@/services/stats/rules'
 const LOG = ROSTER_LOG_TAB.tab
 const DB = NIKKE_DATABASE_TAB.tab
 const NONE = 'None' // nothing missing is a real answer
-const CORE_7 = 11 // copies
-const STAGES: Record<string, number> = { MLB: 4, 'core 7': CORE_7 }
+const CORE_7 = GOALS['core 7']! // copies
+const STAGES = ['MLB', 'core 7']
 
 const text = (cell: unknown) => String(cell ?? '').trim()
 
@@ -51,17 +52,17 @@ function changes(cols: Columns) {
 
 // The SSRs of the chosen trait, each with its latest row (undefined while unowned).
 function roster(cols: Columns, trait: string) {
-  const now = new Map(changes(cols).map((c) => [c.code, c]))
+  const latest = new Map(changes(cols).map((c) => [c.code, c]))
   const wanted = withTrait(cols, trait)
   return ssrs(cols)
     .filter((n) => wanted(n.name))
-    .map((n) => ({ ...n, now: now.get(n.code) }))
+    .map((n) => ({ ...n, latest: latest.get(n.code) }))
 }
 const owned = (cols: Columns, trait: string) =>
-  roster(cols, trait).flatMap((n) => (n.now ? [{ name: n.name, ...n.now }] : []))
+  roster(cols, trait).flatMap((n) => (n.latest ? [{ name: n.name, ...n.latest }] : []))
 
 const trait = anyTraitFilter((c) => distinct(ssrs(c).map((n) => n.name)))
-const stage: Filter = { id: 'stage', label: 'Stage', options: Object.keys(STAGES) }
+const stage: Filter = { id: 'stage', label: 'Stage', options: STAGES }
 const attribute: Filter = { id: 'attribute', label: 'Attribute', options: ATTRIBUTES }
 const range = dateRange((c) => c[LOG].date)
 
@@ -83,7 +84,7 @@ export const ROSTER_FACTS: Fact[] = [
     compute: (c, v) => {
       const all = roster(c, v.trait)
       return all.length
-        ? `${formatCount(all.filter((n) => n.now).length)} of ${formatCount(all.length)}`
+        ? `${formatCount(all.filter((n) => n.latest).length)} of ${formatCount(all.length)}`
         : null
     },
   },
@@ -97,7 +98,7 @@ export const ROSTER_FACTS: Fact[] = [
     compute: (c, v) => {
       const all = roster(c, v.trait)
       if (!all.length) return null
-      const missing = all.filter((n) => !n.now)
+      const missing = all.filter((n) => !n.latest)
       return missing.map((n) => (n.limited ? `${n.name} (limited)` : n.name)).join(', ') || NONE
     },
   },
@@ -108,10 +109,11 @@ export const ROSTER_FACTS: Fact[] = [
     question: 'How many {trait} NIKKE are at {stage}?',
     filters: [trait, stage],
     reads: traitReads,
-    compute: (c, v) =>
-      roster(c, v.trait).length
-        ? formatCount(owned(c, v.trait).filter((n) => n.copies >= STAGES[v.stage]).length)
-        : null,
+    compute: (c, v) => {
+      const all = roster(c, v.trait)
+      const built = all.filter((n) => n.latest && n.latest.copies >= GOALS[v.stage]!)
+      return all.length ? formatCount(built.length) : null
+    },
   },
   {
     id: 'roster-next-in-line',
@@ -149,12 +151,12 @@ export const ROSTER_FACTS: Fact[] = [
       }
       const averages = [...groups].map(([group, copies]) => ({
         group,
-        n: sum(copies, (x) => x) / copies.length,
+        average: sum(copies, (x) => x) / copies.length,
       }))
-      const top = firstMax(averages, (a) => a.n)
+      const top = firstMax(averages, (a) => a.average)
       if (!top) return null
-      const n = Math.round(top.n * 10) / 10
-      return `${top.group}, ${formatPlural(n, 'copy', 'copies')} on average`
+      const average = Math.round(top.average * 10) / 10
+      return `${top.group}, ${formatPlural(average, 'copy', 'copies')} on average`
     },
   },
   {

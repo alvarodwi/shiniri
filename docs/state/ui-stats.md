@@ -58,6 +58,10 @@ the same banner completed within 30 days of its last session. The two Overcore f
 or `Exchange` rows with the same day and NIKKE. If any overcore a pain fact looks at has no match, or
 matches with different levels, the fact has no answer. Blessed streak includes the current stretch.
 
+The Roster facts in `rosterFacts.ts` (gacha spreadsheet) read `RosterLog` joined to `NikkeDatabase`
+on `nameCode`, SSRs only. A NIKKE's state is its latest row; owned means it has one. Roster growth
+sums the rises in copies (a first row counts from 0), leaving out the earliest date, the baseline.
+
 The Roster facts in `dupeFacts.ts` (gacha spreadsheet) are about unused dupes. The snapshot ones read
 the computed `DupeTracker` tab, count only positive `unused`, and answer `None` (the count `0`) when
 nothing is waiting. The history ones join `AllPulls` copies 2 to 11 (blank up to the `RosterLog`
@@ -79,10 +83,6 @@ The sheet says `Electronic`; answers say `Electric`.
 Stage names come raw from the sheet (`46-40 HARD BOSS`, `SUB 2-1 STAGE`, `EX HARD STAGE`): story,
 side and boss stages are told apart by that text, and a boss floor is every tenth floor. The
 manufacturer towers' open weekdays and 3-clear daily limit are constants in `towerFacts.ts`.
-
-The Roster facts in `rosterFacts.ts` (gacha spreadsheet) read `RosterLog` joined to `NikkeDatabase`
-on `nameCode`, SSRs only. A NIKKE's state is its latest row; owned means it has one. Roster growth
-sums the rises in copies (a first row counts from 0), leaving out the earliest date, the baseline.
 
 ## Public surface
 
